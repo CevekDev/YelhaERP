@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard'
@@ -49,59 +49,65 @@ export default function LoginPage() {
   }
 
   return (
+    <Card>
+      <CardHeader className="text-center">
+        <CardTitle>Connexion</CardTitle>
+        <CardDescription>Accédez à votre espace de gestion</CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="vous@exemple.dz"
+              autoComplete="email"
+              {...register('email')}
+            />
+            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Mot de passe</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              {...register('password')}
+            />
+            {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-3">
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Se connecter
+          </Button>
+          <p className="text-sm text-muted-foreground text-center">
+            Pas encore de compte ?{' '}
+            <Link href="/register" className="text-yelha-600 hover:underline font-medium">
+              Créer un compte
+            </Link>
+          </p>
+        </CardFooter>
+      </form>
+    </Card>
+  )
+}
+
+export default function LoginPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yelha-50 to-white p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-10 h-10 bg-yelha-500 rounded-xl flex items-center justify-center">
             <TrendingUp className="w-6 h-6 text-white" />
           </div>
           <span className="text-2xl font-bold text-yelha-700">YelhaERP</span>
         </div>
-
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Connexion</CardTitle>
-            <CardDescription>Accédez à votre espace de gestion</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="vous@exemple.dz"
-                  autoComplete="email"
-                  {...register('email')}
-                />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  {...register('password')}
-                />
-                {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Se connecter
-              </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                Pas encore de compte ?{' '}
-                <Link href="/register" className="text-yelha-600 hover:underline font-medium">
-                  Créer un compte
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
-        </Card>
+        <Suspense fallback={<div className="h-64 rounded-xl bg-muted animate-pulse" />}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   )
