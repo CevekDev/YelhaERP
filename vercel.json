@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "buildCommand": "npx prisma generate && npx prisma migrate deploy && next build",
   "regions": ["cdg1"],
   "functions": {
     "app/api/**/*.ts": {
