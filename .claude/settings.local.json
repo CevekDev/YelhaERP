@@ -8,7 +8,17 @@
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); try{const j=JSON.parse\\(d\\); const vulns=j.vulnerabilities; Object.entries\\(vulns||{}\\).forEach\\(\\([k,v]\\)=>console.log\\(k,v.severity,v.via.map\\(x=>typeof x==='string'?x:x.title\\).join\\(','\\)\\)\\);} catch\\(e\\){console.log\\(d.slice\\(0,1000\\)\\)}\")",
       "Bash(npx tsc *)",
       "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Read(//c/c/Users/cevek/OneDrive/Bureau/YelhaERP/app/**)",
+      "Bash(python3 -c \" import sys, json lines = sys.stdin.read\\(\\).strip\\(\\).split\\('\\\\n'\\) for line in lines[-5:]: try: obj = json.loads\\(line\\) role = obj.get\\('role', ''\\) content = obj.get\\('content', ''\\) if isinstance\\(content, list\\): for c in content: if isinstance\\(c, dict\\) and c.get\\('type'\\) == 'text': print\\(f'[{role}]: {c[\\\\\"text\\\\\"][:500]}'\\) elif isinstance\\(content, str\\): print\\(f'[{role}]: {content[:500]}'\\) except: pass \")",
+      "Bash(cat next.config.js)",
+      "Bash(cat next.config.mjs)",
+      "Bash(cat next.config.ts)",
+      "Bash(npx prisma *)",
+      "Bash(npm list *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(cat app/\\\\\\(auth\\\\\\)/login/page.tsx)",
+      "Bash(cat app/login/page.tsx)"
     ]
   }
 }

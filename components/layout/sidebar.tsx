@@ -45,54 +45,65 @@ export function Sidebar({ companyName, plan }: SidebarProps) {
 
   return (
     <aside className={cn(
-      'fixed top-0 h-screen w-[240px] flex flex-col border-r bg-card z-40',
+      'fixed top-0 h-screen w-[240px] flex flex-col bg-white border-r border-slate-100 z-40 shadow-sm',
       isRTL ? 'right-0 border-r-0 border-l' : 'left-0',
     )}>
-      <div className="flex items-center gap-2 px-4 h-16 border-b shrink-0">
-        <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shrink-0">
+      {/* Logo header with gradient */}
+      <div className={cn(
+        'px-4 h-16 flex items-center gap-3 shrink-0 bg-gradient-to-r from-yelha-700 to-yelha-500',
+        isRTL && 'flex-row-reverse'
+      )}>
+        <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center shrink-0 border border-white/30">
           <TrendingUp className="w-4 h-4 text-white" />
         </div>
         <div className="overflow-hidden">
-          <p className="font-bold text-sm text-yelha-700 leading-none truncate">YelhaERP</p>
-          <p className="text-xs text-muted-foreground truncate mt-0.5">{companyName}</p>
+          <p className="font-bold text-sm text-white leading-none truncate">YelhaERP</p>
+          <p className="text-xs text-white/70 truncate mt-0.5">{companyName}</p>
         </div>
       </div>
 
-      <div className="px-4 py-2">
-        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', planColors[plan] ?? planColors.TRIAL)}>
-          {t('sidebar.plan')} {plan}
+      {/* Plan badge */}
+      <div className={cn('px-3 py-2.5 border-b border-slate-100', isRTL && 'text-right')}>
+        <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', planColors[plan] ?? planColors.TRIAL)}>
+          {plan}
         </span>
       </div>
 
-      <Separator />
-
       <nav className="flex-1 overflow-y-auto py-2 px-2">
         {navItems.map(item => {
-          const active = pathname === item.href || pathname.startsWith(item.href + '/')
+          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'))
+            || (item.href === '/dashboard' && pathname === '/dashboard')
           return (
             <Link key={item.href} href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors mb-0.5',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all mb-0.5',
                 isRTL && 'flex-row-reverse',
-                active ? 'bg-yelha-500 text-white' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                active
+                  ? 'bg-gradient-to-r from-yelha-500 to-yelha-400 text-white shadow-sm shadow-yelha-500/20'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
               )}>
-              <item.icon className="h-4 w-4 shrink-0" />
+              <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-white' : 'text-slate-400')} />
               <span className="flex-1 truncate">{t(item.key)}</span>
-              {item.badge && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">{item.badge}</Badge>}
+              {item.badge && (
+                <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-bold', active ? 'bg-white/25 text-white' : 'bg-yelha-100 text-yelha-700')}>
+                  {item.badge}
+                </span>
+              )}
             </Link>
           )
         })}
       </nav>
 
-      <Separator />
-
-      <div className="p-3">
-        <Button variant="ghost" size="sm"
-          className={cn('w-full text-muted-foreground hover:text-destructive', isRTL ? 'flex-row-reverse justify-end' : 'justify-start')}
+      <div className="p-3 border-t border-slate-100">
+        <button
+          className={cn(
+            'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all',
+            isRTL && 'flex-row-reverse'
+          )}
           onClick={() => signOut({ callbackUrl: '/login' })}>
-          <LogOut className={cn('h-4 w-4', isRTL ? 'ml-3' : 'mr-3')} />
+          <LogOut className="h-4 w-4 shrink-0" />
           {t('sidebar.logout')}
-        </Button>
+        </button>
       </div>
     </aside>
   )

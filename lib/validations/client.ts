@@ -14,7 +14,9 @@ const WILAYAS = [
 ]
 
 export const clientSchema = z.object({
+  clientType: z.enum(['COMPANY', 'INDIVIDUAL']).default('COMPANY'),
   name: z.string().min(2).max(200).trim(),
+  firstName: z.string().max(100).trim().optional().nullable(),
   nif: z.string().max(20).optional().nullable(),
   nis: z.string().max(20).optional().nullable(),
   rc: z.string().max(30).optional().nullable(),
@@ -26,6 +28,7 @@ export const clientSchema = z.object({
     .optional()
     .nullable(),
   email: z.string().email().optional().nullable(),
+  description: z.string().max(1000).optional().nullable(),
 })
 
 export const clientQuerySchema = z.object({

@@ -38,19 +38,42 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 422)
 
-    const [monthRevenue, unpaidCount] = await Promise.all([
+    const [monthRevenue, unpaidCount, employeeCount, clientCount, stockAlerts, lastPayroll] = await Promise.all([
       prisma.invoice.aggregate({
         where: { companyId: ctx.companyId, status: 'PAID', issueDate: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } },
         _sum: { total: true },
       }),
       prisma.invoice.count({ where: { companyId: ctx.companyId, status: { in: ['SENT', 'OVERDUE'] } } }),
+      prisma.employee.count({ where: { companyId: ctx.companyId, isActive: true } }),
+      prisma.client.count({ where: { companyId: ctx.companyId } }),
+      prisma.product.count({ where: { companyId: ctx.companyId, isActive: true } }),
+      prisma.payrollEntry.findMany({
+        where: { companyId: ctx.companyId, month: now.getMonth() + 1, year: now.getFullYear() },
+        select: { netSalary: true, grossSalary: true, cnasEmployee: true, cnasEmployer: true, irg: true },
+        take: 5,
+      }),
     ])
 
+    const totalNetPayroll = lastPayroll.reduce((s, e) => s + Number(e.netSalary), 0)
+    const totalCnas = lastPayroll.reduce((s, e) => s + Number(e.cnasEmployer), 0)
+
     const systemPrompt = `Tu es l'assistant IA de YelhaERP, un logiciel de gestion pour entreprises algériennes.
-Contexte : CA du mois = ${Number(monthRevenue._sum.total ?? 0).toLocaleString('fr-DZ')} DA | Factures impayées : ${unpaidCount} | Date : ${now.toLocaleDateString('fr-DZ')}
+
+DONNÉES RÉELLES DE L'ENTREPRISE (mois en cours) :
+- Chiffre d'affaires du mois : ${Number(monthRevenue._sum.total ?? 0).toLocaleString('fr-DZ')} DA
+- Factures impayées : ${unpaidCount}
+- Employés actifs : ${employeeCount}
+- Clients enregistrés : ${clientCount}
+- Produits en catalogue : ${stockAlerts}
+- Masse salariale nette du mois : ${totalNetPayroll.toLocaleString('fr-DZ')} DA
+- Charges patronales CNAS du mois : ${totalCnas.toLocaleString('fr-DZ')} DA
+- Date : ${now.toLocaleDateString('fr-DZ')}
+
+EXPERTISE :
+Tu maîtrises la fiscalité et comptabilité algériennes : SCF, TVA 19%/9%, CNAS salarié 9%+patronal 26%, IRG 2026 (barème progressif), G50 (déclaration mensuelle TVA/CNAS), IBS 19%/26%, CASNOS, TAP, déclaration annuelle.
+Tu peux analyser les données ci-dessus et donner des conseils personnalisés.
 Tu réponds en français ou en arabe selon la langue de l'utilisateur.
-Tu maîtrises la fiscalité et comptabilité algériennes (SCF, TVA 19%/9%, CNAS 9%+26%, IRG 2026, G50, IBS, CASNOS).
-Sois précis, professionnel et concis.`
+Sois précis, professionnel et concis. Utilise des chiffres quand c'est pertinent.`
 
     if (!process.env.DEEPSEEK_API_KEY) return apiError('Service IA non configuré', 503)
 

@@ -138,24 +138,32 @@ model VerificationToken {
 // CLIENTS
 // ============================================================
 model Client {
-  id        String    @id @default(cuid())
-  companyId String
-  name      String
-  nif       String?
-  nis       String?
-  rc        String?
-  address   String?
-  wilaya    String?
-  phone     String?
-  email     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String     @id @default(cuid())
+  companyId   String
+  clientType  ClientType @default(COMPANY)
+  name        String
+  firstName   String?
+  nif         String?
+  nis         String?
+  rc          String?
+  address     String?
+  wilaya      String?
+  phone       String?
+  email       String?
+  description String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   invoices Invoice[]
 
   @@index([companyId])
   @@index([companyId, name])
+}
+
+enum ClientType {
+  COMPANY
+  INDIVIDUAL
 }
 
 // ============================================================
