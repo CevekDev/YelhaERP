@@ -41,6 +41,11 @@ function createCustomAdapter(): Adapter {
         },
       })
 
+      // Send welcome email (non-blocking)
+      import('@/lib/email/resend').then(({ sendWelcomeEmail }) =>
+        sendWelcomeEmail(newUser.email, newUser.name).catch(() => {})
+      )
+
       return { ...newUser, emailVerified: newUser.emailVerified ?? null } as AdapterUser
     },
   }

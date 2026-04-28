@@ -1,11 +1,14 @@
 import { NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations/auth'
 import { rateLimit, AUTH_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
-import { sendVerificationEmail } from '@/lib/email/resend'
+import { sendVerificationCode } from '@/lib/email/resend'
+
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
 
 export async function POST(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTH_RATE_LIMIT)
@@ -23,8 +26,8 @@ export async function POST(req: NextRequest) {
   if (existing) return apiError('Un compte avec cet email existe déjà', 409)
 
   const hash = await bcrypt.hash(password, 12)
-  const token = randomBytes(32).toString('hex')
-  const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h
+  const code = generateCode()
+  const expiry = new Date(Date.now() + 15 * 60 * 1000) // 15 min
 
   const trialEndsAt = new Date()
   trialEndsAt.setDate(trialEndsAt.getDate() + 10)
@@ -38,17 +41,16 @@ export async function POST(req: NextRequest) {
         name, email, password: hash, role: 'OWNER',
         phone, birthDate: new Date(birthDate),
         companyId: company.id,
-        verificationToken: token, verificationExpiry: expiry,
+        verificationToken: code, verificationExpiry: expiry,
       },
     })
   })
 
-  // Detect locale from Accept-Language header
   const lang = req.headers.get('accept-language')?.startsWith('ar') ? 'ar'
     : req.headers.get('accept-language')?.startsWith('en') ? 'en' : 'fr'
 
   try {
-    await sendVerificationEmail(email, token, name, lang)
+    await sendVerificationCode(email, code, name, lang)
   } catch {
     // Email failure doesn't block registration
   }

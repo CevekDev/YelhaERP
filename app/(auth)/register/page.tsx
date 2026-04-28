@@ -54,7 +54,7 @@ export default function RegisterPage() {
     })
     setLoading(false)
     if (res.ok) {
-      router.push('/verify-email')
+      router.push(`/verify-email?email=${encodeURIComponent(data.email)}`)
     } else {
       const e = await res.json()
       toast.error(e.error ?? t('auth.err_server'))
@@ -144,12 +144,18 @@ export default function RegisterPage() {
             </form>
           </CardContent>
 
-          <CardFooter className="justify-center">
-            <p className="text-sm text-muted-foreground">
+          <CardFooter className="flex-col gap-3">
+            <p className="text-sm text-muted-foreground text-center">
               {t('auth.register_have_account')}{' '}
               <Link href="/login" className="text-yelha-600 hover:underline font-medium">
                 {t('auth.register_login')}
               </Link>
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              {t('auth.legal_accept')}{' '}
+              <Link href="/conditions" className="text-yelha-600 hover:underline">{t('auth.legal_terms')}</Link>
+              {' '}{t('auth.legal_and')}{' '}
+              <Link href="/confidentialite" className="text-yelha-600 hover:underline">{t('auth.legal_privacy')}</Link>
             </p>
           </CardFooter>
         </Card>
