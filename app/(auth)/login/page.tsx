@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,7 +34,6 @@ function GoogleIcon() {
 }
 
 function LoginForm() {
-  const router = useRouter()
   const params = useSearchParams()
   const raw = params.get('callbackUrl') ?? '/dashboard'
   // Never redirect back to auth pages after login
@@ -55,8 +54,8 @@ function LoginForm() {
     } else if (res?.error) {
       toast.error(t('auth.login_error'))
     } else {
-      router.push(callbackUrl)
-      router.refresh()
+      // Hard navigation to ensure session cookie is sent on next request
+      window.location.href = callbackUrl
     }
   }
 
