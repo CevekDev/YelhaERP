@@ -47,9 +47,15 @@ export async function middleware(req: NextRequest) {
     return rateLimitResponse(reset)
   }
 
+  const session = await auth()
+
+  // Rediriger les utilisateurs connectés hors des pages d'auth
+  if (session?.user?.id && (pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
   // Vérification auth pour les routes protégées
   if (!isPublic) {
-    const session = await auth()
     if (!session?.user?.id) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -58,9 +64,6 @@ export async function middleware(req: NextRequest) {
       url.searchParams.set('callbackUrl', pathname)
       return NextResponse.redirect(url)
     }
-
-    // Rediriger vers l'onboarding si l'entreprise n'a pas de businessType
-    // (géré côté client pour éviter les boucles)
   }
 
   return NextResponse.next()

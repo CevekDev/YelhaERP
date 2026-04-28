@@ -36,7 +36,10 @@ function GoogleIcon() {
 function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const callbackUrl = params.get('callbackUrl') ?? '/dashboard'
+  const raw = params.get('callbackUrl') ?? '/dashboard'
+  // Never redirect back to auth pages after login
+  const AUTH_PAGES = ['/login', '/register', '/verify-email']
+  const callbackUrl = AUTH_PAGES.some(p => raw.startsWith(p)) ? '/dashboard' : raw
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const { t, dir } = useT()
