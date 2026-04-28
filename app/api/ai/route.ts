@@ -11,6 +11,7 @@ const schema = z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string().max(4000),
   })).min(1).max(50),
+  conversationId: z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -19,101 +20,107 @@ export async function POST(req: NextRequest) {
 
   try {
     const ctx = await getTenantContext()
-
-    // Vérifier le quota IA
     const company = await prisma.company.findUnique({
       where: { id: ctx.companyId },
       select: { aiQuotaUsed: true, aiQuotaReset: true, plan: true },
     })
     if (!company) return apiError('Entreprise introuvable', 404)
 
-    // Reset mensuel
     const now = new Date()
     const resetDate = new Date(company.aiQuotaReset)
     const needsReset = now.getMonth() !== resetDate.getMonth() || now.getFullYear() !== resetDate.getFullYear()
-
     const quota = AI_QUOTAS[company.plan] ?? 30
     const currentUsage = needsReset ? 0 : company.aiQuotaUsed
-
-    if (currentUsage >= quota) {
-      return apiError('Quota IA mensuel atteint. Passez à un plan supérieur.', 429)
-    }
+    if (currentUsage >= quota) return apiError('Quota IA mensuel atteint. Passez à un plan supérieur.', 429)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
-
     const parsed = schema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 422)
 
-    // Contexte entreprise pour l'IA
     const [monthRevenue, unpaidCount] = await Promise.all([
       prisma.invoice.aggregate({
-        where: {
-          companyId: ctx.companyId,
-          status: 'PAID',
-          issueDate: { gte: new Date(now.getFullYear(), now.getMonth(), 1) },
-        },
+        where: { companyId: ctx.companyId, status: 'PAID', issueDate: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } },
         _sum: { total: true },
       }),
-      prisma.invoice.count({
-        where: { companyId: ctx.companyId, status: { in: ['SENT', 'OVERDUE'] } },
-      }),
+      prisma.invoice.count({ where: { companyId: ctx.companyId, status: { in: ['SENT', 'OVERDUE'] } } }),
     ])
 
     const systemPrompt = `Tu es l'assistant IA de YelhaERP, un logiciel de gestion pour entreprises algériennes.
-Tu as accès en lecture seule aux données de cette entreprise.
+Contexte : CA du mois = ${Number(monthRevenue._sum.total ?? 0).toLocaleString('fr-DZ')} DA | Factures impayées : ${unpaidCount} | Date : ${now.toLocaleDateString('fr-DZ')}
+Tu réponds en français ou en arabe selon la langue de l'utilisateur.
+Tu maîtrises la fiscalité et comptabilité algériennes (SCF, TVA 19%/9%, CNAS 9%+26%, IRG 2026, G50, IBS, CASNOS).
+Sois précis, professionnel et concis.`
 
-Contexte actuel :
-- CA du mois : ${Number(monthRevenue._sum.total ?? 0).toLocaleString('fr-DZ')} DA
-- Factures impayées : ${unpaidCount}
-- Date : ${now.toLocaleDateString('fr-DZ')}
+    if (!process.env.DEEPSEEK_API_KEY) return apiError('Service IA non configuré', 503)
 
-Tu réponds en français ou en arabe selon la langue du message de l'utilisateur.
-Tu es précis, professionnel et tu maîtrises la fiscalité et la comptabilité algériennes (SCF, TVA 19%, CNAS, IRG, G50).
-Ne donne jamais d'informations personnelles sensibles ou de données d'autres entreprises.`
-
-    if (!process.env.DEEPSEEK_API_KEY) {
-      return apiError('Service IA non configuré', 503)
-    }
-
-    // Incrémenter le quota
     await prisma.company.update({
       where: { id: ctx.companyId },
-      data: {
-        aiQuotaUsed: needsReset ? 1 : { increment: 1 },
-        ...(needsReset && { aiQuotaReset: now }),
-      },
+      data: { aiQuotaUsed: needsReset ? 1 : { increment: 1 }, ...(needsReset && { aiQuotaReset: now }) },
     })
 
-    // Streaming avec DeepSeek
     const response = await fetch(`${process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com'}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` },
       body: JSON.stringify({
         model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...parsed.data.messages,
-        ],
+        messages: [{ role: 'system', content: systemPrompt }, ...parsed.data.messages],
         stream: true,
         max_tokens: 2048,
       }),
     })
 
-    if (!response.ok) {
-      return apiError('Erreur du service IA', 502)
-    }
+    if (!response.ok) return apiError('Erreur du service IA', 502)
 
-    // Passer le stream directement
-    return new Response(response.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
+    // Parse SSE and stream only the text content
+    const encoder = new TextEncoder()
+    const readable = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let fullContent = ''
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() ?? ''
+
+            for (const line of lines) {
+              const trimmed = line.trim()
+              if (!trimmed.startsWith('data:')) continue
+              const data = trimmed.slice(5).trim()
+              if (data === '[DONE]') continue
+              try {
+                const json = JSON.parse(data)
+                const content = json.choices?.[0]?.delta?.content
+                if (content) {
+                  fullContent += content
+                  controller.enqueue(encoder.encode(content))
+                }
+              } catch { /* skip malformed chunks */ }
+            }
+          }
+        } finally {
+          controller.close()
+
+          // Save conversation to DB after stream ends
+          if (parsed.data.conversationId) {
+            const allMessages = [...parsed.data.messages, { role: 'assistant', content: fullContent }]
+            await prisma.aiConversation.update({
+              where: { id: parsed.data.conversationId },
+              data: { messages: allMessages },
+            }).catch(() => {})
+          }
+        }
       },
+    })
+
+    return new Response(readable, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' },
     })
   } catch (e: unknown) {
     if (e instanceof Error && e.message === 'UNAUTHORIZED') return apiError('Non authentifié', 401)
