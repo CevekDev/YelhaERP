@@ -27,6 +27,7 @@ model Company {
   wilaya       String?
   phone        String?
   email        String?
+  bankRib      String?
   plan         Plan         @default(TRIAL)
   aiQuotaUsed  Int          @default(0)
   aiQuotaReset DateTime     @default(now())
@@ -47,6 +48,10 @@ model Company {
   aiConversations AiConversation[]
   integrations    Integration[]
   purchaseOrders  PurchaseOrder[]
+  quotes          Quote[]
+  notifications   Notification[]
+  expenses        Expense[]
+  clientMessages  ClientMessage[]
 }
 
 enum BusinessType {
@@ -83,6 +88,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  expenses Expense[]
 
   @@index([companyId])
 }
@@ -151,11 +157,14 @@ model Client {
   phone       String?
   email       String?
   description String?    @db.Text
+  portalToken String?    @unique
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company  Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   invoices Invoice[]
+  quotes   Quote[]
+  messages ClientMessage[]
 
   @@index([companyId])
   @@index([companyId, name])
@@ -211,12 +220,14 @@ model Invoice {
   isWooOrder     Boolean       @default(false)
   externalId     String?
   portalToken    String?       @unique
+  quoteId        String?       @unique
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   client  Client        @relation(fields: [clientId], references: [id])
   lines   InvoiceLine[]
+  quote   Quote?        @relation(fields: [quoteId], references: [id])
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -257,6 +268,62 @@ model InvoiceLine {
 }
 
 // ============================================================
+// DEVIS
+// ============================================================
+model Quote {
+  id           String      @id @default(cuid())
+  companyId    String
+  clientId     String
+  number       String
+  status       QuoteStatus @default(DRAFT)
+  issueDate    DateTime
+  expiryDate   DateTime?
+  subtotal     Decimal     @db.Decimal(15, 2)
+  taxAmount    Decimal     @db.Decimal(15, 2)
+  total        Decimal     @db.Decimal(15, 2)
+  notes        String?
+  portalToken  String?     @unique
+  followUpAt   DateTime?
+  followUpCount Int        @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  Client      @relation(fields: [clientId], references: [id])
+  lines   QuoteLine[]
+  invoice Invoice?
+
+  @@unique([companyId, number])
+  @@index([companyId])
+  @@index([companyId, status])
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+model QuoteLine {
+  id          String  @id @default(cuid())
+  quoteId     String
+  productId   String?
+  description String
+  quantity    Decimal @db.Decimal(10, 3)
+  unitPrice   Decimal @db.Decimal(15, 2)
+  taxRate     Decimal @db.Decimal(5, 2) @default(19)
+  total       Decimal @db.Decimal(15, 2)
+
+  quote   Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([quoteId])
+}
+
+// ============================================================
 // PRODUITS & STOCK
 // ============================================================
 model Product {
@@ -274,6 +341,7 @@ model Product {
 
   company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   stockMovements StockMovement[]
+  quoteLines     QuoteLine[]
 
   @@index([companyId])
   @@index([companyId, sku])
@@ -362,7 +430,8 @@ model JournalEntry {
   accountName String
   createdAt   DateTime @default(now())
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses Expense[]
 
   @@index([companyId])
   @@index([companyId, date])
@@ -386,6 +455,105 @@ model TaxDeclaration {
 
   @@index([companyId])
   @@index([companyId, status])
+}
+
+// ============================================================
+// DÉPENSES & NOTES DE FRAIS
+// ============================================================
+model Expense {
+  id             String          @id @default(cuid())
+  companyId      String
+  userId         String
+  category       ExpenseCategory
+  amount         Decimal         @db.Decimal(15, 2)
+  description    String
+  date           DateTime
+  status         ExpenseStatus   @default(PENDING)
+  receiptUrl     String?
+  receiptText    String?
+  journalEntryId String?
+  taxAmount      Decimal?        @db.Decimal(15, 2)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id])
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, date])
+}
+
+enum ExpenseCategory {
+  TRANSPORT
+  REPAS
+  HEBERGEMENT
+  FOURNITURES
+  COMMUNICATION
+  MAINTENANCE
+  PUBLICITE
+  FORMATION
+  HONORAIRES
+  AUTRE
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPORTED
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+model Notification {
+  id        String           @id @default(cuid())
+  companyId String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  priority  String           @default("NORMAL")
+  actionUrl String?
+  createdAt DateTime         @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, isRead])
+  @@index([companyId, createdAt])
+}
+
+enum NotificationType {
+  FISCAL_DEADLINE
+  ANOMALY
+  STOCK_ALERT
+  INVOICE_OVERDUE
+  CASHFLOW_WARNING
+  AI_INSIGHT
+  QUOTE_EXPIRING
+}
+
+// ============================================================
+// MESSAGERIE PORTAIL CLIENT
+// ============================================================
+model ClientMessage {
+  id         String   @id @default(cuid())
+  companyId  String
+  clientId   String
+  token      String
+  content    String   @db.Text
+  fromClient Boolean  @default(true)
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id])
+
+  @@index([companyId, clientId])
+  @@index([token])
 }
 
 // ============================================================
@@ -441,8 +609,8 @@ model PurchaseOrder {
   orderDate  DateTime
   createdAt  DateTime @default(now())
 
-  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  supplier Supplier      @relation(fields: [supplierId], references: [id])
+  company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier Supplier           @relation(fields: [supplierId], references: [id])
   lines    PurchaseOrderLine[]
 
   @@index([companyId])

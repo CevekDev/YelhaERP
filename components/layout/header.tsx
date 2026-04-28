@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { signOut } from 'next-auth/react'
-import { Bell, Sun, Moon, Settings, LogOut, User } from 'lucide-react'
+import { Sun, Moon, Settings, LogOut, User } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { NotificationBell } from '@/components/layout/notification-bell'
 import { useT } from '@/lib/i18n'
 
 interface HeaderProps { title: string }
@@ -36,24 +37,7 @@ export function Header({ title }: HeaderProps) {
         </Button>
 
         {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-slate-700">
-              <Bell className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <DropdownMenuLabel className="flex items-center justify-between">
-              <span>Notifications</span>
-              <span className="text-xs text-muted-foreground font-normal">Aujourd&apos;hui</span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="py-6 text-center">
-              <Bell className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Aucune notification</p>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationBell />
 
         {/* User menu */}
         <DropdownMenu>

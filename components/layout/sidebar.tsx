@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, FileText, Users, Truck, Package, BarChart3,
   Calculator, Receipt, Bot, Settings, LogOut, TrendingUp, ShoppingBag,
+  FileCheck, Bell,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,18 +34,21 @@ export function Sidebar({ companyName: companyNameProp, plan: planProp, business
   const plan         = session?.user?.plan         ?? planProp
 
   const allNavItems = [
-    { href: '/dashboard',              key: 'sidebar.dashboard',     icon: LayoutDashboard },
-    { href: '/dashboard/invoices',     key: 'sidebar.invoices',      icon: FileText },
-    { href: '/dashboard/clients',      key: 'sidebar.clients',       icon: Users },
-    { href: '/dashboard/suppliers',    key: 'sidebar.suppliers',     icon: Truck },
-    { href: '/dashboard/products',     key: 'sidebar.products',      icon: Package },
-    { href: '/dashboard/stock',        key: 'sidebar.stock',         icon: BarChart3 },
-    { href: '/dashboard/payroll',      key: 'sidebar.payroll',       icon: Calculator },
-    { href: '/dashboard/accounting',   key: 'sidebar.accounting',    icon: Receipt },
-    { href: '/dashboard/tax',          key: 'sidebar.tax',           icon: TrendingUp },
-    { href: '/dashboard/integrations', key: 'sidebar.integrations',  icon: ShoppingBag },
-    { href: '/dashboard/ai',           key: 'sidebar.ai',            icon: Bot, badge: 'IA' },
-    { href: '/dashboard/settings',     key: 'sidebar.settings',      icon: Settings },
+    { href: '/dashboard',                  key: 'sidebar.dashboard',     icon: LayoutDashboard },
+    { href: '/dashboard/invoices',         key: 'sidebar.invoices',      icon: FileText },
+    { href: '/dashboard/quotes',           key: 'sidebar.quotes',        icon: FileCheck },
+    { href: '/dashboard/clients',          key: 'sidebar.clients',       icon: Users },
+    { href: '/dashboard/suppliers',        key: 'sidebar.suppliers',     icon: Truck },
+    { href: '/dashboard/products',         key: 'sidebar.products',      icon: Package },
+    { href: '/dashboard/stock',            key: 'sidebar.stock',         icon: BarChart3 },
+    { href: '/dashboard/expenses',         key: 'sidebar.expenses',      icon: Receipt },
+    { href: '/dashboard/payroll',          key: 'sidebar.payroll',       icon: Calculator },
+    { href: '/dashboard/accounting',       key: 'sidebar.accounting',    icon: Receipt },
+    { href: '/dashboard/tax',              key: 'sidebar.tax',           icon: TrendingUp },
+    { href: '/dashboard/integrations',     key: 'sidebar.integrations',  icon: ShoppingBag },
+    { href: '/dashboard/notifications',    key: 'sidebar.notifications', icon: Bell },
+    { href: '/dashboard/ai',               key: 'sidebar.ai',            icon: Bot, badge: 'IA' },
+    { href: '/dashboard/settings',         key: 'sidebar.settings',      icon: Settings },
   ]
 
   const hidden = HIDDEN_ITEMS[businessType] ?? []
