@@ -6,8 +6,10 @@ import { rateLimitResponse } from '@/lib/security/api-response'
 
 // Routes publiques (pas d'auth requise)
 const PUBLIC_PATHS = [
+  '/',
   '/login',
   '/register',
+  '/verify-email',
   '/api/auth',
   '/portal',
   '/_next',
