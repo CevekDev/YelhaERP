@@ -20,8 +20,8 @@ export default function IntegrationsPage() {
   const [savingWoo, setSavingWoo] = useState(false)
 
   useEffect(() => {
-    fetch('/api/integrations/shopify').then(r => r.json()).then(d => setShopify(d))
-    fetch('/api/integrations/woocommerce').then(r => r.json()).then(d => setWoo(d))
+    fetch('/api/integrations/shopify').then(r => r.ok ? r.json() : null).then(d => d && setShopify(d)).catch(() => {})
+    fetch('/api/integrations/woocommerce').then(r => r.ok ? r.json() : null).then(d => d && setWoo(d)).catch(() => {})
   }, [])
 
   const connectShopify = async () => {

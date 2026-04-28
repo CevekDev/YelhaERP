@@ -77,7 +77,7 @@ export default function SuppliersPage() {
             <div className="col-span-2 space-y-2"><Label>Adresse</Label><Input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} /></div>
             <div className="col-span-2 space-y-2">
               <Label>Wilaya</Label>
-              <Select onValueChange={v => setForm(f => ({...f, wilaya: v}))}>
+              <Select value={form.wilaya} onValueChange={v => setForm(f => ({...f, wilaya: v}))}>
                 <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                 <SelectContent>{WILAYAS_LIST.map(w => <SelectItem key={w.code} value={w.name}>{w.code} — {w.name}</SelectItem>)}</SelectContent>
               </Select>

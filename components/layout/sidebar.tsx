@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, FileText, Users, Truck, Package, BarChart3,
@@ -22,9 +22,15 @@ const HIDDEN_ITEMS: Record<string, string[]> = {
   NONE: ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax', '/dashboard/suppliers', '/dashboard/integrations'],
 }
 
-export function Sidebar({ companyName, plan, businessType }: SidebarProps) {
+export function Sidebar({ companyName: companyNameProp, plan: planProp, businessType: businessTypeProp }: SidebarProps) {
   const pathname = usePathname()
   const { t } = useT()
+  const { data: session } = useSession()
+
+  // Use live session data when available (updates after settings change without page reload)
+  const businessType = session?.user?.businessType ?? businessTypeProp
+  const companyName  = session?.user?.companyName  ?? companyNameProp
+  const plan         = session?.user?.plan         ?? planProp
 
   const allNavItems = [
     { href: '/dashboard',              key: 'sidebar.dashboard',     icon: LayoutDashboard },

@@ -53,7 +53,7 @@ export default function StockPage() {
       body: JSON.stringify({ ...form, quantity: Number(form.quantity), unitCost: form.unitCost ? Number(form.unitCost) : undefined }),
     })
     setSaving(false)
-    if (res.ok) { toast.success('Mouvement enregistré'); setOpen(false); fetch_() }
+    if (res.ok) { toast.success('Mouvement enregistré'); setOpen(false); setForm({ productId: '', type: 'IN', quantity: '', unitCost: '', reference: '', note: '' }); fetch_() }
     else { const e = await res.json(); toast.error(e.error ?? 'Erreur') }
   }
 
@@ -91,7 +91,7 @@ export default function StockPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Type</Label>
-                <Select defaultValue="IN" onValueChange={v => setForm(f => ({...f, type: v}))}>
+                <Select value={form.type} onValueChange={v => setForm(f => ({...f, type: v}))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="IN">Entrée</SelectItem>

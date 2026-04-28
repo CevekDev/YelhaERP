@@ -32,13 +32,13 @@ export function ChatWidget() {
     fetch('/api/ai/conversations')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        const last = d?.data?.[0]
+        const last = Array.isArray(d) ? d[0] : null
         if (!last) return
         return fetch(`/api/ai/conversations/${last.id}`)
           .then(r => r.ok ? r.json() : null)
           .then(conv => {
-            if (conv?.data?.messages?.length) {
-              setMessages(conv.data.messages)
+            if (conv?.messages?.length) {
+              setMessages(conv.messages)
               setConvId(last.id)
             }
           })
@@ -60,7 +60,7 @@ export function ChatWidget() {
       })
       if (res.ok) {
         const d = await res.json()
-        currentConvId = d.data.id
+        currentConvId = d.id
         setConvId(currentConvId)
       }
     }

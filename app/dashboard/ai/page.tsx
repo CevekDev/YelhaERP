@@ -40,7 +40,7 @@ export default function AIPage() {
       const res = await fetch('/api/ai/conversations')
       if (res.ok) {
         const data = await res.json()
-        setConversations(data.data ?? [])
+        setConversations(Array.isArray(data) ? data : [])
       }
     } finally {
       setLoadingConvs(false)
@@ -53,7 +53,7 @@ export default function AIPage() {
     const res = await fetch(`/api/ai/conversations/${id}`)
     if (res.ok) {
       const data = await res.json()
-      setMessages(data.data.messages ?? [])
+      setMessages(data.messages ?? [])
       setActiveId(id)
     }
   }
@@ -89,7 +89,7 @@ export default function AIPage() {
       })
       if (res.ok) {
         const data = await res.json()
-        convId = data.data.id
+        convId = data.id
         setActiveId(convId)
         const newConv: Conversation = { id: convId!, title: content.slice(0, 60), updatedAt: new Date().toISOString() }
         setConversations(c => [newConv, ...c])

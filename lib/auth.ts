@@ -95,7 +95,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // Handle session.update() calls from client — refresh businessType, companyName, plan
+      if (trigger === 'update' && session) {
+        if (session.businessType) token.businessType = session.businessType
+        if (session.companyName)  token.companyName  = session.companyName
+        if (session.plan)         token.plan         = session.plan
+        return token
+      }
       if (user) {
         token.id = user.id as string
 

@@ -52,7 +52,7 @@ export default function AccountingPage() {
       body: JSON.stringify({ ...form, debit: Number(form.debit), credit: Number(form.credit), date: new Date(form.date).toISOString() }),
     })
     setSaving(false)
-    if (res.ok) { toast.success('Écriture enregistrée'); setOpen(false); fetchJournal() }
+    if (res.ok) { toast.success('Écriture enregistrée'); setOpen(false); setForm({ date: new Date().toISOString().split('T')[0], reference: '', description: '', debit: '', credit: '', accountCode: '', accountName: '' }); fetchJournal() }
     else toast.error('Erreur')
   }
 

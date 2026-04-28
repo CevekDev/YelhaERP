@@ -56,7 +56,7 @@ export default function PayrollPage() {
       body: JSON.stringify({ month, year }),
     })
     setGenerating(false)
-    if (res.ok) { toast.success(`${month}/${year} — ${t('pages.payroll_tab_entries')}`); fetchData() }
+    if (res.ok) { toast.success(`Fiches de paie générées — ${MONTHS_FR[month - 1]} ${year}`); fetchData() }
     else toast.error('Erreur lors de la génération')
   }
 

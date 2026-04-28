@@ -6,6 +6,7 @@ import { apiError, apiSuccess } from '@/lib/security/api-response'
 
 const schema = z.object({
   businessType: z.enum(['RC', 'AE', 'NONE']),
+  name: z.string().min(1).max(200).trim().optional(),
   legalForm: z.string().max(50).optional(),
   nif: z.string().max(20).optional(),
   nis: z.string().max(20).optional(),
@@ -14,6 +15,7 @@ const schema = z.object({
   address: z.string().max(500).optional(),
   wilaya: z.string().max(50).optional(),
   phone: z.string().max(20).optional(),
+  email: z.string().email().optional(),
 })
 
 export async function POST(req: NextRequest) {

@@ -18,7 +18,11 @@
       "Bash(npm list *)",
       "Bash(grep -v \"^$\")",
       "Bash(cat app/\\\\\\(auth\\\\\\)/login/page.tsx)",
-      "Bash(cat app/login/page.tsx)"
+      "Bash(cat app/login/page.tsx)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.feghlhrfacpyqfxytwjl:qvR9HzW%26Um%2A%2B6Bx@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\" DIRECT_URL=\"postgresql://postgres.feghlhrfacpyqfxytwjl:qvR9HzW%26Um%2A%2B6Bx@db.feghlhrfacpyqfxytwjl.supabase.co:5432/postgres\" npx prisma db push)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.feghlhrfacpyqfxytwjl:qvR9HzW%26Um%2A%2B6Bx@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\" DIRECT_URL=\"postgresql://postgres.feghlhrfacpyqfxytwjl:qvR9HzW%26Um%2A%2B6Bx@aws-0-eu-west-1.pooler.supabase.com:5432/postgres\" npx prisma db push)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

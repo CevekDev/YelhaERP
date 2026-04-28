@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +23,8 @@ const PLAN_FEATURES: Record<string, { label: string; price: string; aiQuota: str
 }
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
+  const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: '', nif: '', nis: '', legalForm: '', aeCardNumber: '', address: '', wilaya: '', phone: '', email: '' })
 
@@ -41,8 +43,17 @@ export default function SettingsPage() {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
     })
     setSaving(false)
-    if (res.ok) toast.success('Paramètres sauvegardés')
-    else toast.error('Erreur')
+    if (res.ok) {
+      const updated = await res.json()
+      // Refresh JWT token with new businessType + companyName so sidebar updates live
+      const newBusinessType = updated.businessType ?? session?.user?.businessType
+      const newCompanyName  = updated.name         ?? session?.user?.companyName
+      await update({ businessType: newBusinessType, companyName: newCompanyName })
+      router.refresh()
+      toast.success('Paramètres sauvegardés')
+    } else {
+      toast.error('Erreur lors de la sauvegarde')
+    }
   }
 
   const plan = session?.user?.plan ?? 'TRIAL'
