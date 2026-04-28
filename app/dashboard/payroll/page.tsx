@@ -15,13 +15,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Play, UserPlus } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface Employee { id: string; firstName: string; lastName: string; position?: string; baseSalary: number; isActive: boolean }
 interface PayrollEntry { id: string; month: number; year: number; netSalary: number; grossSalary: number; cnasEmployee: number; cnasEmployer: number; irg: number; isPaid: boolean; employee: { firstName: string; lastName: string } }
 
-const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+
 
 export default function PayrollPage() {
+  const { t } = useT()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [entries, setEntries] = useState<PayrollEntry[]>([])
   const now = new Date()
@@ -53,7 +56,7 @@ export default function PayrollPage() {
       body: JSON.stringify({ month, year }),
     })
     setGenerating(false)
-    if (res.ok) { toast.success(`${month}/${year} — Fiches générées`); fetchData() }
+    if (res.ok) { toast.success(`${month}/${year} — ${t('pages.payroll_tab_entries')}`); fetchData() }
     else toast.error('Erreur lors de la génération')
   }
 
@@ -69,37 +72,35 @@ export default function PayrollPage() {
   }
 
   const empColumns = [
-    { key: 'name', header: 'Nom', render: (r: Employee) => <span className="font-medium">{r.firstName} {r.lastName}</span> },
+    { key: 'name', header: t('pages.payroll_col_employee'), render: (r: Employee) => <span className="font-medium">{r.firstName} {r.lastName}</span> },
     { key: 'position', header: 'Poste', render: (r: Employee) => r.position ?? '—' },
     { key: 'baseSalary', header: 'Salaire de base', className: 'da-amount', render: (r: Employee) => formatDA(Number(r.baseSalary)) },
-    { key: 'status', header: 'Statut', render: (r: Employee) => <Badge variant={r.isActive ? 'success' : 'secondary'}>{r.isActive ? 'Actif' : 'Inactif'}</Badge> },
+    { key: 'status', header: t('pages.payroll_col_status'), render: (r: Employee) => <Badge variant={r.isActive ? 'success' : 'secondary'}>{r.isActive ? 'Actif' : 'Inactif'}</Badge> },
   ]
 
   const payColumns = [
-    { key: 'name', header: 'Employé', render: (r: PayrollEntry) => `${r.employee.firstName} ${r.employee.lastName}` },
-    { key: 'grossSalary', header: 'Brut', className: 'da-amount', render: (r: PayrollEntry) => formatDA(Number(r.grossSalary)) },
-    { key: 'cnasEmployee', header: 'CNAS (9%)', className: 'da-amount', render: (r: PayrollEntry) => formatDA(Number(r.cnasEmployee)) },
-    { key: 'irg', header: 'IRG', className: 'da-amount', render: (r: PayrollEntry) => formatDA(Number(r.irg)) },
-    { key: 'netSalary', header: 'Net à payer', className: 'da-amount font-bold', render: (r: PayrollEntry) => <span className="text-yelha-600">{formatDA(Number(r.netSalary))}</span> },
-    { key: 'isPaid', header: 'Statut', render: (r: PayrollEntry) => <Badge variant={r.isPaid ? 'success' : 'warning'}>{r.isPaid ? 'Payé' : 'En attente'}</Badge> },
+    { key: 'name', header: t('pages.payroll_col_employee'), render: (r: PayrollEntry) => `${r.employee.firstName} ${r.employee.lastName}` },
+    { key: 'grossSalary', header: t('pages.payroll_col_gross'), className: 'da-amount', render: (r: PayrollEntry) => formatDA(Number(r.grossSalary)) },
+    { key: 'cnasEmployee', header: t('pages.payroll_col_cnas'), className: 'da-amount', render: (r: PayrollEntry) => formatDA(Number(r.cnasEmployee)) },
+    { key: 'irg', header: t('pages.payroll_col_irg'), className: 'da-amount', render: (r: PayrollEntry) => formatDA(Number(r.irg)) },
+    { key: 'netSalary', header: t('pages.payroll_col_net'), className: 'da-amount font-bold', render: (r: PayrollEntry) => <span className="text-yelha-600">{formatDA(Number(r.netSalary))}</span> },
+    { key: 'isPaid', header: t('pages.payroll_col_status'), render: (r: PayrollEntry) => <Badge variant={r.isPaid ? 'success' : 'warning'}>{r.isPaid ? t('pages.payroll_paid') : t('pages.payroll_pending')}</Badge> },
   ]
 
-  // Summary for current month
   const totalNet = entries.reduce((s, e) => s + Number(e.netSalary), 0)
   const totalCNASEmployer = entries.reduce((s, e) => s + Number(e.cnasEmployer), 0)
 
   return (
     <div>
-      <Header title="Paie" />
+      <Header title={t('pages.payroll_title')} />
       <div className="p-6 space-y-6">
-        <PageHeader title="Gestion de la paie" description={`${employees.length} employé${employees.length > 1 ? 's' : ''} actif${employees.length > 1 ? 's' : ''}`} />
+        <PageHeader title={t('pages.payroll_title')} description={t('pages.payroll_desc')} />
 
-        {/* KPIs mois */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: 'Employés actifs', value: String(employees.length) },
-            { label: 'Fiches du mois', value: String(entries.length) },
-            { label: 'Total net à payer', value: formatDA(totalNet), da: true },
+            { label: t('pages.payroll_tab_entries'), value: String(entries.length) },
+            { label: t('pages.payroll_col_net'), value: formatDA(totalNet), da: true },
             { label: 'Charge CNAS patronale', value: formatDA(totalCNASEmployer), da: true },
           ].map(k => (
             <Card key={k.label}>
@@ -114,16 +115,16 @@ export default function PayrollPage() {
         <Tabs defaultValue="entries">
           <div className="flex items-center justify-between mb-4">
             <TabsList>
-              <TabsTrigger value="entries">Fiches de paie</TabsTrigger>
-              <TabsTrigger value="employees">Employés</TabsTrigger>
+              <TabsTrigger value="entries">{t('pages.payroll_tab_entries')}</TabsTrigger>
+              <TabsTrigger value="employees">{t('pages.payroll_tab_employees')}</TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
               <Select value={String(month)} onValueChange={v => setMonth(Number(v))}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m} {year}</SelectItem>)}</SelectContent>
+                <SelectContent>{MONTHS_FR.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m} {year}</SelectItem>)}</SelectContent>
               </Select>
               <Button onClick={generatePayroll} disabled={generating} className="gap-2">
-                <Play className="h-4 w-4" />Générer {MONTHS[month - 1]}
+                <Play className="h-4 w-4" />{t('pages.payroll_generate')} {MONTHS_FR[month - 1]}
               </Button>
             </div>
           </div>
@@ -140,7 +141,7 @@ export default function PayrollPage() {
             <Card>
               <div className="p-4 border-b flex justify-end">
                 <Button variant="outline" size="sm" onClick={() => setOpenEmp(true)} className="gap-2">
-                  <UserPlus className="h-4 w-4" />Ajouter un employé
+                  <UserPlus className="h-4 w-4" />{t('pages.payroll_new_employee')}
                 </Button>
               </div>
               <CardContent className="p-0">
@@ -153,7 +154,7 @@ export default function PayrollPage() {
 
       <Dialog open={openEmp} onOpenChange={setOpenEmp}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nouvel employé</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('pages.payroll_new_employee')}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
             <div className="space-y-2"><Label>Prénom *</Label><Input value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} /></div>
             <div className="space-y-2"><Label>Nom *</Label><Input value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} /></div>

@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar companyName={session.user.companyName} plan={session.user.plan} />
+      <Sidebar companyName={session.user.companyName} plan={session.user.plan} businessType={session.user.businessType} />
       <main className="ml-[240px] min-h-screen">
         {children}
       </main>

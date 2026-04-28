@@ -15,11 +15,13 @@ import { formatDA } from '@/lib/algerian/format'
 import { SCF_ACCOUNTS } from '@/lib/algerian/tax'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 
 interface JournalEntry { id: string; date: string; reference: string; description: string; debit: number; credit: number; accountCode: string; accountName: string }
 interface BalanceEntry { accountCode: string; accountName: string; totalDebit: number; totalCredit: number; balance: number }
 
 export default function AccountingPage() {
+  const { t } = useT()
   const [entries, setEntries] = useState<JournalEntry[]>([])
   const [balance, setBalance] = useState<BalanceEntry[]>([])
   const [total, setTotal] = useState(0)
@@ -57,21 +59,21 @@ export default function AccountingPage() {
   const journalColumns = [
     { key: 'date', header: 'Date', render: (r: JournalEntry) => new Date(r.date).toLocaleDateString('fr-DZ') },
     { key: 'reference', header: 'Référence', render: (r: JournalEntry) => <span className="font-mono text-xs">{r.reference}</span> },
-    { key: 'accountCode', header: 'Compte', render: (r: JournalEntry) => <span className="font-mono">{r.accountCode} — {r.accountName}</span> },
+    { key: 'accountCode', header: t('pages.accounting_col_account'), render: (r: JournalEntry) => <span className="font-mono">{r.accountCode} — {r.accountName}</span> },
     { key: 'description', header: 'Libellé' },
-    { key: 'debit', header: 'Débit', className: 'da-amount text-right', render: (r: JournalEntry) => Number(r.debit) > 0 ? formatDA(Number(r.debit)) : '—' },
-    { key: 'credit', header: 'Crédit', className: 'da-amount text-right', render: (r: JournalEntry) => Number(r.credit) > 0 ? formatDA(Number(r.credit)) : '—' },
+    { key: 'debit', header: t('pages.accounting_col_debit'), className: 'da-amount text-right', render: (r: JournalEntry) => Number(r.debit) > 0 ? formatDA(Number(r.debit)) : '—' },
+    { key: 'credit', header: t('pages.accounting_col_credit'), className: 'da-amount text-right', render: (r: JournalEntry) => Number(r.credit) > 0 ? formatDA(Number(r.credit)) : '—' },
   ]
 
   return (
     <div>
-      <Header title="Comptabilité" />
+      <Header title={t('pages.accounting_title')} />
       <div className="p-6 space-y-6">
-        <PageHeader title="Comptabilité — Plan SCF" actionLabel="Nouvelle écriture" onAction={() => setOpen(true)} />
+        <PageHeader title={t('pages.accounting_title')} description={t('pages.accounting_desc')} actionLabel={t('pages.accounting_new')} onAction={() => setOpen(true)} />
         <Tabs defaultValue="journal" onValueChange={v => v === 'balance' && fetchBalance()}>
           <TabsList>
-            <TabsTrigger value="journal">Journal général</TabsTrigger>
-            <TabsTrigger value="balance">Balance des comptes</TabsTrigger>
+            <TabsTrigger value="journal">{t('pages.accounting_tab_journal')}</TabsTrigger>
+            <TabsTrigger value="balance">{t('pages.accounting_tab_balance')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="journal">
@@ -84,15 +86,15 @@ export default function AccountingPage() {
 
           <TabsContent value="balance">
             <Card>
-              <CardHeader><CardTitle className="text-base">Balance des comptes (cumulé)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">{t('pages.accounting_balance_title')}</CardTitle></CardHeader>
               <CardContent className="p-0">
                 <table className="w-full text-sm">
                   <thead className="border-b bg-muted/50">
                     <tr>
-                      <th className="text-left px-4 py-3 font-medium">Compte</th>
-                      <th className="text-right px-4 py-3 font-medium da-amount">Total débit</th>
-                      <th className="text-right px-4 py-3 font-medium da-amount">Total crédit</th>
-                      <th className="text-right px-4 py-3 font-medium da-amount">Solde</th>
+                      <th className="text-left px-4 py-3 font-medium">{t('pages.accounting_col_account')}</th>
+                      <th className="text-right px-4 py-3 font-medium da-amount">{t('pages.accounting_col_debit')}</th>
+                      <th className="text-right px-4 py-3 font-medium da-amount">{t('pages.accounting_col_credit')}</th>
+                      <th className="text-right px-4 py-3 font-medium da-amount">{t('pages.accounting_col_balance')}</th>
                     </tr>
                   </thead>
                   <tbody>

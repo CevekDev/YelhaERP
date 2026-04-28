@@ -7,14 +7,14 @@ interface I18nContextType {
   locale: Locale
   setLocale: (l: Locale) => void
   t: (key: string) => string
-  dir: 'ltr' | 'rtl'
+  dir: 'ltr'
 }
 
 const I18nContext = createContext<I18nContextType>({
   locale: 'fr',
   setLocale: () => {},
   t: (k) => k,
-  dir: 'ltr',
+  dir: 'ltr' as const,
 })
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -26,8 +26,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const dir = locale === 'ar' ? 'rtl' : 'ltr'
-    document.documentElement.dir = dir
+    // Always keep LTR layout regardless of language
+    document.documentElement.dir = 'ltr'
     document.documentElement.lang = locale
   }, [locale])
 
@@ -56,7 +56,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t, dir: locale === 'ar' ? 'rtl' : 'ltr' }}>
+    <I18nContext.Provider value={{ locale, setLocale, t, dir: 'ltr' }}>
       {children}
     </I18nContext.Provider>
   )

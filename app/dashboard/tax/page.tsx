@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Calculator, AlertCircle, CheckCircle } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface G50Data { month: number; year: number; tvaCollectee: number; tvaDeductible: number; netDue: number; deadline: string }
 interface Declaration { id: string; type: string; period: string; amount: number; status: string; dueDate: string }
@@ -18,6 +19,7 @@ const now = new Date()
 const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
 export default function TaxPage() {
+  const { t } = useT()
   const [g50, setG50] = useState<G50Data | null>(null)
   const [declarations, setDeclarations] = useState<Declaration[]>([])
   const [month, setMonth] = useState(now.getMonth() + 1)
@@ -47,21 +49,21 @@ export default function TaxPage() {
 
   return (
     <div>
-      <Header title="Fiscalité" />
+      <Header title={t('pages.tax_title')} />
       <div className="p-6 space-y-6">
-        <PageHeader title="Fiscalité — Déclarations" />
+        <PageHeader title={t('pages.tax_title')} description={t('pages.tax_desc')} />
 
         {/* Calcul G50 */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base flex items-center gap-2"><Calculator className="h-4 w-4 text-yelha-500" />Calcul G50 automatique</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Calculator className="h-4 w-4 text-yelha-500" />{t('pages.tax_g50_title')}</CardTitle>
             <div className="flex items-center gap-2">
               <Select value={String(month)} onValueChange={v => setMonth(Number(v))}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m} {now.getFullYear()}</SelectItem>)}</SelectContent>
               </Select>
               <Button onClick={calculateG50} disabled={loading}>
-                {loading ? 'Calcul...' : 'Calculer'}
+                {loading ? '...' : t('pages.tax_generate')}
               </Button>
             </div>
           </CardHeader>
@@ -89,16 +91,16 @@ export default function TaxPage() {
 
         {/* Historique déclarations */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Historique des déclarations</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Historique</CardTitle></CardHeader>
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="text-left px-4 py-3">Type</th>
-                  <th className="text-left px-4 py-3">Période</th>
-                  <th className="text-right px-4 py-3">Montant</th>
-                  <th className="text-left px-4 py-3">Échéance</th>
-                  <th className="text-left px-4 py-3">Statut</th>
+                  <th className="text-left px-4 py-3">{t('pages.tax_col_type')}</th>
+                  <th className="text-left px-4 py-3">{t('pages.tax_col_period')}</th>
+                  <th className="text-right px-4 py-3">{t('pages.tax_col_amount')}</th>
+                  <th className="text-left px-4 py-3">{t('pages.tax_col_due')}</th>
+                  <th className="text-left px-4 py-3">{t('pages.tax_col_status')}</th>
                 </tr>
               </thead>
               <tbody>

@@ -13,13 +13,20 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useT } from '@/lib/i18n'
 
-interface SidebarProps { companyName: string; plan: string }
+interface SidebarProps { companyName: string; plan: string; businessType: string }
 
-export function Sidebar({ companyName, plan }: SidebarProps) {
+// Visibility rules by business type
+// RC = formal company, AE = auto-entrepreneur, NONE = unregistered
+const HIDDEN_ITEMS: Record<string, string[]> = {
+  AE:   ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax'],
+  NONE: ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax', '/dashboard/suppliers', '/dashboard/integrations'],
+}
+
+export function Sidebar({ companyName, plan, businessType }: SidebarProps) {
   const pathname = usePathname()
-  const { t, dir } = useT()
+  const { t } = useT()
 
-  const navItems = [
+  const allNavItems = [
     { href: '/dashboard',              key: 'sidebar.dashboard',     icon: LayoutDashboard },
     { href: '/dashboard/invoices',     key: 'sidebar.invoices',      icon: FileText },
     { href: '/dashboard/clients',      key: 'sidebar.clients',       icon: Users },
@@ -34,6 +41,9 @@ export function Sidebar({ companyName, plan }: SidebarProps) {
     { href: '/dashboard/settings',     key: 'sidebar.settings',      icon: Settings },
   ]
 
+  const hidden = HIDDEN_ITEMS[businessType] ?? []
+  const navItems = allNavItems.filter(item => !hidden.includes(item.href))
+
   const planColors: Record<string, string> = {
     TRIAL:   'bg-amber-100 text-amber-800',
     STARTER: 'bg-blue-100 text-blue-800',
@@ -41,18 +51,18 @@ export function Sidebar({ companyName, plan }: SidebarProps) {
     AGENCY:  'bg-purple-100 text-purple-800',
   }
 
-  const isRTL = dir === 'rtl'
+  // Business type badge
+  const btLabel: Record<string, { label: string; color: string }> = {
+    RC:   { label: 'Société (RC)', color: 'bg-blue-50 text-blue-700 border border-blue-200' },
+    AE:   { label: 'Auto-entrepreneur', color: 'bg-orange-50 text-orange-700 border border-orange-200' },
+    NONE: { label: 'Non enregistré', color: 'bg-slate-100 text-slate-600 border border-slate-200' },
+  }
+  const bt = btLabel[businessType] ?? btLabel.NONE
 
   return (
-    <aside className={cn(
-      'fixed top-0 h-screen w-[240px] flex flex-col bg-white border-r border-slate-100 z-40 shadow-sm',
-      isRTL ? 'right-0 border-r-0 border-l' : 'left-0',
-    )}>
+    <aside className="fixed top-0 h-screen w-[240px] flex flex-col bg-white border-r border-slate-100 z-40 shadow-sm left-0">
       {/* Logo header with gradient */}
-      <div className={cn(
-        'px-4 h-16 flex items-center gap-3 shrink-0 bg-gradient-to-r from-yelha-700 to-yelha-500',
-        isRTL && 'flex-row-reverse'
-      )}>
+      <div className="px-4 h-16 flex items-center gap-3 shrink-0 bg-gradient-to-r from-yelha-700 to-yelha-500">
         <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center shrink-0 border border-white/30">
           <TrendingUp className="w-4 h-4 text-white" />
         </div>
@@ -62,22 +72,23 @@ export function Sidebar({ companyName, plan }: SidebarProps) {
         </div>
       </div>
 
-      {/* Plan badge */}
-      <div className={cn('px-3 py-2.5 border-b border-slate-100', isRTL && 'text-right')}>
-        <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', planColors[plan] ?? planColors.TRIAL)}>
+      {/* Plan + business type */}
+      <div className="px-3 py-2 border-b border-slate-100 space-y-1">
+        <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold', planColors[plan] ?? planColors.TRIAL)}>
           {plan}
         </span>
+        <div className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ml-1.5', bt.color)}>
+          {bt.label}
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-2 px-2">
         {navItems.map(item => {
           const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'))
-            || (item.href === '/dashboard' && pathname === '/dashboard')
           return (
             <Link key={item.href} href={item.href}
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all mb-0.5',
-                isRTL && 'flex-row-reverse',
                 active
                   ? 'bg-gradient-to-r from-yelha-500 to-yelha-400 text-white shadow-sm shadow-yelha-500/20'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
@@ -96,10 +107,7 @@ export function Sidebar({ companyName, plan }: SidebarProps) {
 
       <div className="p-3 border-t border-slate-100">
         <button
-          className={cn(
-            'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all',
-            isRTL && 'flex-row-reverse'
-          )}
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
           onClick={() => signOut({ callbackUrl: '/login' })}>
           <LogOut className="h-4 w-4 shrink-0" />
           {t('sidebar.logout')}
