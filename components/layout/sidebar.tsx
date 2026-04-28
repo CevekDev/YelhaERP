@@ -11,44 +11,43 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { useT } from '@/lib/i18n'
 
-const navItems = [
-  { href: '/dashboard', label: 'Tableau de bord', labelAr: 'لوحة القيادة', icon: LayoutDashboard },
-  { href: '/dashboard/invoices', label: 'Facturation', labelAr: 'الفوترة', icon: FileText },
-  { href: '/dashboard/clients', label: 'Clients', labelAr: 'العملاء', icon: Users },
-  { href: '/dashboard/suppliers', label: 'Fournisseurs', labelAr: 'الموردون', icon: Truck },
-  { href: '/dashboard/products', label: 'Produits', labelAr: 'المنتجات', icon: Package },
-  { href: '/dashboard/stock', label: 'Stock', labelAr: 'المخزون', icon: BarChart3 },
-  { href: '/dashboard/payroll', label: 'Paie', labelAr: 'الرواتب', icon: Calculator },
-  { href: '/dashboard/accounting', label: 'Comptabilité', labelAr: 'المحاسبة', icon: Receipt },
-  { href: '/dashboard/tax', label: 'Fiscalité', labelAr: 'الضرائب', icon: TrendingUp },
-  { href: '/dashboard/integrations', label: 'Intégrations', labelAr: 'التكاملات', icon: ShoppingBag },
-  { href: '/dashboard/ai', label: 'Assistant IA', labelAr: 'مساعد الذكاء', icon: Bot, badge: 'IA' },
-  { href: '/dashboard/settings', label: 'Paramètres', labelAr: 'الإعدادات', icon: Settings },
-]
+interface SidebarProps { companyName: string; plan: string }
 
-interface SidebarProps {
-  companyName: string
-  plan: string
-  isRTL?: boolean
-}
-
-export function Sidebar({ companyName, plan, isRTL = false }: SidebarProps) {
+export function Sidebar({ companyName, plan }: SidebarProps) {
   const pathname = usePathname()
+  const { t, dir } = useT()
+
+  const navItems = [
+    { href: '/dashboard',              key: 'sidebar.dashboard',     icon: LayoutDashboard },
+    { href: '/dashboard/invoices',     key: 'sidebar.invoices',      icon: FileText },
+    { href: '/dashboard/clients',      key: 'sidebar.clients',       icon: Users },
+    { href: '/dashboard/suppliers',    key: 'sidebar.suppliers',     icon: Truck },
+    { href: '/dashboard/products',     key: 'sidebar.products',      icon: Package },
+    { href: '/dashboard/stock',        key: 'sidebar.stock',         icon: BarChart3 },
+    { href: '/dashboard/payroll',      key: 'sidebar.payroll',       icon: Calculator },
+    { href: '/dashboard/accounting',   key: 'sidebar.accounting',    icon: Receipt },
+    { href: '/dashboard/tax',          key: 'sidebar.tax',           icon: TrendingUp },
+    { href: '/dashboard/integrations', key: 'sidebar.integrations',  icon: ShoppingBag },
+    { href: '/dashboard/ai',           key: 'sidebar.ai',            icon: Bot, badge: 'IA' },
+    { href: '/dashboard/settings',     key: 'sidebar.settings',      icon: Settings },
+  ]
 
   const planColors: Record<string, string> = {
-    TRIAL: 'bg-amber-100 text-amber-800',
+    TRIAL:   'bg-amber-100 text-amber-800',
     STARTER: 'bg-blue-100 text-blue-800',
-    PRO: 'bg-yelha-100 text-yelha-800',
-    AGENCY: 'bg-purple-100 text-purple-800',
+    PRO:     'bg-yelha-100 text-yelha-800',
+    AGENCY:  'bg-purple-100 text-purple-800',
   }
+
+  const isRTL = dir === 'rtl'
 
   return (
     <aside className={cn(
-      'fixed top-0 left-0 h-screen w-[240px] flex flex-col border-r bg-card z-40',
-      isRTL && 'left-auto right-0 border-r-0 border-l'
+      'fixed top-0 h-screen w-[240px] flex flex-col border-r bg-card z-40',
+      isRTL ? 'right-0 border-r-0 border-l' : 'left-0',
     )}>
-      {/* Logo */}
       <div className="flex items-center gap-2 px-4 h-16 border-b shrink-0">
         <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shrink-0">
           <TrendingUp className="w-4 h-4 text-white" />
@@ -59,40 +58,27 @@ export function Sidebar({ companyName, plan, isRTL = false }: SidebarProps) {
         </div>
       </div>
 
-      {/* Plan badge */}
       <div className="px-4 py-2">
-        <span className={cn(
-          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-          planColors[plan] ?? planColors.TRIAL
-        )}>
-          Plan {plan}
+        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', planColors[plan] ?? planColors.TRIAL)}>
+          {t('sidebar.plan')} {plan}
         </span>
       </div>
 
       <Separator />
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2 px-2">
-        {navItems.map((item) => {
+        {navItems.map(item => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
-            <Link
-              key={item.href}
-              href={item.href}
+            <Link key={item.href} href={item.href}
               className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors mb-0.5',
-                active
-                  ? 'bg-yelha-500 text-white'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              )}
-            >
+                isRTL && 'flex-row-reverse',
+                active ? 'bg-yelha-500 text-white' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}>
               <item.icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1 truncate">{isRTL ? item.labelAr : item.label}</span>
-              {item.badge && (
-                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
-                  {item.badge}
-                </Badge>
-              )}
+              <span className="flex-1 truncate">{t(item.key)}</span>
+              {item.badge && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">{item.badge}</Badge>}
             </Link>
           )
         })}
@@ -100,16 +86,12 @@ export function Sidebar({ companyName, plan, isRTL = false }: SidebarProps) {
 
       <Separator />
 
-      {/* Logout */}
       <div className="p-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
-          onClick={() => signOut({ callbackUrl: '/login' })}
-        >
-          <LogOut className="h-4 w-4 mr-3" />
-          {isRTL ? 'تسجيل الخروج' : 'Se déconnecter'}
+        <Button variant="ghost" size="sm"
+          className={cn('w-full text-muted-foreground hover:text-destructive', isRTL ? 'flex-row-reverse justify-end' : 'justify-start')}
+          onClick={() => signOut({ callbackUrl: '/login' })}>
+          <LogOut className={cn('h-4 w-4', isRTL ? 'ml-3' : 'mr-3')} />
+          {t('sidebar.logout')}
         </Button>
       </div>
     </aside>
