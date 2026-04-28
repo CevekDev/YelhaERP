@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { rateLimit, PUBLIC_RATE_LIMIT, AUTHENTICATED_RATE_LIMIT, AUTH_RATE_LIMIT } from '@/lib/security/ratelimit'
-import { rateLimitResponse } from '@/lib/security/api-response'
 
-// Routes publiques (pas d'auth requise)
 const PUBLIC_PATHS = [
   '/',
   '/login',
@@ -19,44 +15,34 @@ const PUBLIC_PATHS = [
   '/favicon.ico',
 ]
 
-// Routes d'auth (rate limit strict)
-const AUTH_PATHS = ['/login', '/register', '/api/auth']
+const AUTH_PAGES = ['/login', '/register']
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(p => pathname.startsWith(p))
+  return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/') || (p !== '/' && pathname.startsWith(p)))
 }
 
-function isAuthPath(pathname: string): boolean {
-  return AUTH_PATHS.some(p => pathname.startsWith(p))
+function hasSession(req: NextRequest): boolean {
+  // NextAuth v5 stores session in these cookies
+  return !!(
+    req.cookies.get('authjs.session-token') ||
+    req.cookies.get('__Secure-authjs.session-token') ||
+    req.cookies.get('next-auth.session-token') ||
+    req.cookies.get('__Secure-next-auth.session-token')
+  )
 }
 
-export async function middleware(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const loggedIn = hasSession(req)
 
-  // Rate limiting
-  const isAuth = isAuthPath(pathname)
-  const isApi = pathname.startsWith('/api/')
-  const isPublic = isPublicPath(pathname)
-
-  let rateLimitConfig = PUBLIC_RATE_LIMIT
-  if (isAuth) rateLimitConfig = AUTH_RATE_LIMIT
-  else if (isApi) rateLimitConfig = AUTHENTICATED_RATE_LIMIT
-
-  const { success, reset } = await rateLimit(req, rateLimitConfig)
-  if (!success) {
-    return rateLimitResponse(reset)
-  }
-
-  const session = await auth()
-
-  // Rediriger les utilisateurs connectés hors des pages d'auth
-  if (session?.user?.id && (pathname === '/login' || pathname === '/register')) {
+  // Redirect logged-in users away from auth pages
+  if (loggedIn && AUTH_PAGES.some(p => pathname === p)) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
-  // Vérification auth pour les routes protégées
-  if (!isPublic) {
-    if (!session?.user?.id) {
+  // Protect non-public routes
+  if (!isPublicPath(pathname)) {
+    if (!loggedIn) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
       }
