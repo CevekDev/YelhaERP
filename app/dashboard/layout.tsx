@@ -6,6 +6,7 @@ import { ChatWidget } from '@/components/ai/chat-widget'
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session?.user) redirect('/login')
+  if (!session.user.businessType) redirect('/onboarding')
 
   return (
     <div className="min-h-screen bg-background">

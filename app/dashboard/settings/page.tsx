@@ -24,15 +24,16 @@ const PLAN_FEATURES: Record<string, { label: string; price: string; aiQuota: str
 export default function SettingsPage() {
   const { data: session } = useSession()
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ name: '', nif: '', nis: '', rc: '', legalForm: '', address: '', wilaya: '', phone: '', email: '' })
+  const [form, setForm] = useState({ name: '', nif: '', nis: '', legalForm: '', aeCardNumber: '', address: '', wilaya: '', phone: '', email: '' })
 
   useEffect(() => {
     fetch('/api/company/profile').then(r => r.ok ? r.json() : null).then(d => d && setForm({
-      name: d.name ?? '', nif: d.nif ?? '', nis: d.nis ?? '', rc: d.rc ?? '',
-      legalForm: d.legalForm ?? '', address: d.address ?? '', wilaya: d.wilaya ?? '',
-      phone: d.phone ?? '', email: d.email ?? '',
+      name: d.name ?? '', nif: d.nif ?? '', nis: d.nis ?? '',
+      legalForm: d.legalForm ?? '', aeCardNumber: d.aeCardNumber ?? '',
+      address: d.address ?? '', wilaya: d.wilaya ?? '',
+      phone: d.phone ?? '', email: d.email ?? session?.user?.email ?? '',
     }))
-  }, [])
+  }, [session])
 
   const save = async () => {
     setSaving(true)
@@ -82,12 +83,30 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2"><Label>Nom de l'entreprise</Label><Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>NIF</Label><Input value={form.nif} onChange={e => setForm(f => ({...f, nif: e.target.value}))} /></div>
-              <div className="space-y-2"><Label>NIS</Label><Input value={form.nis} onChange={e => setForm(f => ({...f, nis: e.target.value}))} /></div>
-              <div className="space-y-2"><Label>RC</Label><Input value={form.rc} onChange={e => setForm(f => ({...f, rc: e.target.value}))} /></div>
-              <div className="space-y-2"><Label>Forme juridique</Label><Input value={form.legalForm} onChange={e => setForm(f => ({...f, legalForm: e.target.value}))} placeholder="SARL, EURL..." /></div>
+            <div className="space-y-2">
+              <Label>Forme juridique</Label>
+              <Select value={form.legalForm} onValueChange={v => setForm(f => ({...f, legalForm: v}))}>
+                <SelectTrigger><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
+                <SelectContent>
+                  {[
+                    { value: 'SARL', label: 'SARL' }, { value: 'EURL', label: 'EURL' },
+                    { value: 'SPA', label: 'SPA' }, { value: 'SNC', label: 'SNC' },
+                    { value: 'EI', label: 'EI — Établissement Individuel' },
+                    { value: 'AE', label: 'Auto-entrepreneur' },
+                    { value: 'NONE', label: 'Sans RC / Informel' },
+                  ].map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
+            {form.legalForm === 'AE' && (
+              <div className="space-y-2"><Label>Numéro carte Auto-entrepreneur</Label><Input value={form.aeCardNumber} onChange={e => setForm(f => ({...f, aeCardNumber: e.target.value}))} placeholder="AE-00-000000" /></div>
+            )}
+            {form.legalForm && form.legalForm !== 'NONE' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2"><Label>NIF</Label><Input value={form.nif} onChange={e => setForm(f => ({...f, nif: e.target.value}))} /></div>
+                <div className="space-y-2"><Label>NIS</Label><Input value={form.nis} onChange={e => setForm(f => ({...f, nis: e.target.value}))} /></div>
+              </div>
+            )}
             <div className="space-y-2"><Label>Téléphone</Label><Input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} /></div>
             <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} /></div>
             <div className="space-y-2"><Label>Adresse</Label><Input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} /></div>

@@ -1,63 +1,76 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Loader2, Building2, CreditCard, UserCheck, TrendingUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Loader2, TrendingUp, Building2 } from 'lucide-react'
+import { WILAYAS_LIST } from '@/lib/algerian/format'
 
-type BusinessType = 'RC' | 'AE' | 'NONE'
+const LEGAL_FORMS = [
+  { value: 'SARL',  label: 'SARL — Société à Responsabilité Limitée' },
+  { value: 'EURL',  label: 'EURL — Entreprise Unipersonnelle à Responsabilité Limitée' },
+  { value: 'SPA',   label: 'SPA — Société par Actions' },
+  { value: 'SNC',   label: 'SNC — Société en Nom Collectif' },
+  { value: 'EI',    label: 'EI — Établissement Individuel' },
+  { value: 'AE',    label: 'Auto-entrepreneur' },
+  { value: 'NONE',  label: 'Sans RC / Informel' },
+]
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { update } = useSession()
+  const { data: session, update } = useSession()
   const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState<1 | 2>(1)
-  const [selected, setSelected] = useState<BusinessType | null>(null)
-  const [fields, setFields] = useState({
-    nif: '', nis: '', rc: '', legalForm: '', aeCardNumber: '',
-    address: '', wilaya: '', phone: '',
+  const [form, setForm] = useState({
+    companyName: '',
+    legalForm: '',
+    aeCardNumber: '',
+    nif: '',
+    nis: '',
+    phone: '',
+    email: '',
+    address: '',
+    wilaya: '',
   })
 
-  const options = [
-    {
-      type: 'RC' as BusinessType,
-      icon: Building2,
-      title: 'Registre de Commerce',
-      desc: 'SARL, EURL, SPA ou autre forme juridique',
-    },
-    {
-      type: 'AE' as BusinessType,
-      icon: CreditCard,
-      title: 'Auto-Entrepreneur',
-      desc: "Carte d'auto-entrepreneur (AE)",
-    },
-    {
-      type: 'NONE' as BusinessType,
-      icon: UserCheck,
-      title: "Pas encore de statut",
-      desc: 'Je commencerai à formaliser plus tard',
-    },
-  ]
+  useEffect(() => {
+    if (session?.user) {
+      setForm(f => ({
+        ...f,
+        email: session.user.email ?? '',
+        companyName: session.user.companyName ?? '',
+      }))
+    }
+  }, [session])
+
+  const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
+  const isAE = form.legalForm === 'AE'
 
   const handleSave = async () => {
-    if (!selected) return
+    if (!form.legalForm) { toast.error('Veuillez choisir une forme juridique'); return }
     setLoading(true)
     const res = await fetch('/api/company/onboarding', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ businessType: selected, ...fields }),
+      body: JSON.stringify({
+        businessType: form.legalForm === 'AE' ? 'AE' : form.legalForm === 'NONE' ? 'NONE' : 'RC',
+        legalForm: form.legalForm,
+        aeCardNumber: form.aeCardNumber,
+        nif: form.nif,
+        nis: form.nis,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        wilaya: form.wilaya,
+        name: form.companyName,
+      }),
     })
     setLoading(false)
-    if (!res.ok) {
-      toast.error("Erreur lors de l'enregistrement")
-      return
-    }
+    if (!res.ok) { toast.error("Erreur lors de l'enregistrement"); return }
     await update()
     toast.success('Profil configuré !')
     router.push('/dashboard')
@@ -66,7 +79,6 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yelha-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-10 h-10 bg-yelha-500 rounded-xl flex items-center justify-center">
             <TrendingUp className="w-6 h-6 text-white" />
@@ -74,100 +86,102 @@ export default function OnboardingPage() {
           <span className="text-2xl font-bold text-yelha-700">YelhaERP</span>
         </div>
 
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold">Bienvenue !</h2>
-              <p className="text-muted-foreground mt-1">Quel est votre statut juridique ?</p>
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-yelha-100 rounded-xl flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-yelha-600" />
             </div>
-            <div className="grid gap-3">
-              {options.map(opt => (
-                <button
-                  key={opt.type}
-                  onClick={() => setSelected(opt.type)}
-                  className={cn(
-                    'flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all',
-                    selected === opt.type
-                      ? 'border-yelha-500 bg-yelha-50'
-                      : 'border-border bg-card hover:border-yelha-200'
-                  )}
-                >
-                  <div className={cn(
-                    'p-3 rounded-lg',
-                    selected === opt.type ? 'bg-yelha-500 text-white' : 'bg-muted'
-                  )}>
-                    <opt.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{opt.title}</p>
-                    <p className="text-sm text-muted-foreground">{opt.desc}</p>
-                  </div>
-                </button>
-              ))}
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Configurez votre entreprise</h2>
+              <p className="text-slate-500 text-sm">Ces informations apparaîtront sur vos factures</p>
             </div>
-            <Button
-              className="w-full mt-6"
-              disabled={!selected}
-              onClick={() => selected === 'NONE' ? handleSave() : setStep(2)}
-            >
-              Continuer
+          </div>
+
+          <div className="space-y-5">
+            {/* Nom entreprise */}
+            <div className="space-y-2">
+              <Label>Nom de l'entreprise</Label>
+              <Input value={form.companyName} onChange={e => set('companyName', e.target.value)} placeholder="SARL MonEntreprise" />
+            </div>
+
+            {/* Forme juridique */}
+            <div className="space-y-2">
+              <Label>Forme juridique <span className="text-red-500">*</span></Label>
+              <Select value={form.legalForm} onValueChange={v => set('legalForm', v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez votre forme juridique..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEGAL_FORMS.map(f => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Numéro carte AE — seulement si Auto-entrepreneur */}
+            {isAE && (
+              <div className="space-y-2">
+                <Label>Numéro de carte Auto-entrepreneur</Label>
+                <Input value={form.aeCardNumber} onChange={e => set('aeCardNumber', e.target.value)} placeholder="AE-00-000000" />
+              </div>
+            )}
+
+            {/* NIF / NIS — masqué si NONE */}
+            {form.legalForm && form.legalForm !== 'NONE' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>NIF</Label>
+                  <Input value={form.nif} onChange={e => set('nif', e.target.value)} placeholder="000000000000000" />
+                </div>
+                <div className="space-y-2">
+                  <Label>NIS</Label>
+                  <Input value={form.nis} onChange={e => set('nis', e.target.value)} placeholder="000000000000000" />
+                </div>
+              </div>
+            )}
+
+            {/* Téléphone / Email */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Téléphone</Label>
+                <Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0555 123 456" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} />
+              </div>
+            </div>
+
+            {/* Adresse */}
+            <div className="space-y-2">
+              <Label>Adresse</Label>
+              <Input value={form.address} onChange={e => set('address', e.target.value)} placeholder="Rue, quartier, ville..." />
+            </div>
+
+            {/* Wilaya */}
+            <div className="space-y-2">
+              <Label>Wilaya</Label>
+              <Select value={form.wilaya} onValueChange={v => set('wilaya', v)}>
+                <SelectTrigger><SelectValue placeholder="Choisir une wilaya..." /></SelectTrigger>
+                <SelectContent>
+                  {WILAYAS_LIST.map(w => (
+                    <SelectItem key={w.code} value={w.name}>{w.code} — {w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button className="w-full h-12 text-base" onClick={handleSave} disabled={loading || !form.legalForm}>
+              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Terminer la configuration →
             </Button>
           </div>
-        )}
+        </div>
 
-        {step === 2 && selected && (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {selected === 'RC' ? 'Informations RC' : 'Carte Auto-Entrepreneur'}
-              </CardTitle>
-              <CardDescription>Ces informations apparaîtront sur vos factures</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {selected === 'RC' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>NIF</Label>
-                      <Input placeholder="000000000000000" value={fields.nif} onChange={e => setFields(f => ({...f, nif: e.target.value}))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>NIS</Label>
-                      <Input placeholder="000000000000000" value={fields.nis} onChange={e => setFields(f => ({...f, nis: e.target.value}))} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>RC</Label>
-                      <Input placeholder="16/00-00000000 B 00" value={fields.rc} onChange={e => setFields(f => ({...f, rc: e.target.value}))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Forme juridique</Label>
-                      <Input placeholder="SARL, EURL, SPA..." value={fields.legalForm} onChange={e => setFields(f => ({...f, legalForm: e.target.value}))} />
-                    </div>
-                  </div>
-                </>
-              )}
-              {selected === 'AE' && (
-                <div className="space-y-2">
-                  <Label>Numéro de carte AE</Label>
-                  <Input placeholder="AE-00-000000" value={fields.aeCardNumber} onChange={e => setFields(f => ({...f, aeCardNumber: e.target.value}))} />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>Adresse</Label>
-                <Input placeholder="Rue, quartier..." value={fields.address} onChange={e => setFields(f => ({...f, address: e.target.value}))} />
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(1)}>Retour</Button>
-                <Button className="flex-1" onClick={handleSave} disabled={loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Terminer la configuration
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <p className="text-center text-slate-400 text-xs mt-4">
+          Vous pourrez modifier ces informations à tout moment dans les Paramètres.
+        </p>
       </div>
     </div>
   )

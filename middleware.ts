@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   '/login',
   '/register',
   '/verify-email',
+  '/onboarding',
   '/conditions',
   '/confidentialite',
   '/mentions-legales',
