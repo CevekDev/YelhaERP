@@ -60,7 +60,24 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
 
-  const data = await getDashboardData(session.user.companyId)
+  if (!session.user.companyId) {
+    console.error('Dashboard: no companyId in session', session.user)
+    redirect('/onboarding')
+  }
+
+  let data
+  try {
+    data = await getDashboardData(session.user.companyId)
+  } catch (e) {
+    console.error('Dashboard getDashboardData error:', e)
+    data = {
+      monthRevenue: { _sum: { total: 0 } },
+      unpaidInvoices: { _sum: { total: 0 }, _count: 0 },
+      lowStockCount: 0,
+      recentInvoices: [],
+      monthlyRevenue: [],
+    }
+  }
 
   return (
     <div>
