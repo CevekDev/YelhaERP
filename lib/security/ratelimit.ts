@@ -62,7 +62,7 @@ export async function rateLimit(
 }
 
 // Configs prédéfinies
-export const PUBLIC_RATE_LIMIT = { limit: 100, windowMs: 60_000 }
-export const AUTH_RATE_LIMIT = { limit: 10, windowMs: 60_000 } // Plus strict pour l'auth
-export const AUTHENTICATED_RATE_LIMIT = { limit: 300, windowMs: 60_000 }
-export const AI_RATE_LIMIT = { limit: 20, windowMs: 60_000 }
+export const PUBLIC_RATE_LIMIT = { limit: 500, windowMs: 60_000 }
+export const AUTH_RATE_LIMIT = { limit: 30, windowMs: 60_000 }
+export const AUTHENTICATED_RATE_LIMIT = { limit: 1000, windowMs: 60_000 }
+export const AI_RATE_LIMIT = { limit: 50, windowMs: 60_000 }
