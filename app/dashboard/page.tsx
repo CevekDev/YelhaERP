@@ -32,10 +32,11 @@ async function getDashboardData(companyId: string) {
       _sum: { total: true },
       _count: true,
     }),
-    // Stock en alerte
-    prisma.product.count({
-      where: { companyId, isActive: true, stockQty: { lte: prisma.product.fields.stockAlert } },
-    }),
+    // Stock en alerte (stock_qty <= stock_alert)
+    prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*)::int as count FROM "Product"
+      WHERE company_id = ${companyId} AND is_active = true AND stock_qty <= stock_alert
+    `.then(r => Number(r[0]?.count ?? 0)),
     // 5 dernières factures
     prisma.invoice.findMany({
       where: { companyId },
@@ -69,7 +70,7 @@ export default async function DashboardPage() {
           monthRevenue={Number(data.monthRevenue._sum.total ?? 0)}
           unpaidTotal={Number(data.unpaidInvoices._sum.total ?? 0)}
           unpaidCount={data.unpaidInvoices._count}
-          lowStockCount={data.lowStockCount}
+          lowStockCount={data.lowStockCount as number}
         />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
