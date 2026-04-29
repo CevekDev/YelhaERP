@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
-import { Play, UserPlus } from 'lucide-react'
+import { Play, UserPlus, Users } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
 interface Employee { id: string; firstName: string; lastName: string; position?: string; baseSalary: number; isActive: boolean }
@@ -93,7 +93,7 @@ export default function PayrollPage() {
   return (
     <div>
       <Header title={t('pages.payroll_title')} />
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <PageHeader title={t('pages.payroll_title')} description={t('pages.payroll_desc')} />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -145,7 +145,8 @@ export default function PayrollPage() {
                 </Button>
               </div>
               <CardContent className="p-0">
-                <DataTable data={employees as unknown as Record<string, unknown>[]} columns={empColumns as never} total={employees.length} page={1} limit={100} onPageChange={() => {}} loading={loading} emptyText="Aucun employé" />
+                <DataTable data={employees as unknown as Record<string, unknown>[]} columns={empColumns as never} total={employees.length} page={1} limit={100} onPageChange={() => {}} loading={loading}
+                  emptyIcon={Users} emptyText="Aucun employé" emptyDescription="Ajoutez vos employés pour générer les bulletins de paie." emptyAction={{ label: 'Ajouter un employé', onClick: () => setOpenEmp(true) }} />
               </CardContent>
             </Card>
           </TabsContent>

@@ -151,7 +151,7 @@ export default function ExpensesPage() {
   return (
     <div>
       <Header title="Dépenses" />
-      <div className="p-6 space-y-4">
+      <div className="p-4 md:p-6 space-y-4">
         <PageHeader title="Dépenses" description={`${total} dépenses`} />
 
         {/* Summary */}

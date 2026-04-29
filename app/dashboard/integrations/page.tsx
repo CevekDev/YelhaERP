@@ -59,7 +59,7 @@ export default function IntegrationsPage() {
   return (
     <div>
       <Header title="Intégrations" />
-      <div className="p-6 max-w-3xl space-y-6">
+      <div className="p-4 md:p-6 max-w-3xl space-y-6">
         <PageHeader title="Intégrations e-commerce" description="Synchronisez vos commandes et mettez à jour votre stock automatiquement" />
 
         {/* Shopify */}

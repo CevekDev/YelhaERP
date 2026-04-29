@@ -2,7 +2,8 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ChevronLeft, ChevronRight, FileX, type LucideIcon } from 'lucide-react'
 
 interface Column<T> {
   key: string
@@ -20,10 +21,17 @@ interface DataTableProps<T extends Record<string, unknown>> {
   onPageChange: (p: number) => void
   loading?: boolean
   emptyText?: string
+  emptyDescription?: string
+  emptyIcon?: LucideIcon
+  emptyAction?: { label: string; onClick: () => void }
 }
 
 export function DataTable<T extends Record<string, unknown>>({
-  data, columns, total, page, limit, onPageChange, loading, emptyText = 'Aucun enregistrement',
+  data, columns, total, page, limit, onPageChange, loading,
+  emptyText = 'Aucun enregistrement',
+  emptyDescription = 'Aucune donnée à afficher pour le moment.',
+  emptyIcon,
+  emptyAction,
 }: DataTableProps<T>) {
   const pages = Math.ceil(total / limit)
 
@@ -50,8 +58,13 @@ export function DataTable<T extends Record<string, unknown>>({
             ))
           ) : data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="text-center text-muted-foreground py-12">
-                {emptyText}
+              <TableCell colSpan={columns.length} className="p-0">
+                <EmptyState
+                  icon={emptyIcon ?? FileX}
+                  title={emptyText}
+                  description={emptyDescription}
+                  action={emptyAction}
+                />
               </TableCell>
             </TableRow>
           ) : (

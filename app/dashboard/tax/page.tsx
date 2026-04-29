@@ -50,7 +50,7 @@ export default function TaxPage() {
   return (
     <div>
       <Header title={t('pages.tax_title')} />
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <PageHeader title={t('pages.tax_title')} description={t('pages.tax_desc')} />
 
         {/* Calcul G50 */}

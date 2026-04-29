@@ -61,7 +61,7 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-slate-700">
+        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
@@ -82,7 +82,7 @@ export function NotificationBell() {
         <DropdownMenuSeparator />
         {recent.length === 0 ? (
           <div className="py-6 text-center">
-            <Bell className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+            <Bell className="h-8 w-8 text-muted mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Aucune notification</p>
           </div>
         ) : (

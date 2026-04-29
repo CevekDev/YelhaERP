@@ -62,7 +62,7 @@ export default function SettingsPage() {
   return (
     <div>
       <Header title="Paramètres" />
-      <div className="p-6 max-w-2xl space-y-6">
+      <div className="p-4 md:p-6 max-w-2xl space-y-6">
         <PageHeader title="Paramètres" />
 
         {/* Plan actuel */}

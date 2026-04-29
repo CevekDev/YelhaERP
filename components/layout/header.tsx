@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 import { NotificationBell } from '@/components/layout/notification-bell'
+import { MobileSidebarTrigger } from '@/components/layout/sidebar'
 import { useT } from '@/lib/i18n'
 
 interface HeaderProps { title: string }
@@ -25,25 +26,30 @@ export function Header({ title }: HeaderProps) {
     .split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <header className="h-16 border-b bg-white/80 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-30">
-      <h1 className="text-lg font-semibold text-slate-800">{title}</h1>
-      <div className="flex items-center gap-1">
-        <LanguageSwitcher />
+    <header className="h-16 border-b bg-background/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+      <div className="flex items-center gap-3">
+        <MobileSidebarTrigger />
+        <h1 className="text-lg font-semibold text-foreground truncate max-w-[180px] md:max-w-none">{title}</h1>
+      </div>
 
-        <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700"
+      <div className="flex items-center gap-1">
+        <div className="hidden sm:block">
+          <LanguageSwitcher />
+        </div>
+
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title={theme === 'dark' ? t('header.theme_light') : t('header.theme_dark')}>
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
-        {/* Notifications */}
         <NotificationBell />
 
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full ml-1">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yelha-500 to-yelha-700 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
                 {initials}
               </div>
             </Button>

@@ -111,9 +111,9 @@ export function ChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: 440 }}>
+        <div className="w-80 sm:w-96 bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col" style={{ height: 440 }}>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-yelha-700 to-yelha-500 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-primary shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center">
                 <Bot className="h-4 w-4 text-white" />

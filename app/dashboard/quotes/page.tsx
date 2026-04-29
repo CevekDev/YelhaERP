@@ -80,7 +80,7 @@ export default function QuotesPage() {
   return (
     <div>
       <Header title="Devis" />
-      <div className="p-6 space-y-4">
+      <div className="p-4 md:p-6 space-y-4">
         <PageHeader title="Devis" description={`${total} devis au total`} />
 
         {/* Taux de conversion */}

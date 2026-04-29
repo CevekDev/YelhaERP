@@ -68,7 +68,7 @@ export default function AccountingPage() {
   return (
     <div>
       <Header title={t('pages.accounting_title')} />
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <PageHeader title={t('pages.accounting_title')} description={t('pages.accounting_desc')} actionLabel={t('pages.accounting_new')} onAction={() => setOpen(true)} />
         <Tabs defaultValue="journal" onValueChange={v => v === 'balance' && fetchBalance()}>
           <TabsList>

@@ -69,7 +69,7 @@ export default function StockPage() {
   return (
     <div>
       <Header title="Stock" />
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <PageHeader title="Mouvements de stock" description={`${total} mouvement${total > 1 ? 's' : ''}`} actionLabel="Nouveau mouvement" onAction={() => setOpen(true)} />
         <Card>
           <CardContent className="p-0">

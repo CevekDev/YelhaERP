@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDA } from '@/lib/algerian/format'
 import Link from 'next/link'
-import { Eye, Plus } from 'lucide-react'
+import { Eye, Plus, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Brouillon', SENT: 'Envoyée', PAID: 'Payée',
@@ -29,6 +30,7 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const router = useRouter()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -71,7 +73,7 @@ export default function InvoicesPage() {
   return (
     <div>
       <Header title="Facturation" />
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <PageHeader title="Factures" description={`${total} facture${total > 1 ? 's' : ''} au total`} />
         <Card>
           <div className="p-4 border-b flex items-center gap-3">
@@ -97,7 +99,10 @@ export default function InvoicesPage() {
               columns={columns as never}
               total={total} page={page} limit={20}
               onPageChange={setPage} loading={loading}
+              emptyIcon={FileText}
               emptyText="Aucune facture"
+              emptyDescription="Créez votre première facture pour commencer."
+              emptyAction={{ label: 'Nouvelle facture', onClick: () => router.push('/dashboard/invoices/new') }}
             />
           </CardContent>
         </Card>

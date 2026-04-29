@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
+import { Package } from 'lucide-react'
 
 interface Product { id: string; name: string; sku?: string; unitPrice: number; stockQty: number; stockAlert: number; unit?: string; taxRate: number }
 
@@ -68,12 +69,13 @@ export default function ProductsPage() {
   return (
     <div>
       <Header title="Produits & Services" />
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <PageHeader title="Produits & Services" description={`${total} article${total > 1 ? 's' : ''}`} actionLabel="Nouveau produit" onAction={() => setOpen(true)} />
         <Card>
           <div className="p-4 border-b"><SearchInput placeholder="Rechercher par nom ou SKU..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
-            <DataTable data={products as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading} emptyText="Aucun produit" />
+            <DataTable data={products as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading}
+              emptyIcon={Package} emptyText="Aucun produit" emptyDescription="Créez votre catalogue produits et services." emptyAction={{ label: 'Ajouter un produit', onClick: () => setOpen(true) }} />
           </CardContent>
         </Card>
       </div>

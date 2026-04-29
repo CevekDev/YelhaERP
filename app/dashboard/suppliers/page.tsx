@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { WILAYAS_LIST } from '@/lib/algerian/format'
 import { toast } from 'sonner'
+import { Truck } from 'lucide-react'
 
 interface Supplier { id: string; name: string; email?: string; phone?: string; nif?: string; wilaya?: string }
 
@@ -56,12 +57,13 @@ export default function SuppliersPage() {
   return (
     <div>
       <Header title="Fournisseurs" />
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <PageHeader title="Fournisseurs" description={`${total} fournisseur${total > 1 ? 's' : ''}`} actionLabel="Nouveau fournisseur" onAction={() => setOpen(true)} />
         <Card>
           <div className="p-4 border-b"><SearchInput placeholder="Rechercher..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
-            <DataTable data={suppliers as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading} emptyText="Aucun fournisseur" />
+            <DataTable data={suppliers as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading}
+              emptyIcon={Truck} emptyText="Aucun fournisseur" emptyDescription="Ajoutez vos fournisseurs pour gérer vos achats." emptyAction={{ label: 'Ajouter un fournisseur', onClick: () => setOpen(true) }} />
           </CardContent>
         </Card>
       </div>

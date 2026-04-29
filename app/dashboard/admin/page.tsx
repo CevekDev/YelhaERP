@@ -78,7 +78,7 @@ export default function AdminPage() {
   return (
     <div>
       <Header title="Administration" />
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <PageHeader title="Panneau d'administration" description="Gestion des abonnements et des entreprises" />
 
         <div className="grid grid-cols-3 gap-4">

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WILAYAS_LIST } from '@/lib/algerian/format'
 import { toast } from 'sonner'
-import { Eye, Building2, User } from 'lucide-react'
+import { Eye, Building2, User, Users } from 'lucide-react'
 import Link from 'next/link'
 
 interface Client { id: string; name: string; firstName?: string; clientType: string; email?: string; phone?: string; nif?: string; wilaya?: string }
@@ -76,12 +76,13 @@ export default function ClientsPage() {
   return (
     <div>
       <Header title="Clients" />
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <PageHeader title="Clients" description={`${total} client${total > 1 ? 's' : ''}`} actionLabel="Nouveau client" onAction={() => setOpen(true)} />
         <Card>
           <div className="p-4 border-b"><SearchInput placeholder="Rechercher par nom, NIF..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
-            <DataTable data={clients as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading} emptyText="Aucun client" />
+            <DataTable data={clients as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading}
+              emptyIcon={Users} emptyText="Aucun client" emptyDescription="Ajoutez vos premiers clients pour pouvoir leur facturer." emptyAction={{ label: 'Ajouter un client', onClick: () => setOpen(true) }} />
           </CardContent>
         </Card>
       </div>
