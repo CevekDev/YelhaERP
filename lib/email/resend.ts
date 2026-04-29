@@ -1,10 +1,13 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'YelhaERP <noreply@yelha.net>'
 
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
+
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
-  return resend.emails.send({ from: FROM, to, subject, html })
+  return getResend().emails.send({ from: FROM, to, subject, html })
 }
 
 function header(locale: string) {
@@ -67,7 +70,7 @@ export async function sendVerificationCode(email: string, code: string, name: st
     </div>
     <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">${ignore}</p>`
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: subjects[locale as keyof typeof subjects] ?? subjects.fr,
@@ -101,7 +104,7 @@ export async function sendWelcomeEmail(email: string, name: string, locale = 'fr
       <a href="https://erp.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 40px;border-radius:12px;text-decoration:none;">${cta} →</a>
     </div>`
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: subjects[locale as keyof typeof subjects] ?? subjects.fr,
