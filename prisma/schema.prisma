@@ -252,17 +252,42 @@ model Invoice {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  client  Client        @relation(fields: [clientId], references: [id])
-  lines   InvoiceLine[]
-  quote   Quote?        @relation(fields: [quoteId], references: [id])
-  project Project?      @relation(fields: [projectId], references: [id])
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client   Client           @relation(fields: [clientId], references: [id])
+  lines    InvoiceLine[]
+  payments InvoicePayment[]
+  quote    Quote?           @relation(fields: [quoteId], references: [id])
+  project  Project?         @relation(fields: [projectId], references: [id])
 
   @@unique([companyId, number])
   @@index([companyId])
   @@index([companyId, status])
   @@index([companyId, issueDate])
   @@index([companyId, clientId])
+}
+
+model InvoicePayment {
+  id         String        @id @default(cuid())
+  invoiceId  String
+  amount     Decimal       @db.Decimal(15, 2)
+  method     PaymentMethod
+  reference  String?
+  proofUrl   String?
+  paidAt     DateTime      @default(now())
+  notes      String?
+  createdAt  DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+enum PaymentMethod {
+  CCP_VIREMENT
+  CHARGILY_EDAHABIA
+  CHARGILY_CIB
+  CASH
+  BANK_TRANSFER
 }
 
 enum InvoiceType {

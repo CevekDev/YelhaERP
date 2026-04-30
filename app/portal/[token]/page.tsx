@@ -1,9 +1,16 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { formatDA } from '@/lib/algerian/format'
-import { TrendingUp, Download } from 'lucide-react'
+import { TrendingUp, Download, CheckCircle } from 'lucide-react'
+import { PortalPaymentSection } from './payment-section'
 
-export default async function PortalPage({ params }: { params: { token: string } }) {
+export default async function PortalPage({
+  params,
+  searchParams,
+}: {
+  params: { token: string }
+  searchParams: { paid?: string }
+}) {
   const invoice = await prisma.invoice.findUnique({
     where: { portalToken: params.token },
     include: {
@@ -17,6 +24,9 @@ export default async function PortalPage({ params }: { params: { token: string }
 
   const STATUS_LABELS: Record<string, string> = { DRAFT: 'Brouillon', SENT: 'Envoyée', PAID: 'Payée', PARTIAL: 'Partielle', OVERDUE: 'En retard', CANCELLED: 'Annulée' }
   const STATUS_COLORS: Record<string, string> = { DRAFT: 'bg-gray-100 text-gray-700', SENT: 'bg-blue-100 text-blue-700', PAID: 'bg-green-100 text-green-700', PARTIAL: 'bg-amber-100 text-amber-700', OVERDUE: 'bg-red-100 text-red-700', CANCELLED: 'bg-gray-100 text-gray-500' }
+
+  const justPaid = searchParams.paid === '1'
+  const payable = !['PAID', 'CANCELLED', 'DRAFT'].includes(invoice.status)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -37,6 +47,18 @@ export default async function PortalPage({ params }: { params: { token: string }
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+
+        {/* Success banner after Chargily redirect */}
+        {justPaid && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-center gap-4">
+            <CheckCircle className="w-7 h-7 text-green-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-green-800">Paiement reçu — merci !</p>
+              <p className="text-sm text-green-600 mt-0.5">Votre paiement est en cours de traitement. Vous recevrez une confirmation sous peu.</p>
+            </div>
+          </div>
+        )}
+
         {/* Status + header facture */}
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-start justify-between">
@@ -107,6 +129,17 @@ export default async function PortalPage({ params }: { params: { token: string }
           <div className="bg-white rounded-xl border p-6 text-sm text-gray-600">
             <span className="font-medium">Note : </span>{invoice.notes}
           </div>
+        )}
+
+        {/* Payment section */}
+        {payable && (
+          <PortalPaymentSection
+            invoiceId={invoice.id}
+            portalToken={params.token}
+            total={Number(invoice.total)}
+            invoiceNumber={invoice.number}
+            status={invoice.status}
+          />
         )}
 
         <p className="text-center text-xs text-gray-400">Généré par YelhaERP · Accès réservé au destinataire</p>
