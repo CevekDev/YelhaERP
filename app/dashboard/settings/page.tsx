@@ -13,7 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { WILAYAS_LIST } from '@/lib/algerian/format'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Zap, CheckCircle } from 'lucide-react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 const PLAN_FEATURES: Record<string, { label: string; price: string; aiQuota: string; color: string }> = {
   TRIAL: { label: 'Essai gratuit', price: '10 jours', aiQuota: '30 questions/mois', color: 'bg-amber-100 text-amber-800' },
@@ -56,6 +58,9 @@ export default function SettingsPage() {
     }
   }
 
+  const searchParams = useSearchParams()
+  const upgraded = searchParams.get('upgraded') === '1'
+
   const plan = session?.user?.plan ?? 'TRIAL'
   const planInfo = PLAN_FEATURES[plan] ?? PLAN_FEATURES.TRIAL
 
@@ -70,7 +75,13 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="text-base">Votre abonnement</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            {upgraded && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
+                <CheckCircle className="w-4 h-4 shrink-0" />
+                Paiement reçu ! Votre plan sera mis à jour sous peu.
+              </div>
+            )}
             <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
               <div>
                 <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${planInfo.color}`}>
@@ -78,10 +89,13 @@ export default function SettingsPage() {
                 </span>
                 <p className="text-sm text-muted-foreground mt-2">{planInfo.price} · {planInfo.aiQuota}</p>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Contactez-nous pour changer de plan</p>
-                <p className="text-xs text-muted-foreground mt-1">contact@yelhaerp.dz</p>
-              </div>
+              {plan !== 'AGENCY' && (
+                <Link href="/dashboard/settings/upgrade">
+                  <Button size="sm" className="gap-1.5">
+                    <Zap className="w-3.5 h-3.5" />Changer de plan
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

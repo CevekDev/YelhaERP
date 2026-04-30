@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
 
-  let event: { type: string; data: { status: string; metadata?: { invoice_id?: string } } }
+  let event: { type: string; data: { metadata?: Record<string, string> } }
   try {
     event = JSON.parse(payload)
   } catch {
@@ -25,33 +25,18 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === 'checkout.paid') {
-    const invoiceId = event.data?.metadata?.invoice_id
-    if (invoiceId) {
-      const invoice = await prisma.invoice.findUnique({
-        where: { id: invoiceId },
-        include: { payments: true },
-      })
-      if (invoice && invoice.status !== 'PAID') {
-        // Determine payment method from Chargily (we use EDAHABIA as default)
-        const method = 'CHARGILY_EDAHABIA'
+    const meta = event.data?.metadata ?? {}
 
-        await prisma.$transaction([
-          prisma.invoicePayment.create({
-            data: {
-              invoiceId,
-              amount: invoice.total,
-              method,
-              reference: event.data?.metadata?.invoice_id ?? null,
-              notes: 'Paiement en ligne via Chargily Pay',
-              paidAt: new Date(),
-            },
-          }),
-          prisma.invoice.update({
-            where: { id: invoiceId },
-            data: { status: 'PAID' },
-          }),
-        ])
-      }
+    if (meta.type === 'subscription' && meta.company_id && meta.plan) {
+      // Subscription payment — upgrade company plan
+      await prisma.company.update({
+        where: { id: meta.company_id },
+        data: {
+          plan: meta.plan as 'STARTER' | 'PRO' | 'AGENCY',
+          // Reset trial end date when upgrading
+          trialEndsAt: null,
+        },
+      }).catch(() => null)
     }
   }
 
