@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Header } from '@/components/layout/header'
 import { DashboardKPIs } from '@/components/dashboard/kpis'
+import { EnterpriseKPIs } from '@/components/dashboard/enterprise-kpis'
 import { RecentInvoices } from '@/components/dashboard/recent-invoices'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { RevenueComparisonChart } from '@/components/dashboard/revenue-comparison-chart'
@@ -34,6 +35,12 @@ async function getDashboardData(companyId: string) {
     lastYearYTD,
     pendingQuotes,
     pendingExpenses,
+    crmLeads,
+    purchaseOrders,
+    productionOrders,
+    leaveRequests,
+    activeProjects,
+    unmatchedInvoices,
   ] = await Promise.all([
     // CA du mois
     prisma.invoice.aggregate({
@@ -104,6 +111,18 @@ async function getDashboardData(companyId: string) {
     prisma.quote.count({ where: { companyId, status: 'SENT' } }),
     // Dépenses en attente d'approbation
     prisma.expense.count({ where: { companyId, status: 'PENDING' } }),
+    // Leads CRM actifs (hors WON/LOST)
+    prisma.lead.count({ where: { companyId, stage: { notIn: ['WON', 'LOST'] } } }).catch(() => 0),
+    // Bons de commande en cours
+    prisma.purchaseOrder.count({ where: { companyId, status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED', 'PARTIALLY_RECEIVED'] } } }).catch(() => 0),
+    // Ordres de fabrication en production
+    prisma.productionOrder.count({ where: { companyId, status: 'IN_PROGRESS' } }).catch(() => 0),
+    // Congés en attente de validation
+    prisma.leaveRequest.count({ where: { companyId, status: 'PENDING' } }).catch(() => 0),
+    // Projets actifs
+    prisma.project.count({ where: { companyId, status: 'ACTIVE' } }).catch(() => 0),
+    // Factures fournisseurs en attente
+    prisma.supplierInvoice.count({ where: { companyId, status: 'PENDING' } }).catch(() => 0),
   ])
 
   return {
@@ -112,6 +131,7 @@ async function getDashboardData(companyId: string) {
     currentYTD: Number(currentYTD._sum.total ?? 0),
     lastYearYTD: Number(lastYearYTD._sum.total ?? 0),
     pendingQuotes, pendingExpenses,
+    crmLeads, purchaseOrders, productionOrders, leaveRequests, activeProjects, unmatchedInvoices,
   }
 }
 
@@ -143,6 +163,8 @@ export default async function DashboardPage() {
       lastYearYTD: 0,
       pendingQuotes: 0,
       pendingExpenses: 0,
+      crmLeads: 0, purchaseOrders: 0, productionOrders: 0,
+      leaveRequests: 0, activeProjects: 0, unmatchedInvoices: 0,
     }
   }
 
@@ -153,7 +175,17 @@ export default async function DashboardPage() {
         {/* CA Alert Banner */}
         <CAAlertBanner currentYTD={data.currentYTD} lastYearYTD={data.lastYearYTD} />
 
-        {/* KPIs */}
+        {/* Enterprise module KPIs */}
+        <EnterpriseKPIs
+          crmLeads={data.crmLeads as number}
+          purchaseOrders={data.purchaseOrders as number}
+          productionOrders={data.productionOrders as number}
+          leaveRequests={data.leaveRequests as number}
+          activeProjects={data.activeProjects as number}
+          unmatchedInvoices={data.unmatchedInvoices as number}
+        />
+
+        {/* Financial KPIs */}
         <DashboardKPIs
           monthRevenue={Number(data.monthRevenue._sum.total ?? 0)}
           unpaidTotal={Number(data.unpaidInvoices._sum.total ?? 0)}
