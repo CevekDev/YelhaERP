@@ -5,13 +5,21 @@ import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { z } from 'zod'
 
 const schema = z.object({
-  plan: z.enum(['STARTER', 'PRO', 'AGENCY']),
+  plan:   z.enum(['STARTER', 'PRO', 'AGENCY']),
+  months: z.number().int().min(1).max(12).default(1),
 })
 
 const PLAN_PRICES: Record<string, number> = {
   STARTER: 1500,
-  PRO: 3200,
-  AGENCY: 9900,
+  PRO:     3200,
+  AGENCY:  9900,
+}
+
+// Discount by number of months
+const DISCOUNTS: Record<number, number> = {
+  3:  0.10,
+  6:  0.10,
+  12: 0.20,
 }
 
 const CHARGILY_BASE = process.env.CHARGILY_MODE === 'live'
@@ -25,24 +33,28 @@ export async function POST(req: NextRequest) {
     const ctx = await getTenantContext()
     const body = await req.json()
     const parsed = schema.safeParse(body)
-    if (!parsed.success) return apiError('Plan invalide', 400)
+    if (!parsed.success) return apiError('Plan ou durée invalide', 400)
 
-    const { plan } = parsed.data
-    const amount = PLAN_PRICES[plan]
+    const { plan, months } = parsed.data
+    const basePrice = PLAN_PRICES[plan]
+    const discount = DISCOUNTS[months] ?? 0
+    const amount = Math.round(basePrice * months * (1 - discount))
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
     const payload = {
       amount,
       currency: 'dzd',
       success_url: `${appUrl}/dashboard/settings?upgraded=1`,
-      failure_url: `${appUrl}/dashboard/settings/upgrade?error=1`,
+      failure_url: `${appUrl}/dashboard/settings/billing?error=1`,
       webhook_url: `${appUrl}/api/webhooks/chargily`,
-      description: `Abonnement YelhaERP — Plan ${plan}`,
+      description: `Abonnement YelhaERP — Plan ${plan} × ${months} mois${discount > 0 ? ` (−${discount * 100}%)` : ''}`,
       locale: 'ar',
       metadata: {
-        type: 'subscription',
+        type:       'subscription',
         company_id: ctx.companyId,
         plan,
+        months,
       },
     }
 

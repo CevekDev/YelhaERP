@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
   if (!success) return rateLimitResponse(reset)
   try {
     const ctx = await getTenantContext()
-    const q = expenseQuerySchema.parse(Object.fromEntries(req.nextUrl.searchParams))
+    const qRaw = expenseQuerySchema.safeParse(Object.fromEntries(req.nextUrl.searchParams))
+    if (!qRaw.success) return apiError('Paramètres invalides', 400)
+    const q = qRaw.data
 
     const where = {
       companyId: ctx.companyId,

@@ -47,11 +47,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!invoice) return apiError('Facture introuvable', 404)
     if (invoice.status === 'PAID') return apiError('Facture déjà payée', 400)
 
-    const body = await req.json()
+    let body: unknown
+    try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
     const parsed = schema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 400, parsed.error.flatten())
 
     const { amount, method, reference, notes, paidAt } = parsed.data
+
+    const resolvedDate = paidAt ? new Date(paidAt) : new Date()
+    if (isNaN(resolvedDate.getTime())) return apiError('Date de paiement invalide', 400)
+    if (resolvedDate > new Date()) return apiError('La date de paiement ne peut pas être dans le futur', 400)
 
     const payment = await prisma.invoicePayment.create({
       data: {
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         method,
         reference: reference ?? null,
         notes: notes ?? null,
-        paidAt: paidAt ? new Date(paidAt) : new Date(),
+        paidAt: resolvedDate,
       },
     })
 

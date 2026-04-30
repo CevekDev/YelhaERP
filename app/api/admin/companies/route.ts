@@ -11,14 +11,22 @@ const updatePlanSchema = z.object({
   trialEndsAt: z.string().datetime().optional(),
 })
 
-// Seul le OWNER du compte admin peut accéder
+function isSuperAdmin(email: string | undefined): boolean {
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL
+  if (!superAdminEmail || !email) return false
+  return email.toLowerCase() === superAdminEmail.toLowerCase()
+}
+
 export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
     const ctx = await getTenantContext()
-    // Vérification admin global — le OWNER de la première entreprise créée
     requireRole(ctx.role, 'OWNER')
+
+    // Seul le super-admin Yelha peut lister toutes les entreprises
+    const user = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { email: true } })
+    if (!isSuperAdmin(user?.email)) return apiError('Accès refusé — super-admin requis', 403)
 
     const { searchParams } = req.nextUrl
     const page = Math.max(1, Number(searchParams.get('page') ?? 1))
@@ -52,9 +60,15 @@ export async function PATCH(req: NextRequest) {
   try {
     const ctx = await getTenantContext()
     requireRole(ctx.role, 'OWNER')
-    const body = await req.json().catch(() => null)
+
+    const user = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { email: true } })
+    if (!isSuperAdmin(user?.email)) return apiError('Accès refusé — super-admin requis', 403)
+
+    let body: unknown
+    try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
     const parsed = updatePlanSchema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 422)
+
     const { companyId, plan, trialEndsAt } = parsed.data
     const updated = await prisma.company.update({
       where: { id: companyId },

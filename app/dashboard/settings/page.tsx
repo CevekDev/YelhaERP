@@ -1,154 +1,87 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { Header } from '@/components/layout/header'
-import { PageHeader } from '@/components/ui/page-header'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { WILAYAS_LIST } from '@/lib/algerian/format'
-import { toast } from 'sonner'
-import { Loader2, Zap, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle } from 'lucide-react'
 
-const PLAN_FEATURES: Record<string, { label: string; price: string; aiQuota: string; color: string }> = {
-  TRIAL: { label: 'Essai gratuit', price: '10 jours', aiQuota: '30 questions/mois', color: 'bg-amber-100 text-amber-800' },
-  STARTER: { label: 'Starter', price: '1 500 DA/mois', aiQuota: '50 questions/mois', color: 'bg-blue-100 text-blue-800' },
-  PRO: { label: 'Pro', price: '3 200 DA/mois', aiQuota: '300 questions/mois', color: 'bg-yelha-100 text-yelha-800' },
-  AGENCY: { label: 'Agency', price: '9 900 DA/mois', aiQuota: 'Illimité', color: 'bg-purple-100 text-purple-800' },
+const SECTIONS = [
+  {
+    href: '/dashboard/settings/entreprise',
+    icon: Building2,
+    label: 'Profil de l\'entreprise',
+    description: 'Nom, forme juridique, NIF, adresse, coordonnées',
+    color: 'bg-blue-50 text-blue-600',
+  },
+  {
+    href: '/dashboard/settings/billing',
+    icon: CreditCard,
+    label: 'Abonnement & facturation',
+    description: 'Gérer votre plan, payer par EDAHABIA/CIB ou virement CCP',
+    color: 'bg-yelha-50 text-yelha-600',
+  },
+  {
+    href: '/dashboard/settings/integrations',
+    icon: Plug,
+    label: 'Intégrations',
+    description: 'Connecter Shopify, WooCommerce et autres services',
+    color: 'bg-green-50 text-green-600',
+  },
+  {
+    href: '/dashboard/settings/admins',
+    icon: Users,
+    label: 'Collaborateurs & accès',
+    description: 'Ajouter des administrateurs, comptables ou employés à votre espace',
+    color: 'bg-purple-50 text-purple-600',
+  },
+]
+
+function SettingsContent() {
+  const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const upgraded = searchParams.get('upgraded') === '1'
+  const plan = session?.user?.plan ?? 'TRIAL'
+
+  return (
+    <div className="p-4 md:p-6 max-w-2xl space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Paramètres</h1>
+        <p className="text-muted-foreground text-sm mt-1">{session?.user?.companyName}</p>
+      </div>
+
+      {upgraded && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm">
+          <CheckCircle className="w-5 h-5 shrink-0" />
+          Paiement reçu ! Votre plan sera mis à jour sous peu. Merci !
+        </div>
+      )}
+
+      <div className="grid gap-3">
+        {SECTIONS.map(s => (
+          <Link key={s.href} href={s.href}
+            className="flex items-center gap-4 p-4 border rounded-xl bg-card hover:shadow-sm hover:border-foreground/20 transition-all group">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${s.color}`}>
+              <s.icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm">{s.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+          </Link>
+        ))}
+      </div>
+
+      <p className="text-xs text-muted-foreground">Plan actuel : <strong>{plan}</strong> · contact@yelhaerp.dz</p>
+    </div>
+  )
 }
 
 export default function SettingsPage() {
-  const { data: session, update } = useSession()
-  const router = useRouter()
-  const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ name: '', nif: '', nis: '', legalForm: '', aeCardNumber: '', address: '', wilaya: '', phone: '', email: '' })
-
-  useEffect(() => {
-    fetch('/api/company/profile').then(r => r.ok ? r.json() : null).then(d => d && setForm({
-      name: d.name ?? '', nif: d.nif ?? '', nis: d.nis ?? '',
-      legalForm: d.legalForm ?? '', aeCardNumber: d.aeCardNumber ?? '',
-      address: d.address ?? '', wilaya: d.wilaya ?? '',
-      phone: d.phone ?? '', email: d.email ?? session?.user?.email ?? '',
-    }))
-  }, [session])
-
-  const save = async () => {
-    setSaving(true)
-    const res = await fetch('/api/company/profile', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
-    })
-    setSaving(false)
-    if (res.ok) {
-      const updated = await res.json()
-      // Refresh JWT token with new businessType + companyName so sidebar updates live
-      const newBusinessType = updated.businessType ?? session?.user?.businessType
-      const newCompanyName  = updated.name         ?? session?.user?.companyName
-      await update({ businessType: newBusinessType, companyName: newCompanyName })
-      router.refresh()
-      toast.success('Paramètres sauvegardés')
-    } else {
-      toast.error('Erreur lors de la sauvegarde')
-    }
-  }
-
-  const searchParams = useSearchParams()
-  const upgraded = searchParams.get('upgraded') === '1'
-
-  const plan = session?.user?.plan ?? 'TRIAL'
-  const planInfo = PLAN_FEATURES[plan] ?? PLAN_FEATURES.TRIAL
-
   return (
-    <div>
-      <Header title="Paramètres" />
-      <div className="p-4 md:p-6 max-w-2xl space-y-6">
-        <PageHeader title="Paramètres" />
-
-        {/* Plan actuel */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Votre abonnement</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {upgraded && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
-                <CheckCircle className="w-4 h-4 shrink-0" />
-                Paiement reçu ! Votre plan sera mis à jour sous peu.
-              </div>
-            )}
-            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-              <div>
-                <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${planInfo.color}`}>
-                  Plan {planInfo.label}
-                </span>
-                <p className="text-sm text-muted-foreground mt-2">{planInfo.price} · {planInfo.aiQuota}</p>
-              </div>
-              {plan !== 'AGENCY' && (
-                <Link href="/dashboard/settings/upgrade">
-                  <Button size="sm" className="gap-1.5">
-                    <Zap className="w-3.5 h-3.5" />Changer de plan
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Profil entreprise */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Profil de l'entreprise</CardTitle>
-            <CardDescription>Ces informations apparaissent sur vos factures</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2"><Label>Nom de l'entreprise</Label><Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} /></div>
-            <div className="space-y-2">
-              <Label>Forme juridique</Label>
-              <Select value={form.legalForm} onValueChange={v => setForm(f => ({...f, legalForm: v}))}>
-                <SelectTrigger><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                <SelectContent>
-                  {[
-                    { value: 'SARL', label: 'SARL' }, { value: 'EURL', label: 'EURL' },
-                    { value: 'SPA', label: 'SPA' }, { value: 'SNC', label: 'SNC' },
-                    { value: 'EI', label: 'EI — Établissement Individuel' },
-                    { value: 'AE', label: 'Auto-entrepreneur' },
-                    { value: 'NONE', label: 'Sans RC / Informel' },
-                  ].map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {form.legalForm === 'AE' && (
-              <div className="space-y-2"><Label>Numéro carte Auto-entrepreneur</Label><Input value={form.aeCardNumber} onChange={e => setForm(f => ({...f, aeCardNumber: e.target.value}))} placeholder="AE-00-000000" /></div>
-            )}
-            {form.legalForm && form.legalForm !== 'NONE' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>NIF</Label><Input value={form.nif} onChange={e => setForm(f => ({...f, nif: e.target.value}))} /></div>
-                <div className="space-y-2"><Label>NIS</Label><Input value={form.nis} onChange={e => setForm(f => ({...f, nis: e.target.value}))} /></div>
-              </div>
-            )}
-            <div className="space-y-2"><Label>Téléphone</Label><Input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} /></div>
-            <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} /></div>
-            <div className="space-y-2"><Label>Adresse</Label><Input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} /></div>
-            <div className="space-y-2">
-              <Label>Wilaya</Label>
-              <Select value={form.wilaya} onValueChange={v => setForm(f => ({...f, wilaya: v}))}>
-                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                <SelectContent>{WILAYAS_LIST.map(w => <SelectItem key={w.code} value={w.name}>{w.code} — {w.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <Button onClick={save} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Enregistrer
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <Suspense fallback={<div className="p-6 text-muted-foreground">Chargement...</div>}>
+      <SettingsContent />
+    </Suspense>
   )
 }

@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const { page, limit, status, clientId } = query.data
     const where = {
       companyId: ctx.companyId,
-      ...(status && { status: status as never }),
+      ...(status && { status }),
       ...(clientId && { clientId }),
     }
 

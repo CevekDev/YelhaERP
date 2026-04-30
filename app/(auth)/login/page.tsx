@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Loader2, TrendingUp } from 'lucide-react'
+import { Loader2, TrendingUp, ArrowLeft, Users } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 
@@ -32,17 +32,21 @@ function GoogleIcon() {
   )
 }
 
+type Mode = 'owner' | 'collaborateur'
+
 function LoginForm() {
   const params = useSearchParams()
   const raw = params.get('callbackUrl') ?? '/dashboard'
-  // Never redirect back to auth pages after login
   const AUTH_PAGES = ['/login', '/register', '/verify-email']
   const callbackUrl = AUTH_PAGES.some(p => raw.startsWith(p)) ? '/dashboard' : raw
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [mode, setMode] = useState<Mode>('owner')
   const { t, dir } = useT()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({ resolver: zodResolver(schema) })
+
+  const switchMode = (m: Mode) => { setMode(m); reset() }
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -51,9 +55,8 @@ function LoginForm() {
     if (res?.error === 'EMAIL_NOT_VERIFIED') {
       toast.error(t('auth.err_email_not_verified'))
     } else if (res?.error) {
-      toast.error(t('auth.login_error'))
+      toast.error(mode === 'collaborateur' ? 'Identifiants incorrects. Vérifiez avec votre responsable.' : t('auth.login_error'))
     } else {
-      // Hard navigation to ensure session cookie is sent on next request
       window.location.href = callbackUrl
     }
   }
@@ -63,9 +66,44 @@ function LoginForm() {
     await signIn('google', { callbackUrl })
   }
 
+  if (mode === 'collaborateur') {
+    return (
+      <div dir={dir} className="space-y-4">
+        <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <Users className="w-4 h-4 text-blue-600 shrink-0" />
+          <p className="text-xs text-blue-700">Connexion collaborateur — utilisez les identifiants fournis par votre responsable</p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="col-email" className="text-slate-700">Email</Label>
+            <Input id="col-email" type="email" placeholder="votre@entreprise.dz" autoComplete="email" className="h-11 border-slate-200" {...register('email')} />
+            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="col-password" className="text-slate-700">Mot de passe</Label>
+            <Input id="col-password" type="password" autoComplete="current-password" className="h-11 border-slate-200" {...register('password')} />
+            {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+          </div>
+          <Button type="submit" className="w-full h-11 bg-yelha-500 hover:bg-yelha-600 font-semibold" disabled={loading}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            Se connecter
+          </Button>
+        </form>
+
+        <button
+          onClick={() => switchMode('owner')}
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors mx-auto"
+        >
+          <ArrowLeft className="w-3 h-3" />
+          Retour à la connexion principale
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div dir={dir} className="space-y-4">
-      {/* Google */}
       <Button variant="outline" className="w-full gap-2 h-11 border-slate-200 hover:bg-slate-50" onClick={handleGoogle} disabled={googleLoading}>
         {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
         {t('auth.login_google')}
@@ -100,6 +138,15 @@ function LoginForm() {
           {t('auth.login_register')}
         </Link>
       </p>
+
+      <div className="pt-2 border-t border-slate-100 text-center">
+        <button
+          onClick={() => switchMode('collaborateur')}
+          className="text-xs text-slate-400 hover:text-slate-600 transition-colors underline-offset-2 hover:underline"
+        >
+          Accès collaborateur →
+        </button>
+      </div>
     </div>
   )
 }
@@ -109,7 +156,6 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left panel - branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-yelha-800 via-yelha-700 to-yelha-500 flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background decorations */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-black/10 rounded-full blur-3xl" />
@@ -149,7 +195,6 @@ export default function LoginPage() {
       {/* Right panel - form */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
           <div className="flex items-center justify-between mb-8 lg:hidden">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 bg-yelha-500 rounded-xl flex items-center justify-center">
