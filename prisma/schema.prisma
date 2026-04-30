@@ -74,6 +74,7 @@ model Company {
   stockPositions     StockPosition[]
   stockTransfers     StockTransfer[]
   exchangeRates      ExchangeRate[]
+  apiKeys            ApiKey[]
 }
 
 enum BusinessType {
@@ -1404,4 +1405,24 @@ model ExchangeRate {
 
   @@unique([companyId, fromCurrency, toCurrency, date])
   @@index([companyId, date])
+}
+
+// ============================================================
+// CLÉS API (accès externe via Bearer token)
+// ============================================================
+model ApiKey {
+  id         String    @id @default(cuid())
+  companyId  String
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String
+  lastUsedAt DateTime?
+  isActive   Boolean   @default(true)
+  scopes     String[]  @default(["read"])
+  createdAt  DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([keyHash])
 }
