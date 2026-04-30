@@ -10,7 +10,7 @@ import {
   TrendingUp, Grid3X3, Search, Sun, Moon, Settings, LogOut, User,
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers, Globe,
-  Building2, ShoppingCart, LayoutDashboard, ChevronDown, X,
+  Building2, ShoppingCart, LayoutDashboard, ChevronDown, X, Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { MobileSidebarTrigger } from '@/components/layout/sidebar'
+import { useT } from '@/lib/i18n'
+import type { Locale } from '@/lib/i18n/translations'
 
 // ── Module definitions ──────────────────────────────────────
 export const MODULES = [
@@ -276,6 +278,41 @@ function AppsMenu() {
   )
 }
 
+// ── Language Menu ────────────────────────────────────────────
+const LANGS: { code: Locale; label: string; flag: string }[] = [
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'ar', label: 'العربية', flag: '🇩🇿' },
+]
+
+function LangMenu() {
+  const { locale, setLocale } = useT()
+  const current = LANGS.find(l => l.code === locale) ?? LANGS[0]
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors h-8">
+          <Globe className="h-4 w-4" />
+          <span className="text-xs font-medium hidden lg:inline">{current.code.toUpperCase()}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-36">
+        {LANGS.map(l => (
+          <DropdownMenuItem
+            key={l.code}
+            onClick={() => setLocale(l.code)}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <span>{l.flag}</span>
+            <span className="flex-1">{l.label}</span>
+            {locale === l.code && <Check className="h-3 w-3 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 // ── Top Navbar ───────────────────────────────────────────────
 export function TopNav() {
   const pathname = usePathname()
@@ -316,8 +353,8 @@ export function TopNav() {
           <AppsMenu />
         </div>
 
-        {/* Module tabs */}
-        <nav className="hidden md:flex items-center gap-0.5 flex-1">
+        {/* Module tabs — scrollable so right icons always stay visible */}
+        <nav className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto scrollbar-hide flex-1">
           {MODULES.map(module => {
             const isActive = activeModule?.id === module.id
             return (
@@ -325,7 +362,7 @@ export function TopNav() {
                 key={module.id}
                 href={module.href}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0',
                   isActive
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -338,9 +375,11 @@ export function TopNav() {
           })}
         </nav>
 
-        {/* Right side */}
-        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+        {/* Right side — always visible */}
+        <div className="flex items-center gap-1 ml-2 shrink-0">
           <GlobalSearch />
+
+          <LangMenu />
 
           <Button
             variant="ghost" size="icon"
