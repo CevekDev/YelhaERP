@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { Sidebar } from '@/components/layout/sidebar'
+import { TopNav } from '@/components/layout/top-nav'
 import { ChatWidget } from '@/components/ai/chat-widget'
 import { KeyboardShortcuts } from '@/components/providers/keyboard-shortcuts'
 
@@ -10,10 +10,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session.user.businessType) redirect('/onboarding')
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar companyName={session.user.companyName} plan={session.user.plan} businessType={session.user.businessType} />
+    <div className="min-h-screen bg-muted/30">
+      {/* TopNav handles both desktop tabs and mobile hamburger */}
+      <TopNav />
       <KeyboardShortcuts />
-      <main className="md:ml-[240px] min-h-screen">
+      {/*
+        pt-14: offset for top bar (56px)
+        Sub-nav adds 40px when present — pages with sub-nav use pt-24 class via layout wrapper
+        md:pt-24 covers the most common case (most pages are under a module with sub-nav)
+      */}
+      <main className="pt-14 md:pt-24 min-h-screen">
         {children}
       </main>
       <ChatWidget />
