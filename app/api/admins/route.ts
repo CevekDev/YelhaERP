@@ -10,7 +10,7 @@ const schema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['ADMIN', 'ACCOUNTANT', 'EMPLOYEE', 'VIEWER']),
+  role: z.enum(['ADMIN', 'ACCOUNTANT', 'EMPLOYEE', 'READONLY']),
 })
 
 export async function GET(req: NextRequest) {

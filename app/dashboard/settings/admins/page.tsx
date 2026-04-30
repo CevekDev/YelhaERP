@@ -23,7 +23,7 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   ADMIN:      { label: 'Administrateur', color: 'bg-purple-100 text-purple-700' },
   ACCOUNTANT: { label: 'Comptable',      color: 'bg-blue-100 text-blue-700' },
   EMPLOYEE:   { label: 'Employé',        color: 'bg-gray-100 text-gray-700' },
-  VIEWER:     { label: 'Lecteur',        color: 'bg-slate-100 text-slate-600' },
+  READONLY:     { label: 'Lecteur',        color: 'bg-slate-100 text-slate-600' },
 }
 
 export default function AdminsSettingsPage() {
@@ -119,7 +119,7 @@ export default function AdminsSettingsPage() {
                     <SelectItem value="ADMIN">Administrateur — accès complet</SelectItem>
                     <SelectItem value="ACCOUNTANT">Comptable — facturation & compta</SelectItem>
                     <SelectItem value="EMPLOYEE">Employé — lecture & saisie</SelectItem>
-                    <SelectItem value="VIEWER">Lecteur — lecture seule</SelectItem>
+                    <SelectItem value="READONLY">Lecteur — lecture seule</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
