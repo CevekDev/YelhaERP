@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { formatDA } from '@/lib/algerian/format'
 import { cn } from '@/lib/utils'
 import {
-  ShoppingCart, Search, Plus, Minus, X, CreditCard, Banknote,
+  ShoppingCart, Search, Plus, Minus, X, Banknote,
   UserCircle, CheckCircle2, RotateCcw, Lock, Unlock,
   AlertTriangle, Loader2, Package,
 } from 'lucide-react'
@@ -27,7 +27,7 @@ type Product = {
   unit: string | null
 }
 type CartItem = Product & { quantity: number; lineTotal: number; lineTax: number }
-type PayMethod = 'CASH' | 'CARD' | 'DEBT'
+type PayMethod = 'CASH' | 'DEBT'
 type PosSession = {
   id: string
   number: number
@@ -207,8 +207,7 @@ export default function POSPage() {
   const change   = payMethod === 'CASH' ? Math.max(0, received - total) : 0
   const canPay   = cart.length > 0 && (
     payMethod === 'DEBT' ? clientName.trim().length > 0 :
-    payMethod === 'CASH' ? received >= total :
-    true // CARD
+    received >= total
   )
 
   async function processSale() {
@@ -451,8 +450,8 @@ export default function POSPage() {
           {/* Payment panel */}
           <div className="border-t p-4 space-y-3">
             {/* Method tabs */}
-            <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-muted p-1">
-              {(['CASH', 'CARD', 'DEBT'] as PayMethod[]).map(m => (
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted p-1">
+              {(['CASH', 'DEBT'] as PayMethod[]).map(m => (
                 <button
                   key={m}
                   onClick={() => setPayMethod(m)}
@@ -464,9 +463,8 @@ export default function POSPage() {
                   )}
                 >
                   {m === 'CASH' && <Banknote className="h-4 w-4" />}
-                  {m === 'CARD' && <CreditCard className="h-4 w-4" />}
                   {m === 'DEBT' && <UserCircle className="h-4 w-4" />}
-                  {m === 'CASH' ? 'Espèces' : m === 'CARD' ? 'Carte' : 'Dette'}
+                  {m === 'CASH' ? 'Espèces' : 'Dette'}
                 </button>
               ))}
             </div>
@@ -511,12 +509,6 @@ export default function POSPage() {
                   <AlertTriangle className="h-3 w-3" />
                   Cette vente sera enregistrée comme dette
                 </p>
-              </div>
-            )}
-
-            {payMethod === 'CARD' && (
-              <div className="px-3 py-2 bg-blue-500/10 rounded-lg text-sm text-blue-600 text-center">
-                Paiement par carte CIB / EDAHABIA
               </div>
             )}
 

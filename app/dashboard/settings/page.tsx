@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle } from 'lucide-react'
+import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, LayoutGrid, User } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -34,6 +34,20 @@ const SECTIONS = [
     label: 'Collaborateurs & accès',
     description: 'Ajouter des administrateurs, comptables ou employés à votre espace',
     color: 'bg-purple-50 text-purple-600',
+  },
+  {
+    href: '/dashboard/settings/applications',
+    icon: LayoutGrid,
+    label: 'Applications',
+    description: 'Activer ou désactiver les modules : Compta, RH, CRM, Production, POS...',
+    color: 'bg-emerald-50 text-emerald-600',
+  },
+  {
+    href: '/dashboard/settings/profile',
+    icon: User,
+    label: 'Mon profil',
+    description: 'Nom, téléphone, mot de passe, langue d\'interface',
+    color: 'bg-orange-50 text-orange-600',
   },
 ]
 

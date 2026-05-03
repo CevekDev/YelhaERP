@@ -13,7 +13,7 @@ const saleSchema = z.object({
     taxRate:     z.number().min(0).max(100).optional(),
     description: z.string().max(200).optional(),
   })).min(1).max(50),
-  paymentMethod: z.enum(['CASH', 'CARD', 'DEBT']).default('CASH'),
+  paymentMethod: z.enum(['CASH', 'DEBT']).default('CASH'),
   amountPaid:    z.number().min(0),
   clientId:      z.string().optional(),
   clientName:    z.string().max(200).optional(),
@@ -194,7 +194,6 @@ export async function POST(req: NextRequest) {
       data: {
         totalSales: { increment: total },
         totalCash:  { increment: paymentMethod === 'CASH' ? total : 0 },
-        totalCard:  { increment: paymentMethod === 'CARD' ? total : 0 },
         totalDebt:  { increment: paymentMethod === 'DEBT' ? total : 0 },
       },
     })

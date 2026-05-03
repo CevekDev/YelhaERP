@@ -7,9 +7,10 @@ interface PageHeaderProps {
   actionLabel?: string
   onAction?: () => void
   actionHref?: string
+  actionDataTutorial?: string
 }
 
-export function PageHeader({ title, description, actionLabel, onAction }: PageHeaderProps) {
+export function PageHeader({ title, description, actionLabel, onAction, actionDataTutorial }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-6">
       <div>
@@ -17,7 +18,7 @@ export function PageHeader({ title, description, actionLabel, onAction }: PageHe
         {description && <p className="text-muted-foreground mt-1">{description}</p>}
       </div>
       {actionLabel && (
-        <Button onClick={onAction} className="gap-2">
+        <Button onClick={onAction} className="gap-2" data-tutorial={actionDataTutorial}>
           <Plus className="h-4 w-4" />
           {actionLabel}
         </Button>

@@ -28,8 +28,9 @@ model Company {
   phone        String?
   email        String?
   bankRib      String?
-  plan         Plan         @default(TRIAL)
-  aiQuotaUsed  Int          @default(0)
+  plan          Plan         @default(TRIAL)
+  activeModules String[]     @default(["dashboard","ventes","achats","stocks"])
+  aiQuotaUsed   Int          @default(0)
   aiQuotaReset DateTime     @default(now())
   trialEndsAt  DateTime?
   createdAt    DateTime     @default(now())

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Package } from 'lucide-react'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Product { id: string; name: string; sku?: string; unitPrice: number; stockQty: number; stockAlert: number; unit?: string; taxRate: number }
 
@@ -70,7 +71,7 @@ export default function ProductsPage() {
     <div>
       <Header title="Produits & Services" />
       <div className="p-4 md:p-6">
-        <PageHeader title="Produits & Services" description={`${total} article${total > 1 ? 's' : ''}`} actionLabel="Nouveau produit" onAction={() => setOpen(true)} />
+        <PageHeader title="Produits & Services" description={`${total} article${total > 1 ? 's' : ''}`} actionLabel="Nouveau produit" onAction={() => setOpen(true)} actionDataTutorial="new-product" />
         <Card>
           <div className="p-4 border-b"><SearchInput placeholder="Rechercher par nom ou SKU..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
@@ -88,7 +89,7 @@ export default function ProductsPage() {
             <div className="space-y-2"><Label>Unité</Label><Input placeholder="pcs, kg, h..." value={form.unit} onChange={e => setForm(f => ({...f, unit: e.target.value}))} /></div>
             <div className="space-y-2"><Label>Prix unitaire (DA) *</Label><Input type="number" min="0" value={form.unitPrice} onChange={e => setForm(f => ({...f, unitPrice: e.target.value}))} /></div>
             <div className="space-y-2"><Label>TVA %</Label><Input type="number" min="0" max="100" value={form.taxRate} onChange={e => setForm(f => ({...f, taxRate: e.target.value}))} /></div>
-            <div className="space-y-2"><Label>Seuil alerte stock</Label><Input type="number" min="0" value={form.stockAlert} onChange={e => setForm(f => ({...f, stockAlert: e.target.value}))} /></div>
+            <div className="space-y-2" data-tutorial="stock-alert"><Label>Seuil alerte stock</Label><Input type="number" min="0" value={form.stockAlert} onChange={e => setForm(f => ({...f, stockAlert: e.target.value}))} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
@@ -96,6 +97,7 @@ export default function ProductsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="products" />
     </div>
   )
 }

@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { Eye, Plus, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Brouillon', SENT: 'Envoyée', PAID: 'Payée',
@@ -71,6 +72,7 @@ export default function InvoicesPage() {
   ]
 
   return (
+    <>
     <div>
       <Header title="Facturation" />
       <div className="p-4 md:p-6">
@@ -78,7 +80,7 @@ export default function InvoicesPage() {
         <Card>
           <div className="p-4 border-b flex items-center gap-3">
             <Select value={status} onValueChange={v => { setStatus(v); setPage(1) }}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" data-tutorial="invoice-filters">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
@@ -89,8 +91,11 @@ export default function InvoicesPage() {
               </SelectContent>
             </Select>
             <div className="flex-1" />
+            <Link href="/dashboard/invoices/new" data-tutorial="invoice-export">
+              <Button variant="outline" className="gap-2"><FileText className="h-4 w-4" />Exporter</Button>
+            </Link>
             <Link href="/dashboard/invoices/new">
-              <Button className="gap-2"><Plus className="h-4 w-4" />Nouvelle facture</Button>
+              <Button className="gap-2" data-tutorial="new-invoice"><Plus className="h-4 w-4" />Nouvelle facture</Button>
             </Link>
           </div>
           <CardContent className="p-0">
@@ -108,5 +113,7 @@ export default function InvoicesPage() {
         </Card>
       </div>
     </div>
+    <TutorialOverlay pageKey="invoices" />
+    </>
   )
 }

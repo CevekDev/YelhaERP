@@ -16,6 +16,7 @@ import { WILAYAS_LIST } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Eye, Building2, User, Users } from 'lucide-react'
 import Link from 'next/link'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Client { id: string; name: string; firstName?: string; clientType: string; email?: string; phone?: string; nif?: string; wilaya?: string }
 
@@ -77,7 +78,7 @@ export default function ClientsPage() {
     <div>
       <Header title="Clients" />
       <div className="p-4 md:p-6">
-        <PageHeader title="Clients" description={`${total} client${total > 1 ? 's' : ''}`} actionLabel="Nouveau client" onAction={() => setOpen(true)} />
+        <PageHeader title="Clients" description={`${total} client${total > 1 ? 's' : ''}`} actionLabel="Nouveau client" onAction={() => setOpen(true)} actionDataTutorial="new-client" />
         <Card>
           <div className="p-4 border-b"><SearchInput placeholder="Rechercher par nom, NIF..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
@@ -171,6 +172,7 @@ export default function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="clients" />
     </div>
   )
 }

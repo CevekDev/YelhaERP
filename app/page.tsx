@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   TrendingUp, Menu, X, ArrowRight, CheckCircle, FileText, Users, Package,
   Calculator, Briefcase, BarChart3, Zap, Shield, Globe, ChevronDown,
-  Star, Building2, Receipt, Truck, Brain, Clock, Award, Sparkles,
+  Star, Building2, Receipt, Truck, Brain, Clock, Award, Sparkles, ShoppingCart, Code2,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
@@ -216,8 +216,10 @@ function Features() {
     { icon: Calculator, color: 'bg-yelha-50 text-yelha-600', title: t('features.accounting_title'), desc: t('features.accounting_desc') },
     { icon: Receipt,  color: 'bg-red-50 text-red-600',     title: t('features.tax_title'),        desc: t('features.tax_desc') },
     { icon: Truck,    color: 'bg-cyan-50 text-cyan-600',    title: t('features.purchases_title'), desc: t('features.purchases_desc') },
-    { icon: Globe,    color: 'bg-indigo-50 text-indigo-600', title: t('features.integrations_title'), desc: t('features.integrations_desc') },
-    { icon: Brain,    color: 'bg-pink-50 text-pink-600',    title: t('features.ai_title'),        desc: t('features.ai_desc') },
+    { icon: Globe,        color: 'bg-indigo-50 text-indigo-600', title: t('features.integrations_title'), desc: t('features.integrations_desc') },
+    { icon: Brain,        color: 'bg-pink-50 text-pink-600',    title: t('features.ai_title'),           desc: t('features.ai_desc') },
+    { icon: ShoppingCart, color: 'bg-green-50 text-green-600',  title: t('features.pos_title'),          desc: t('features.pos_desc') },
+    { icon: Code2,        color: 'bg-slate-50 text-slate-600',  title: t('features.api_title'),          desc: t('features.api_desc') },
   ]
   return (
     <section id="features" className="py-20 lg:py-28 bg-slate-50">

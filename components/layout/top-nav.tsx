@@ -331,6 +331,18 @@ export function TopNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
+  const [activeModules, setActiveModules] = useState<string[]>(['dashboard', 'ventes', 'achats', 'stocks'])
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/settings/modules')
+        .then(r => r.json())
+        .then(d => { if (d.activeModules) setActiveModules(d.activeModules) })
+        .catch(() => {})
+    }
+  }, [session?.user])
+
+  const visibleModules = MODULES.filter(m => activeModules.includes(m.id))
 
   const activeModule = getActiveModule(pathname)
   const initials = (session?.user?.name ?? 'U')
@@ -360,7 +372,7 @@ export function TopNav() {
 
         {/* Module tabs — scrollable so right icons always stay visible */}
         <nav className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto scrollbar-hide flex-1">
-          {MODULES.map(module => {
+          {visibleModules.map(module => {
             const isActive = activeModule?.id === module.id
             return (
               <Link
@@ -418,7 +430,7 @@ export function TopNav() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
+                <Link href="/dashboard/settings/profile" className="flex items-center gap-2 cursor-pointer">
                   <User className="h-4 w-4" />Profil
                 </Link>
               </DropdownMenuItem>

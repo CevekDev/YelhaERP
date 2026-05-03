@@ -65,6 +65,10 @@ const fr = {
     integrations_desc: 'Synchronisez automatiquement vos commandes Shopify et WooCommerce comme factures.',
     ai_title: 'Assistant IA',
     ai_desc: 'Un assistant intelligent formé sur la réglementation algérienne pour répondre à vos questions comptables.',
+    pos_title: 'Point de Vente',
+    pos_desc: 'Caisse physique avec sessions, tickets de caisse, gestion des dettes clients et paiement espèces.',
+    api_title: 'API & Intégrations',
+    api_desc: 'API REST complète avec clés API, webhooks et documentation pour connecter vos outils métier.',
   },
   // ── Section Algérie ────────────────────────────────────────
   algeria: {
@@ -413,6 +417,10 @@ const en: typeof fr = {
     integrations_desc: 'Automatically sync your Shopify and WooCommerce orders as invoices.',
     ai_title: 'AI Assistant',
     ai_desc: 'An intelligent assistant trained on Algerian regulations to answer your accounting questions.',
+    pos_title: 'Point of Sale',
+    pos_desc: 'Physical cash register with sessions, receipts, customer debt tracking and cash payments.',
+    api_title: 'API & Integrations',
+    api_desc: 'Full REST API with API keys, webhooks and documentation to connect your business tools.',
   },
   algeria: {
     badge: '🇩🇿 Built for Algeria',
@@ -752,6 +760,10 @@ const ar: typeof fr = {
     integrations_desc: 'زامن طلبياتك من Shopify وWooCommerce تلقائياً كفواتير.',
     ai_title: 'مساعد الذكاء الاصطناعي',
     ai_desc: 'مساعد ذكي مدرَّب على التشريعات الجزائرية للإجابة على أسئلتك المحاسبية.',
+    pos_title: 'نقطة البيع',
+    pos_desc: 'صندوق مادي مع جلسات وإيصالات وتتبع ديون العملاء والدفع نقداً.',
+    api_title: 'API والتكاملات',
+    api_desc: 'واجهة برمجة REST كاملة مع مفاتيح API وخطافات ووثائق لربط أدواتك.',
   },
   algeria: {
     badge: '🇩🇿 مصنوع للجزائر',
