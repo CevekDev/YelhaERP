@@ -75,6 +75,10 @@ model Company {
   stockTransfers     StockTransfer[]
   exchangeRates      ExchangeRate[]
   apiKeys            ApiKey[]
+  // POS
+  posSessions        PosSession[]
+  posSales           PosSale[]
+  posDebts           PosDebt[]
 }
 
 enum BusinessType {
@@ -190,6 +194,8 @@ model Client {
   messages ClientMessage[]
   leads    Lead[]
   projects Project[]
+  posSales PosSale[]
+  posDebts PosDebt[]
 
   @@index([companyId])
   @@index([companyId, name])
@@ -259,6 +265,8 @@ model Invoice {
   payments InvoicePayment[]
   quote    Quote?           @relation(fields: [quoteId], references: [id])
   project  Project?         @relation(fields: [projectId], references: [id])
+  posSale  PosSale?
+  posDebt  PosDebt?
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -1425,4 +1433,108 @@ model ApiKey {
 
   @@index([companyId])
   @@index([keyHash])
+}
+
+// ============================================================
+// POINT DE VENTE (POS)
+// ============================================================
+model PosSession {
+  id            String           @id @default(cuid())
+  companyId     String
+  number        Int
+  status        PosSessionStatus @default(OPEN)
+  openingCash   Decimal          @db.Decimal(15, 2) @default(0)
+  closingCash   Decimal?         @db.Decimal(15, 2)
+  totalSales    Decimal          @db.Decimal(15, 2) @default(0)
+  totalCash     Decimal          @db.Decimal(15, 2) @default(0)
+  totalCard     Decimal          @db.Decimal(15, 2) @default(0)
+  totalDebt     Decimal          @db.Decimal(15, 2) @default(0)
+  resetInterval String           @default("daily")
+  notes         String?
+  openedAt      DateTime         @default(now())
+  closedAt      DateTime?
+
+  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sales   PosSale[]
+
+  @@index([companyId, status])
+  @@index([companyId, openedAt])
+}
+
+enum PosSessionStatus {
+  OPEN
+  CLOSED
+}
+
+model PosSale {
+  id            String           @id @default(cuid())
+  companyId     String
+  sessionId     String
+  invoiceId     String?          @unique
+  clientId      String?
+  paymentMethod PosPaymentMethod @default(CASH)
+  subtotal      Decimal          @db.Decimal(15, 2)
+  taxAmount     Decimal          @db.Decimal(15, 2)
+  total         Decimal          @db.Decimal(15, 2)
+  amountPaid    Decimal          @db.Decimal(15, 2)
+  change        Decimal          @db.Decimal(15, 2) @default(0)
+  createdAt     DateTime         @default(now())
+
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  session PosSession  @relation(fields: [sessionId], references: [id])
+  invoice Invoice?    @relation(fields: [invoiceId], references: [id])
+  client  Client?     @relation(fields: [clientId], references: [id])
+  debt    PosDebt?
+
+  @@index([companyId, sessionId])
+  @@index([companyId, createdAt])
+}
+
+enum PosPaymentMethod {
+  CASH
+  CARD
+  DEBT
+}
+
+model PosDebt {
+  id          String        @id @default(cuid())
+  companyId   String
+  clientId    String
+  saleId      String?       @unique
+  invoiceId   String?       @unique
+  totalAmount Decimal       @db.Decimal(15, 2)
+  paidAmount  Decimal       @db.Decimal(15, 2) @default(0)
+  dueDate     DateTime?
+  notes       String?
+  status      PosDebtStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client   Client           @relation(fields: [clientId], references: [id])
+  sale     PosSale?         @relation(fields: [saleId], references: [id])
+  invoice  Invoice?         @relation(fields: [invoiceId], references: [id])
+  payments PosDebtPayment[]
+
+  @@index([companyId, clientId])
+  @@index([companyId, status])
+}
+
+enum PosDebtStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
+model PosDebtPayment {
+  id     String           @id @default(cuid())
+  debtId String
+  amount Decimal          @db.Decimal(15, 2)
+  method PosPaymentMethod @default(CASH)
+  note   String?
+  paidAt DateTime         @default(now())
+
+  debt PosDebt @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@index([debtId])
 }

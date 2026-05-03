@@ -145,6 +145,19 @@ export const MODULES = [
       { label: 'Statistiques', href: '/dashboard/crm/stats' },
     ],
   },
+  {
+    id: 'pos',
+    label: 'Caisse',
+    icon: ShoppingCart,
+    color: 'bg-green-600',
+    href: '/dashboard/pos',
+    prefixes: ['/dashboard/pos'],
+    subNav: [
+      { label: 'Caisse', href: '/dashboard/pos' },
+      { label: 'Sessions', href: '/dashboard/pos/sessions' },
+      { label: 'Dettes', href: '/dashboard/pos/debts' },
+    ],
+  },
 ] as const
 
 type Module = typeof MODULES[number]
