@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.variable}>
         <I18nProvider>
           <SessionProvider>
-            <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
               {children}
               <Toaster richColors position="top-right" />
             </ThemeProvider>

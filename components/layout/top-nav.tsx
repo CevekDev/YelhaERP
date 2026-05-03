@@ -340,14 +340,6 @@ export function TopNav() {
           <MobileSidebarTrigger />
         </div>
 
-        {/* Logo */}
-        <Link href="/dashboard" className="hidden md:flex items-center gap-2 shrink-0 mr-1">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
-            <TrendingUp className="h-3.5 w-3.5 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-sm text-foreground">YelhaERP</span>
-        </Link>
-
         {/* Apps menu */}
         <div className="hidden md:block">
           <AppsMenu />
@@ -377,7 +369,6 @@ export function TopNav() {
 
         {/* Right side — always visible */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
-          <GlobalSearch />
 
           <LangMenu />
 

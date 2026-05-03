@@ -31,6 +31,14 @@ export function v1RateLimitResponse(reset: number, plan: string): NextResponse {
   )
 }
 
+// Returns error response if write scope is missing, null if OK
+export function requireWriteScope(ctx: V1Context): NextResponse | null {
+  if (!ctx.scopes.includes('write')) {
+    return v1Error('Permission "write" requise. Créez une clé avec scope "write" dans Paramètres → Intégrations.', 403, 'INSUFFICIENT_SCOPE')
+  }
+  return null
+}
+
 export async function withV1Auth(
   req: NextRequest,
   handler: (ctx: V1Context) => Promise<NextResponse>
@@ -44,7 +52,6 @@ export async function withV1Auth(
 
   const res = await handler({ companyId: ctx.companyId, plan: ctx.plan, scopes: ctx.scopes })
 
-  // Inject rate limit headers on every response
   res.headers.set('X-RateLimit-Limit', String(limitsConfig.limit))
   res.headers.set('X-RateLimit-Remaining', String(remaining))
   res.headers.set('X-RateLimit-Reset', String(reset))

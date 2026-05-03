@@ -260,11 +260,11 @@ export default function BillingPage() {
             </li>
           </ol>
 
-          <div className="bg-gray-50 border rounded-xl p-4">
+          <div className="bg-muted border border-border rounded-xl p-4">
             <p className="text-xs text-muted-foreground mb-1">Numéro de compte CCP</p>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-lg font-bold tracking-wider">{CCP_ACCOUNT}</span>
-              <button onClick={copyAccount} className="flex items-center gap-1.5 text-xs text-yelha-600 hover:text-yelha-700 shrink-0">
+              <span className="font-mono text-lg font-bold tracking-wider text-foreground">{CCP_ACCOUNT}</span>
+              <button onClick={copyAccount} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 shrink-0">
                 {copied ? <><Check className="w-3.5 h-3.5 text-green-500" />Copié</> : <><Copy className="w-3.5 h-3.5" />Copier</>}
               </button>
             </div>
