@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import {
   ShoppingBag, Globe, Loader2, CheckCircle, Plug, ArrowLeft,
   Code2, Plus, Trash2, Copy, Check, Eye, EyeOff, FileText,
-  Key, AlertTriangle, ExternalLink,
+  Key, AlertTriangle, ExternalLink, Truck,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -314,6 +314,48 @@ export default function IntegrationsSettingsPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Delivery Companies */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center">
+                <Truck className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Sociétés de livraison</CardTitle>
+                <CardDescription>Webhooks de suivi automatique des colis</CardDescription>
+              </div>
+            </div>
+            <Link href="/dashboard/ecommerce/delivery">
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ExternalLink className="w-3.5 h-3.5" />Configurer
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg bg-muted/40 p-4 space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Configurez vos sociétés de livraison dans{' '}
+              <Link href="/dashboard/ecommerce/delivery" className="text-primary hover:underline">
+                E-commerce &gt; Livraison
+              </Link>
+              . Chaque société obtient une URL de webhook unique à renseigner dans son tableau de bord.
+            </p>
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Format de l&apos;URL webhook</p>
+              <div className="font-mono text-xs bg-background border rounded-lg px-3 py-2 text-muted-foreground">
+                {process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'}/api/webhooks/delivery/<span className="text-primary">[id-societe]</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Compatible avec Yalidine, Maystro, Procolis, Ecotrack, Guepex, ZR Express et toute société supportant les webhooks HTTP POST.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

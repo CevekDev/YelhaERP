@@ -10,7 +10,7 @@ import {
   TrendingUp, Grid3X3, Search, Sun, Moon, Settings, LogOut, User,
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers, Globe,
-  Building2, ShoppingCart, LayoutDashboard, ChevronDown, X, Check,
+  Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -156,6 +156,18 @@ export const MODULES = [
       { label: 'Caisse', href: '/dashboard/pos' },
       { label: 'Sessions', href: '/dashboard/pos/sessions' },
       { label: 'Dettes', href: '/dashboard/pos/debts' },
+    ],
+  },
+  {
+    id: 'ecommerce',
+    label: 'E-commerce',
+    icon: ShoppingBag,
+    color: 'bg-teal-600',
+    href: '/dashboard/ecommerce',
+    prefixes: ['/dashboard/ecommerce'],
+    subNav: [
+      { label: 'Commandes', href: '/dashboard/ecommerce' },
+      { label: 'Livraison', href: '/dashboard/ecommerce/delivery' },
     ],
   },
 ] as const

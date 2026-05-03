@@ -80,6 +80,10 @@ model Company {
   posSessions        PosSession[]
   posSales           PosSale[]
   posDebts           PosDebt[]
+  // E-commerce
+  deliveryCompanies  DeliveryCompany[]
+  deliveryDrivers    DeliveryDriver[]
+  ecomOrders         EcomOrder[]
 }
 
 enum BusinessType {
@@ -1538,4 +1542,142 @@ model PosDebtPayment {
   debt PosDebt @relation(fields: [debtId], references: [id], onDelete: Cascade)
 
   @@index([debtId])
+}
+
+// ============================================================
+// E-COMMERCE — LIVRAISON
+// ============================================================
+
+model DeliveryCompany {
+  id            String              @id @default(cuid())
+  companyId     String
+  name          String
+  slug          DeliverySlug        @default(OTHER)
+  isDefault     Boolean             @default(false)
+  isActive      Boolean             @default(true)
+  apiKey        String?
+  apiSecret     String?
+  webhookSecret String?
+  config        Json?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deliveryOptions DeliveryOption[]
+  orders          EcomOrder[]
+  drivers         DeliveryDriver[]
+
+  @@index([companyId])
+  @@index([companyId, isDefault])
+}
+
+enum DeliverySlug {
+  MANUAL
+  YALIDINE
+  MAYSTRO
+  PROCOLIS
+  ECOTRACK
+  GUEPEX
+  ZR_EXPRESS
+  OTHER
+}
+
+model DeliveryOption {
+  id                String          @id @default(cuid())
+  deliveryCompanyId String
+  name              String
+  price             Decimal         @db.Decimal(10, 2) @default(0)
+  description       String?
+  isActive          Boolean         @default(true)
+
+  deliveryCompany DeliveryCompany @relation(fields: [deliveryCompanyId], references: [id], onDelete: Cascade)
+  orders          EcomOrder[]
+
+  @@index([deliveryCompanyId])
+}
+
+model DeliveryDriver {
+  id                String          @id @default(cuid())
+  companyId         String
+  deliveryCompanyId String?
+  name              String
+  phone             String
+  email             String?
+  wilaya            String?
+  vehicleType       String?
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deliveryCompany DeliveryCompany? @relation(fields: [deliveryCompanyId], references: [id])
+  orders          EcomOrder[]
+
+  @@index([companyId])
+}
+
+model EcomOrder {
+  id                 String           @id @default(cuid())
+  companyId          String
+  orderNumber        String
+  customerName       String
+  customerFirstName  String?
+  customerPhone      String
+  customerPhone2     String?
+  customerAddress    String
+  customerWilaya     String
+  customerCommune    String?
+  productDescription String
+  productPrice       Decimal          @db.Decimal(15, 2)
+  quantity           Int              @default(1)
+  deliveryCompanyId  String?
+  deliveryOptionId   String?
+  deliveryDriverId   String?
+  deliveryFee        Decimal          @db.Decimal(10, 2) @default(0)
+  total              Decimal          @db.Decimal(15, 2)
+  status             EcomOrderStatus  @default(PENDING)
+  externalId         String?
+  externalStatus     String?
+  trackingNumber     String?
+  isPaid             Boolean          @default(false)
+  notes              String?
+  confirmedAt        DateTime?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  returnedAt         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deliveryCompany DeliveryCompany? @relation(fields: [deliveryCompanyId], references: [id])
+  deliveryOption  DeliveryOption?  @relation(fields: [deliveryOptionId], references: [id])
+  driver          DeliveryDriver?  @relation(fields: [deliveryDriverId], references: [id])
+  statusHistory   EcomStatusHistory[]
+
+  @@unique([companyId, orderNumber])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+}
+
+enum EcomOrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  NO_ANSWER
+  RETURNED
+  CANCELLED
+}
+
+model EcomStatusHistory {
+  id        String          @id @default(cuid())
+  orderId   String
+  status    EcomOrderStatus
+  note      String?
+  source    String          @default("MANUAL")
+  createdAt DateTime        @default(now())
+
+  order EcomOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }

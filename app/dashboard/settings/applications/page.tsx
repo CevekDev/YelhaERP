@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header'
 import { Switch } from '@/components/ui/switch'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calculator, UserCheck, Briefcase, Factory, Users, ShoppingCart, Loader2 } from 'lucide-react'
+import { Calculator, UserCheck, Briefcase, Factory, Users, ShoppingCart, ShoppingBag, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const REQUIRED_MODULES = ['dashboard', 'ventes', 'achats', 'stocks']
@@ -52,6 +52,13 @@ const OPTIONAL_MODULES = [
     icon: ShoppingCart,
     color: 'bg-green-100 text-green-600',
     description: 'Caisse physique, ventes en magasin, gestion des dettes',
+  },
+  {
+    id: 'ecommerce',
+    label: 'E-commerce',
+    icon: ShoppingBag,
+    color: 'bg-teal-100 text-teal-600',
+    description: 'Gestion des commandes en ligne, livraison, suivi des colis',
   },
 ]
 
