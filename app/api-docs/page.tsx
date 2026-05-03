@@ -1,4 +1,4 @@
-import { Printer } from 'lucide-react'
+import { PrintButton } from './_print-button'
 
 export const metadata = { title: 'Documentation API — YelhaERP' }
 
@@ -88,13 +88,7 @@ export default function ApiDocsPage() {
           </div>
           <span className="font-bold text-slate-800">YelhaERP — Documentation API v1</span>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-yelha-500 text-white rounded-lg text-sm font-medium hover:bg-yelha-600 transition-colors"
-        >
-          <Printer className="w-4 h-4" />
-          Télécharger PDF
-        </button>
+        <PrintButton />
       </div>
 
       <div className="max-w-4xl mx-auto px-8 py-10">
