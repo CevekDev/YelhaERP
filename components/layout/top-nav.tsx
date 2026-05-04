@@ -342,8 +342,11 @@ function LangMenu() {
 export function TopNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [activeModules, setActiveModules] = useState<string[]>(['dashboard', 'ventes', 'achats', 'stocks'])
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (session?.user) {
@@ -412,9 +415,11 @@ export function TopNav() {
           <Button
             variant="ghost" size="icon"
             className="text-muted-foreground hover:text-foreground h-8 w-8"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
           >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {mounted
+              ? (resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />)
+              : <Moon className="h-4 w-4" />}
           </Button>
 
           <NotificationBell />
