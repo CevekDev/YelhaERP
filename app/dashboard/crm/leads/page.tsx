@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { formatDA } from '@/lib/algerian/format'
-import { Search, User, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, User, ChevronLeft, ChevronRight, Users, Phone, Mail, MapPin } from 'lucide-react'
 import Link from 'next/link'
 
 interface Lead {
@@ -25,6 +24,17 @@ interface Lead {
   createdAt: string
 }
 
+interface Client {
+  id: string
+  name: string
+  firstName?: string
+  email?: string
+  phone?: string
+  wilaya?: string
+  address?: string
+  createdAt: string
+}
+
 const STAGE_COLORS: Record<string, string> = {
   NEW: 'bg-slate-100 text-slate-700',
   QUALIFIED: 'bg-blue-100 text-blue-700',
@@ -39,118 +49,261 @@ const STAGE_LABELS: Record<string, string> = {
   NEGOTIATION: 'Négociation', WON: 'Gagné', LOST: 'Perdu',
 }
 
+type Tab = 'leads' | 'clients'
+
 export default function LeadsPage() {
+  const [tab, setTab] = useState<Tab>('leads')
+
+  // Leads state
   const [leads, setLeads] = useState<Lead[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
+  const [totalLeads, setTotalLeads] = useState(0)
+  const [pageLeads, setPageLeads] = useState(1)
   const [search, setSearch] = useState('')
-  const [stage, setStage] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [stage, setStage] = useState('ALL')
+  const [loadingLeads, setLoadingLeads] = useState(true)
+
+  // Clients state
+  const [clients, setClients] = useState<Client[]>([])
+  const [totalClients, setTotalClients] = useState(0)
+  const [pageClients, setPageClients] = useState(1)
+  const [clientSearch, setClientSearch] = useState('')
+  const [loadingClients, setLoadingClients] = useState(false)
+
   const limit = 20
 
   const fetchLeads = async () => {
-    setLoading(true)
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+    setLoadingLeads(true)
+    const params = new URLSearchParams({ page: String(pageLeads), limit: String(limit) })
     if (search) params.set('search', search)
     if (stage && stage !== 'ALL') params.set('stage', stage)
     const res = await fetch(`/api/crm/leads?${params}`)
     const data = await res.json()
     setLeads(data.data?.leads ?? [])
-    setTotal(data.data?.total ?? 0)
-    setLoading(false)
+    setTotalLeads(data.data?.total ?? 0)
+    setLoadingLeads(false)
   }
 
-  useEffect(() => { fetchLeads() }, [page, search, stage])
+  const fetchClients = async () => {
+    setLoadingClients(true)
+    const params = new URLSearchParams({ page: String(pageClients), limit: String(limit) })
+    if (clientSearch) params.set('search', clientSearch)
+    const res = await fetch(`/api/clients?${params}`)
+    const data = await res.json()
+    setClients(data.data?.clients ?? data.clients ?? [])
+    setTotalClients(data.data?.total ?? data.total ?? 0)
+    setLoadingClients(false)
+  }
 
-  const totalPages = Math.ceil(total / limit)
+  useEffect(() => { fetchLeads() }, [pageLeads, search, stage])
+  useEffect(() => {
+    if (tab === 'clients') fetchClients()
+  }, [pageClients, clientSearch, tab])
+
+  const totalLeadPages = Math.ceil(totalLeads / limit)
+  const totalClientPages = Math.ceil(totalClients / limit)
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <Breadcrumb items={[{ label: 'CRM', href: '/dashboard/crm/pipeline' }, { label: 'Leads' }]} />
+      <Breadcrumb items={[{ label: 'CRM', href: '/dashboard/crm/pipeline' }, { label: 'Leads & Clients' }]} />
 
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Leads ({total})</h1>
+        <h1 className="text-2xl font-bold">CRM</h1>
         <Link href="/dashboard/crm/pipeline">
           <Button variant="outline">Vue Kanban</Button>
         </Link>
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <Select value={stage} onValueChange={setStage}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Tous les stades" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Tous les stades</SelectItem>
-            {Object.entries(STAGE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b">
+        <button
+          onClick={() => setTab('leads')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            tab === 'leads'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <User className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+          Leads ({totalLeads})
+        </button>
+        <button
+          onClick={() => setTab('clients')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            tab === 'clients'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Users className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+          Clients ({totalClients})
+        </button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium">Lead</th>
-              <th className="text-left px-4 py-3 font-medium">Société</th>
-              <th className="text-left px-4 py-3 font-medium">Contact</th>
-              <th className="text-left px-4 py-3 font-medium">Stade</th>
-              <th className="text-right px-4 py-3 font-medium">Valeur</th>
-              <th className="text-left px-4 py-3 font-medium">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">Chargement...</td></tr>
-            ) : leads.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">
-                <User className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                Aucun lead trouvé
-              </td></tr>
-            ) : leads.map(lead => (
-              <tr key={lead.id} className="border-t hover:bg-muted/20">
-                <td className="px-4 py-3">
-                  <Link href={`/dashboard/crm/leads/${lead.id}`} className="font-medium hover:underline">
-                    {[lead.firstName, lead.lastName].filter(Boolean).join(' ')}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{lead.company ?? '—'}</td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {lead.email && <div>{lead.email}</div>}
-                  {lead.phone && <div>{lead.phone}</div>}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STAGE_COLORS[lead.stage] ?? ''}`}>
-                    {STAGE_LABELS[lead.stage] ?? lead.stage}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-mono da-amount">
-                  {lead.expectedValue ? formatDA(Number(lead.expectedValue)) : '—'}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {new Date(lead.createdAt).toLocaleDateString('fr-DZ')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{total} lead{total > 1 ? 's' : ''}</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="text-sm py-1.5 px-3 border rounded-md">{page} / {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+      {/* LEADS TAB */}
+      {tab === 'leads' && (
+        <>
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input className="pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <Select value={stage} onValueChange={setStage}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Tous les stades" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tous les stades</SelectItem>
+                {Object.entries(STAGE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
+
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">Lead</th>
+                  <th className="text-left px-4 py-3 font-medium">Société</th>
+                  <th className="text-left px-4 py-3 font-medium">Contact</th>
+                  <th className="text-left px-4 py-3 font-medium">Stade</th>
+                  <th className="text-right px-4 py-3 font-medium">Valeur</th>
+                  <th className="text-left px-4 py-3 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingLeads ? (
+                  <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">Chargement...</td></tr>
+                ) : leads.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <User className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    Aucun lead trouvé
+                  </td></tr>
+                ) : leads.map(lead => (
+                  <tr key={lead.id} className="border-t hover:bg-muted/20">
+                    <td className="px-4 py-3">
+                      <Link href={`/dashboard/crm/leads/${lead.id}`} className="font-medium hover:underline">
+                        {[lead.firstName, lead.lastName].filter(Boolean).join(' ')}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{lead.company ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {lead.email && <div>{lead.email}</div>}
+                      {lead.phone && <div>{lead.phone}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STAGE_COLORS[lead.stage] ?? ''}`}>
+                        {STAGE_LABELS[lead.stage] ?? lead.stage}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono da-amount">
+                      {lead.expectedValue ? formatDA(Number(lead.expectedValue)) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {new Date(lead.createdAt).toLocaleDateString('fr-DZ')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalLeadPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{totalLeads} lead{totalLeads > 1 ? 's' : ''}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={pageLeads <= 1} onClick={() => setPageLeads(p => p - 1)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm py-1.5 px-3 border rounded-md">{pageLeads} / {totalLeadPages}</span>
+                <Button variant="outline" size="sm" disabled={pageLeads >= totalLeadPages} onClick={() => setPageLeads(p => p + 1)}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* CLIENTS TAB */}
+      {tab === 'clients' && (
+        <>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Nom, téléphone, email..."
+              value={clientSearch}
+              onChange={e => { setClientSearch(e.target.value); setPageClients(1) }}
+            />
+          </div>
+
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">Client</th>
+                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Contact</th>
+                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Wilaya</th>
+                  <th className="text-left px-4 py-3 font-medium">Depuis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingClients ? (
+                  <tr><td colSpan={4} className="text-center py-12 text-muted-foreground">Chargement...</td></tr>
+                ) : clients.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center py-12 text-muted-foreground">
+                    <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p>Aucun client trouvé</p>
+                    <p className="text-xs mt-1">Les clients créés dans Ventes, POS, Abonnements ou E-commerce apparaissent ici.</p>
+                  </td></tr>
+                ) : clients.map(client => (
+                  <tr key={client.id} className="border-t hover:bg-muted/20">
+                    <td className="px-4 py-3">
+                      <Link href={`/dashboard/clients/${client.id}`} className="font-medium hover:underline">
+                        {[client.firstName, client.name].filter(Boolean).join(' ')}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs hidden md:table-cell">
+                      {client.email && (
+                        <div className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />{client.email}
+                        </div>
+                      )}
+                      {client.phone && (
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-3 h-3" />{client.phone}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
+                      {client.wilaya ? (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />{client.wilaya}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {new Date(client.createdAt).toLocaleDateString('fr-DZ')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalClientPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{totalClients} client{totalClients > 1 ? 's' : ''}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={pageClients <= 1} onClick={() => setPageClients(p => p - 1)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm py-1.5 px-3 border rounded-md">{pageClients} / {totalClientPages}</span>
+                <Button variant="outline" size="sm" disabled={pageClients >= totalClientPages} onClick={() => setPageClients(p => p + 1)}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

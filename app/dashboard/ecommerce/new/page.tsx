@@ -1,15 +1,17 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Loader2, Package, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDA } from '@/lib/algerian/format'
 
+type Product = { id: string; name: string; sku: string | null; unitPrice: number; stockQty: number; unit: string | null }
 type DeliveryOption = { id: string; name: string; price: number }
 type DeliveryCompany = { id: string; name: string; slug: string; isDefault: boolean; deliveryOptions: DeliveryOption[] }
 type Driver = { id: string; name: string; phone: string }
@@ -20,14 +22,22 @@ const WILAYAS = [
   'Skikda','Sidi Bel Abbès','Annaba','Guelma','Constantine','Médéa','Mostaganem','MSila','Mascara','Ouargla',
   'Oran','El Bayadh','Illizi','Bordj Bou Arréridj','Boumerdès','El Tarf','Tindouf','Tissemsilt','El Oued','Khenchela',
   'Souk Ahras','Tipaza','Mila','Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane',
-  'Timimoun','Bordj Badji Mokhtar','Ouled Djellal','Béni Abbès','In Salah','In Guezzam','Touggourt','Djanet','El M\'Ghair','El Meniaa',
+  'Timimoun','Bordj Badji Mokhtar','Ouled Djellal','Béni Abbès','In Salah','In Guezzam','Touggourt','Djanet',"El M'Ghair",'El Meniaa',
 ]
 
 export default function NewOrderPage() {
   const router = useRouter()
-  const [submitting, setSubmitting] = useState(false)
-  const [companies, setCompanies]   = useState<DeliveryCompany[]>([])
-  const [drivers, setDrivers]       = useState<Driver[]>([])
+  const [submitting, setSubmitting]   = useState(false)
+  const [companies, setCompanies]     = useState<DeliveryCompany[]>([])
+  const [drivers, setDrivers]         = useState<Driver[]>([])
+
+  // Product picker state
+  const [productSearch, setProductSearch] = useState('')
+  const [products, setProducts]           = useState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [loadingProducts, setLoadingProducts] = useState(false)
+  const [showDropdown, setShowDropdown]   = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
   const [form, setForm] = useState({
     customerName:       '',
@@ -60,16 +70,59 @@ export default function NewOrderPage() {
     }).catch(() => {})
   }, [])
 
+  // Product search debounce
+  useEffect(() => {
+    if (!productSearch || selectedProduct) return
+    const timer = setTimeout(async () => {
+      setLoadingProducts(true)
+      try {
+        const res = await fetch(`/api/pos/products?q=${encodeURIComponent(productSearch)}`)
+        const data = await res.json()
+        setProducts(data.data ?? [])
+        setShowDropdown(true)
+      } catch { /**/ }
+      setLoadingProducts(false)
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [productSearch, selectedProduct])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function selectProduct(p: Product) {
+    setSelectedProduct(p)
+    setProductSearch(p.name)
+    setShowDropdown(false)
+    setForm(f => ({
+      ...f,
+      productDescription: p.name,
+      productPrice: String(Number(p.unitPrice)),
+    }))
+  }
+
+  function clearProduct() {
+    setSelectedProduct(null)
+    setProductSearch('')
+    setProducts([])
+    setForm(f => ({ ...f, productDescription: '', productPrice: '' }))
+  }
+
   function set(field: string, value: string) {
     setForm(prev => {
       const next = { ...prev, [field]: value }
-      // Auto-fill delivery fee when option changes
       if (field === 'deliveryOptionId') {
         const company = companies.find(c => c.id === next.deliveryCompanyId)
         const option  = company?.deliveryOptions.find(o => o.id === value)
         if (option) next.deliveryFee = String(option.price)
       }
-      // Reset option when company changes
       if (field === 'deliveryCompanyId') {
         next.deliveryOptionId = ''
         next.deliveryFee = '0'
@@ -86,6 +139,7 @@ export default function NewOrderPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.productDescription) { toast.error('Produit requis'); return }
     setSubmitting(true)
     try {
       const res = await fetch('/api/ecommerce/orders', {
@@ -160,10 +214,8 @@ export default function NewOrderPage() {
             <div className="space-y-1.5">
               <Label>Wilaya *</Label>
               <select
-                value={form.customerWilaya}
-                onChange={e => set('customerWilaya', e.target.value)}
-                required
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={form.customerWilaya} onChange={e => set('customerWilaya', e.target.value)} required
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">Sélectionner...</option>
                 {WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
@@ -176,21 +228,101 @@ export default function NewOrderPage() {
           </CardContent>
         </Card>
 
-        {/* Product */}
+        {/* Product — from stock or manual */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Produit</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Description *</Label>
-              <Input value={form.productDescription} onChange={e => set('productDescription', e.target.value)} required placeholder="Description du produit" />
-            </div>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Produit
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Product search */}
             <div className="space-y-1.5">
-              <Label>Prix unitaire (DA) *</Label>
-              <Input value={form.productPrice} onChange={e => set('productPrice', e.target.value)} required type="number" min="0" step="0.01" placeholder="0" />
+              <Label>Rechercher dans le stock</Label>
+              <div className="relative" ref={searchRef}>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9 pr-8"
+                  placeholder="Nom ou SKU du produit..."
+                  value={productSearch}
+                  onChange={e => {
+                    setProductSearch(e.target.value)
+                    if (selectedProduct) clearProduct()
+                  }}
+                  onFocus={() => { if (products.length > 0) setShowDropdown(true) }}
+                />
+                {productSearch && (
+                  <button type="button" onClick={clearProduct} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {/* Dropdown */}
+                {showDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                    {loadingProducts ? (
+                      <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />Recherche...
+                      </div>
+                    ) : products.length === 0 ? (
+                      <div className="p-3 text-sm text-muted-foreground">Aucun produit trouvé</div>
+                    ) : (
+                      <ul className="max-h-52 overflow-y-auto">
+                        {products.map(p => (
+                          <li key={p.id}>
+                            <button
+                              type="button"
+                              onClick={() => selectProduct(p)}
+                              className="w-full text-left px-4 py-2.5 hover:bg-muted transition-colors flex items-center justify-between gap-3"
+                            >
+                              <div>
+                                <p className="text-sm font-medium">{p.name}</p>
+                                {p.sku && <p className="text-xs text-muted-foreground">SKU: {p.sku}</p>}
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-semibold da-amount">{formatDA(Number(p.unitPrice))}</p>
+                                <Badge variant={p.stockQty > 0 ? 'success' : 'destructive'} className="text-xs">
+                                  Stock: {p.stockQty} {p.unit ?? ''}
+                                </Badge>
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+              {selectedProduct && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                  <Package className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-medium flex-1">{selectedProduct.name}</span>
+                  <Badge variant={selectedProduct.stockQty > 0 ? 'success' : 'destructive'} className="text-xs">
+                    {selectedProduct.stockQty} en stock
+                  </Badge>
+                </div>
+              )}
             </div>
-            <div className="space-y-1.5">
-              <Label>Quantité *</Label>
-              <Input value={form.quantity} onChange={e => set('quantity', e.target.value)} required type="number" min="1" step="1" placeholder="1" />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Description / libellé *</Label>
+                <Input
+                  value={form.productDescription}
+                  onChange={e => set('productDescription', e.target.value)}
+                  required
+                  placeholder="Description affichée sur le bon de livraison"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prix unitaire (DA) *</Label>
+                <Input value={form.productPrice} onChange={e => set('productPrice', e.target.value)} required type="number" min="0" step="0.01" placeholder="0" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Quantité *</Label>
+                <Input value={form.quantity} onChange={e => set('quantity', e.target.value)} required type="number" min="1" step="1" placeholder="1" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -202,44 +334,33 @@ export default function NewOrderPage() {
             <div className="space-y-1.5">
               <Label>Société de livraison</Label>
               <select
-                value={form.deliveryCompanyId}
-                onChange={e => set('deliveryCompanyId', e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={form.deliveryCompanyId} onChange={e => set('deliveryCompanyId', e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">Aucune</option>
-                {companies.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}{c.isDefault ? ' (par défaut)' : ''}
-                  </option>
-                ))}
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}{c.isDefault ? ' (par défaut)' : ''}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
               <Label>Type de livraison</Label>
               <select
-                value={form.deliveryOptionId}
-                onChange={e => set('deliveryOptionId', e.target.value)}
+                value={form.deliveryOptionId} onChange={e => set('deliveryOptionId', e.target.value)}
                 disabled={!selectedCompany || selectedCompany.deliveryOptions.length === 0}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
               >
                 <option value="">Aucun</option>
-                {selectedCompany?.deliveryOptions.map(o => (
-                  <option key={o.id} value={o.id}>{o.name} — {o.price} DA</option>
-                ))}
+                {selectedCompany?.deliveryOptions.map(o => <option key={o.id} value={o.id}>{o.name} — {o.price} DA</option>)}
               </select>
             </div>
             {selectedCompany?.slug === 'MANUAL' && (
               <div className="space-y-1.5">
                 <Label>Livreur indépendant</Label>
                 <select
-                  value={form.deliveryDriverId}
-                  onChange={e => set('deliveryDriverId', e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={form.deliveryDriverId} onChange={e => set('deliveryDriverId', e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="">Aucun</option>
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>{d.name} — {d.phone}</option>
-                  ))}
+                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name} — {d.phone}</option>)}
                 </select>
               </div>
             )}
@@ -258,7 +379,7 @@ export default function NewOrderPage() {
         <div className="border rounded-xl p-4 bg-muted/30 space-y-2">
           <h3 className="font-semibold text-sm">Récapitulatif</h3>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Produit ({qty} x {price} DA)</span>
+            <span className="text-muted-foreground">Produit ({qty} × {price} DA)</span>
             <span className="da-amount">{formatDA(price * qty)}</span>
           </div>
           <div className="flex justify-between text-sm">
