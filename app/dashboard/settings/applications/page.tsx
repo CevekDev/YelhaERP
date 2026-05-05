@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header'
 import { Switch } from '@/components/ui/switch'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calculator, UserCheck, Briefcase, Factory, Users, ShoppingCart, ShoppingBag, Loader2 } from 'lucide-react'
+import { Calculator, UserCheck, Briefcase, Factory, Users, ShoppingCart, ShoppingBag, RefreshCw, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const REQUIRED_MODULES = ['dashboard', 'ventes', 'achats', 'stocks']
@@ -59,6 +59,13 @@ const OPTIONAL_MODULES = [
     icon: ShoppingBag,
     color: 'bg-teal-100 text-teal-600',
     description: 'Gestion des commandes en ligne, livraison, suivi des colis',
+  },
+  {
+    id: 'abonnements',
+    label: 'Abonnements',
+    icon: RefreshCw,
+    color: 'bg-indigo-100 text-indigo-600',
+    description: 'Plans tarifaires, abonnements clients, facturation récurrente',
   },
 ]
 

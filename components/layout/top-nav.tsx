@@ -9,7 +9,7 @@ import {
   TrendingUp, Grid3X3, Search, Settings, LogOut, User,
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers,
-  Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X,
+  Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -166,6 +166,18 @@ export const MODULES = [
     subNav: [
       { label: 'Commandes', href: '/dashboard/ecommerce' },
       { label: 'Livraison', href: '/dashboard/ecommerce/delivery' },
+    ],
+  },
+  {
+    id: 'abonnements',
+    label: 'Abonnements',
+    icon: RefreshCw,
+    color: 'bg-indigo-600',
+    href: '/dashboard/subscriptions',
+    prefixes: ['/dashboard/subscriptions'],
+    subNav: [
+      { label: 'Abonnements', href: '/dashboard/subscriptions' },
+      { label: 'Plans', href: '/dashboard/subscriptions/plans' },
     ],
   },
 ] as const

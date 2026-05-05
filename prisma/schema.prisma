@@ -84,6 +84,9 @@ model Company {
   deliveryCompanies  DeliveryCompany[]
   deliveryDrivers    DeliveryDriver[]
   ecomOrders         EcomOrder[]
+  // Abonnements
+  subscriptionPlans  SubscriptionPlan[]
+  subscriptions      Subscription[]
 }
 
 enum BusinessType {
@@ -199,8 +202,9 @@ model Client {
   messages ClientMessage[]
   leads    Lead[]
   projects Project[]
-  posSales PosSale[]
-  posDebts PosDebt[]
+  posSales      PosSale[]
+  posDebts      PosDebt[]
+  subscriptions Subscription[]
 
   @@index([companyId])
   @@index([companyId, name])
@@ -1680,4 +1684,67 @@ model EcomStatusHistory {
   order EcomOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+}
+
+// ============================================================
+// ABONNEMENTS
+// ============================================================
+model SubscriptionPlan {
+  id            String      @id @default(cuid())
+  companyId     String
+  name          String
+  description   String?     @db.Text
+  price         Decimal     @db.Decimal(10, 2)
+  currency      String      @default("DZD")
+  interval      SubInterval @default(MONTHLY)
+  intervalCount Int         @default(1)
+  trialDays     Int?
+  features      String[]    @default([])
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@index([companyId])
+}
+
+model Subscription {
+  id          String     @id @default(cuid())
+  companyId   String
+  clientId    String
+  planId      String
+  status      SubStatus  @default(ACTIVE)
+  startDate   DateTime   @default(now())
+  endDate     DateTime?
+  nextBilling DateTime?
+  cancelledAt DateTime?
+  notes       String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  Client           @relation(fields: [clientId], references: [id])
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([clientId])
+}
+
+enum SubInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum SubStatus {
+  TRIAL
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
 }

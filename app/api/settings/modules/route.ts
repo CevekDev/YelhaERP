@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { getTenantContext } from '@/lib/security/tenant'
 import { apiSuccess, apiError } from '@/lib/security/api-response'
 
-const VALID_MODULES = ['dashboard', 'ventes', 'achats', 'stocks', 'compta', 'rh', 'projets', 'production', 'crm', 'pos']
+const VALID_MODULES = ['dashboard', 'ventes', 'achats', 'stocks', 'compta', 'rh', 'projets', 'production', 'crm', 'pos', 'ecommerce', 'abonnements']
 const REQUIRED_MODULES = ['dashboard', 'ventes', 'achats', 'stocks']
 
 const schema = z.object({
