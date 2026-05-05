@@ -76,6 +76,7 @@ model Company {
   stockTransfers     StockTransfer[]
   exchangeRates      ExchangeRate[]
   apiKeys            ApiKey[]
+  webhooks           Webhook[]
   // POS
   posSessions        PosSession[]
   posSales           PosSale[]
@@ -1436,12 +1437,34 @@ model ApiKey {
   lastUsedAt DateTime?
   isActive   Boolean   @default(true)
   scopes     String[]  @default(["read"])
+  mode       String    @default("live")
   createdAt  DateTime  @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([keyHash])
+}
+
+// ============================================================
+// WEBHOOKS
+// ============================================================
+model Webhook {
+  id          String   @id @default(cuid())
+  companyId   String
+  url         String
+  events      String[]
+  secret      String
+  isActive    Boolean  @default(true)
+  description String?
+  lastTriggeredAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyId, isActive])
 }
 
 // ============================================================

@@ -6,6 +6,7 @@ export interface V1Context {
   companyId: string
   plan: string
   scopes: string[]
+  mode: 'live' | 'test'
 }
 
 export function v1Error(message: string, status: number, code?: string): NextResponse {
@@ -50,13 +51,14 @@ export async function withV1Auth(
   const { success, remaining, reset } = await rateLimitByKey(ctx.keyId, limitsConfig)
   if (!success) return v1RateLimitResponse(reset, ctx.plan)
 
-  const res = await handler({ companyId: ctx.companyId, plan: ctx.plan, scopes: ctx.scopes })
+  const res = await handler({ companyId: ctx.companyId, plan: ctx.plan, scopes: ctx.scopes, mode: ctx.mode })
 
   res.headers.set('X-RateLimit-Limit', String(limitsConfig.limit))
   res.headers.set('X-RateLimit-Remaining', String(remaining))
   res.headers.set('X-RateLimit-Reset', String(reset))
   res.headers.set('X-RateLimit-Plan', ctx.plan)
   res.headers.set('X-API-Version', 'v1')
+  res.headers.set('X-Yelha-Environment', ctx.mode)
 
   return res
 }

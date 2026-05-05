@@ -7,6 +7,7 @@ export interface ApiKeyContext {
   plan: string
   keyId: string
   scopes: string[]
+  mode: 'live' | 'test'
 }
 
 export async function authenticateApiKey(req: NextRequest): Promise<ApiKeyContext | null> {
@@ -19,7 +20,7 @@ export async function authenticateApiKey(req: NextRequest): Promise<ApiKeyContex
 
   const apiKey = await prisma.apiKey.findUnique({
     where: { keyHash: hash, isActive: true },
-    include: { company: { select: { id: true, plan: true } } },
+    select: { id: true, scopes: true, mode: true, company: { select: { id: true, plan: true } } },
   })
   if (!apiKey) return null
 
@@ -31,6 +32,7 @@ export async function authenticateApiKey(req: NextRequest): Promise<ApiKeyContex
     plan: apiKey.company.plan,
     keyId: apiKey.id,
     scopes: apiKey.scopes,
+    mode: (apiKey.mode === 'test' ? 'test' : 'live') as 'live' | 'test',
   }
 }
 

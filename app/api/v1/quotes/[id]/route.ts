@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { withV1Auth, v1Success, v1Error, requireWriteScope } from '../../_auth'
 import { dispatchWebhook } from '@/lib/webhooks/dispatch'
 
-const invoiceLineSchema = z.object({
-  productId:   z.string().cuid().optional(),
+const quoteLineSchema = z.object({
+  productId:   z.string().cuid().optional().nullable(),
   description: z.string().min(1).max(500).trim(),
   quantity:    z.number().positive().max(999999),
   unitPrice:   z.number().min(0).max(99999999),
@@ -13,14 +13,14 @@ const invoiceLineSchema = z.object({
 })
 
 const updateSchema = z.object({
-  status:   z.enum(['DRAFT','SENT','PAID','PARTIAL','OVERDUE','CANCELLED']).optional(),
-  dueDate:  z.string().datetime().optional().nullable(),
-  notes:    z.string().max(2000).optional().nullable(),
-  lines:    z.array(invoiceLineSchema).min(1).max(100).optional(),
-  currency: z.string().length(3).optional(),
+  status:     z.enum(['DRAFT','SENT','ACCEPTED','REJECTED','EXPIRED']).optional(),
+  expiryDate: z.string().datetime().optional().nullable(),
+  notes:      z.string().max(2000).optional().nullable(),
+  currency:   z.string().length(3).optional(),
+  lines:      z.array(quoteLineSchema).min(1).max(100).optional(),
 })
 
-function computeTotals(lines: z.infer<typeof invoiceLineSchema>[]) {
+function computeTotals(lines: z.infer<typeof quoteLineSchema>[]) {
   let subtotal = 0
   let taxAmount = 0
   const computed = lines.map(line => {
@@ -35,16 +35,15 @@ function computeTotals(lines: z.infer<typeof invoiceLineSchema>[]) {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   return withV1Auth(req, async (ctx) => {
-    const invoice = await prisma.invoice.findFirst({
+    const quote = await prisma.quote.findFirst({
       where: { id: params.id, companyId: ctx.companyId },
       include: {
-        client:   { select: { id: true, name: true, email: true, phone: true, address: true, wilaya: true } },
-        lines:    { select: { id: true, description: true, quantity: true, unitPrice: true, taxRate: true, total: true } },
-        payments: { select: { id: true, amount: true, method: true, paidAt: true, reference: true } },
+        client: { select: { id: true, name: true, email: true, phone: true, address: true, wilaya: true } },
+        lines:  { select: { id: true, description: true, quantity: true, unitPrice: true, taxRate: true, total: true } },
       },
     })
-    if (!invoice) return v1Error('Facture introuvable', 404, 'NOT_FOUND')
-    return v1Success(invoice)
+    if (!quote) return v1Error('Devis introuvable', 404, 'NOT_FOUND')
+    return v1Success(quote)
   })
 }
 
@@ -53,9 +52,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const writeErr = requireWriteScope(ctx)
     if (writeErr) return writeErr
 
-    const existing = await prisma.invoice.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
-    if (!existing) return v1Error('Facture introuvable', 404, 'NOT_FOUND')
-    if (existing.status === 'CANCELLED') return v1Error('Impossible de modifier une facture annulée', 409, 'CONFLICT')
+    const existing = await prisma.quote.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
+    if (!existing) return v1Error('Devis introuvable', 404, 'NOT_FOUND')
+    if (existing.status === 'CONVERTED') return v1Error('Impossible de modifier un devis déjà converti', 409, 'CONFLICT')
 
     let body: unknown
     try { body = await req.json() } catch { return v1Error('Corps JSON invalide', 400, 'INVALID_BODY') }
@@ -63,7 +62,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const parsed = updateSchema.safeParse(body)
     if (!parsed.success) return v1Error('Données invalides', 422, 'VALIDATION_ERROR')
 
-    const { lines: rawLines, status, dueDate, notes, currency } = parsed.data
+    const { lines: rawLines, status, expiryDate, notes, currency } = parsed.data
 
     let lineData: Record<string, unknown> | undefined
     let subtotal: number | undefined
@@ -78,15 +77,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       lineData = { deleteMany: {}, create: computed.lines }
     }
 
-    const invoice = await prisma.invoice.update({
+    const quote = await prisma.quote.update({
       where: { id: params.id },
       data: {
-        ...(status    !== undefined && { status }),
-        ...(dueDate   !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
-        ...(notes     !== undefined && { notes }),
-        ...(currency  !== undefined && { currency }),
-        ...(subtotal  !== undefined && { subtotal, taxAmount, total }),
-        ...(lineData  !== undefined && { lines: lineData }),
+        ...(status     !== undefined && { status }),
+        ...(expiryDate !== undefined && { expiryDate: expiryDate ? new Date(expiryDate) : null }),
+        ...(notes      !== undefined && { notes }),
+        ...(currency   !== undefined && { currency }),
+        ...(subtotal   !== undefined && { subtotal, taxAmount, total }),
+        ...(lineData   !== undefined && { lines: lineData }),
       },
       include: {
         client: { select: { id: true, name: true, email: true } },
@@ -94,10 +93,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       },
     })
 
-    const event = status === 'PAID' ? 'invoice.paid' : 'invoice.updated'
-    dispatchWebhook(ctx.companyId, event, invoice as unknown as Record<string, unknown>)
+    // Fire appropriate webhook
+    if (status === 'ACCEPTED') dispatchWebhook(ctx.companyId, 'quote.accepted', quote as unknown as Record<string, unknown>)
+    else if (status === 'REJECTED') dispatchWebhook(ctx.companyId, 'quote.rejected', quote as unknown as Record<string, unknown>)
 
-    return v1Success(invoice)
+    return v1Success(quote)
   })
 }
 
@@ -106,15 +106,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const writeErr = requireWriteScope(ctx)
     if (writeErr) return writeErr
 
-    const existing = await prisma.invoice.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
-    if (!existing) return v1Error('Facture introuvable', 404, 'NOT_FOUND')
-    if (existing.status === 'PAID') return v1Error('Impossible de supprimer une facture payée', 409, 'CONFLICT')
+    const existing = await prisma.quote.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
+    if (!existing) return v1Error('Devis introuvable', 404, 'NOT_FOUND')
+    if (existing.status === 'CONVERTED') return v1Error('Impossible de supprimer un devis converti en facture', 409, 'CONFLICT')
 
-    // Soft delete: set status to CANCELLED
-    await prisma.invoice.update({
-      where: { id: params.id },
-      data:  { status: 'CANCELLED' },
-    })
+    await prisma.quote.delete({ where: { id: params.id } })
 
     return v1Success({ id: params.id, deleted: true })
   })
