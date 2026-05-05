@@ -10,7 +10,8 @@ import { useT } from '@/lib/i18n'
 import type { Locale } from '@/lib/i18n/translations'
 import { signOut, useSession } from 'next-auth/react'
 import { toast } from 'sonner'
-import { Loader2, LogOut } from 'lucide-react'
+import { Loader2, LogOut, Sun, Moon } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 interface UserProfile {
   id: string
@@ -30,6 +31,9 @@ const LANGS: { code: Locale; label: string; flag: string }[] = [
 export default function ProfilePage() {
   const { locale, setLocale } = useT()
   const { data: session } = useSession()
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -159,23 +163,58 @@ export default function ProfilePage() {
         {/* Language preference */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="font-semibold mb-4">Langue d&apos;interface</h2>
+            <h2 className="font-semibold mb-1">Langue d&apos;interface</h2>
+            <p className="text-xs text-muted-foreground mb-4">Choisissez la langue d&apos;affichage de l&apos;application.</p>
             <div className="flex gap-2 flex-wrap">
               {LANGS.map(l => (
                 <button
                   key={l.code}
                   onClick={() => setLocale(l.code)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
                     locale === l.code
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border hover:border-muted-foreground'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border hover:border-muted-foreground hover:bg-muted'
                   }`}
                 >
-                  <span>{l.flag}</span>
+                  <span className="text-base">{l.flag}</span>
                   <span>{l.label}</span>
                 </button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Theme preference */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="font-semibold mb-1">Apparence</h2>
+            <p className="text-xs text-muted-foreground mb-4">Choisissez le thème clair ou sombre.</p>
+            {mounted && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                    resolvedTheme === 'light'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border hover:border-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Sun className="h-4 w-4" />
+                  Clair
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                    resolvedTheme === 'dark'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border hover:border-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Moon className="h-4 w-4" />
+                  Sombre
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

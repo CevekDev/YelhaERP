@@ -4,13 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
-import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import {
-  TrendingUp, Grid3X3, Search, Sun, Moon, Settings, LogOut, User,
+  TrendingUp, Grid3X3, Search, Settings, LogOut, User,
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
-  Bot, Bell, Factory, Briefcase, UserCheck, Layers, Globe,
-  Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, Check,
+  Bot, Bell, Factory, Briefcase, UserCheck, Layers,
+  Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,8 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { MobileSidebarTrigger } from '@/components/layout/sidebar'
-import { useT } from '@/lib/i18n'
-import type { Locale } from '@/lib/i18n/translations'
+
 
 // ── Module definitions ──────────────────────────────────────
 export const MODULES = [
@@ -303,50 +301,11 @@ function AppsMenu() {
   )
 }
 
-// ── Language Menu ────────────────────────────────────────────
-const LANGS: { code: Locale; label: string; flag: string }[] = [
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ar', label: 'العربية', flag: '🇩🇿' },
-]
-
-function LangMenu() {
-  const { locale, setLocale } = useT()
-  const current = LANGS.find(l => l.code === locale) ?? LANGS[0]
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-1 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors h-8">
-          <Globe className="h-4 w-4" />
-          <span className="text-xs font-medium hidden lg:inline">{current.code.toUpperCase()}</span>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        {LANGS.map(l => (
-          <DropdownMenuItem
-            key={l.code}
-            onClick={() => setLocale(l.code)}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <span>{l.flag}</span>
-            <span className="flex-1">{l.label}</span>
-            {locale === l.code && <Check className="h-3 w-3 text-primary" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
 // ── Top Navbar ───────────────────────────────────────────────
 export function TopNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
   const [activeModules, setActiveModules] = useState<string[]>(['dashboard', 'ventes', 'achats', 'stocks'])
-
-  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (session?.user) {
@@ -409,18 +368,6 @@ export function TopNav() {
 
         {/* Right side — always visible */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
-
-          <LangMenu />
-
-          <Button
-            variant="ghost" size="icon"
-            className="text-muted-foreground hover:text-foreground h-8 w-8"
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-          >
-            {mounted
-              ? (resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />)
-              : <Moon className="h-4 w-4" />}
-          </Button>
 
           <NotificationBell />
 
