@@ -16,6 +16,7 @@ import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Play, UserPlus, Users } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Employee { id: string; firstName: string; lastName: string; position?: string; baseSalary: number; isActive: boolean }
 interface PayrollEntry { id: string; month: number; year: number; netSalary: number; grossSalary: number; cnasEmployee: number; cnasEmployer: number; irg: number; isPaid: boolean; employee: { firstName: string; lastName: string } }
@@ -140,7 +141,7 @@ export default function PayrollPage() {
           <TabsContent value="employees">
             <Card>
               <div className="p-4 border-b flex justify-end">
-                <Button variant="outline" size="sm" onClick={() => setOpenEmp(true)} className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => setOpenEmp(true)} className="gap-2" data-tutorial="new-employee">
                   <UserPlus className="h-4 w-4" />{t('pages.payroll_new_employee')}
                 </Button>
               </div>
@@ -171,6 +172,7 @@ export default function PayrollPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="payroll" />
     </div>
   )
 }

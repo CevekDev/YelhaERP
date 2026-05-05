@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Movement {
   id: string; type: string; quantity: number; unitCost?: number; reference?: string; createdAt: string
@@ -70,7 +71,7 @@ export default function StockPage() {
     <div>
       <Header title="Stock" />
       <div className="p-4 md:p-6">
-        <PageHeader title="Mouvements de stock" description={`${total} mouvement${total > 1 ? 's' : ''}`} actionLabel="Nouveau mouvement" onAction={() => setOpen(true)} />
+        <PageHeader title="Mouvements de stock" description={`${total} mouvement${total > 1 ? 's' : ''}`} actionLabel="Nouveau mouvement" onAction={() => setOpen(true)} actionDataTutorial="new-movement" />
         <Card>
           <CardContent className="p-0">
             <DataTable data={movements as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading} emptyText="Aucun mouvement de stock" />
@@ -92,7 +93,7 @@ export default function StockPage() {
               <div className="space-y-2">
                 <Label>Type</Label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({...f, type: v}))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger data-tutorial="stock-filter"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="IN">Entrée</SelectItem>
                     <SelectItem value="OUT">Sortie</SelectItem>
@@ -111,6 +112,7 @@ export default function StockPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="stock" />
     </div>
   )
 }

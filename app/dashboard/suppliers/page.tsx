@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WILAYAS_LIST } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Truck } from 'lucide-react'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Supplier { id: string; name: string; email?: string; phone?: string; nif?: string; wilaya?: string }
 
@@ -58,7 +59,7 @@ export default function SuppliersPage() {
     <div>
       <Header title="Fournisseurs" />
       <div className="p-4 md:p-6">
-        <PageHeader title="Fournisseurs" description={`${total} fournisseur${total > 1 ? 's' : ''}`} actionLabel="Nouveau fournisseur" onAction={() => setOpen(true)} />
+        <PageHeader title="Fournisseurs" description={`${total} fournisseur${total > 1 ? 's' : ''}`} actionLabel="Nouveau fournisseur" onAction={() => setOpen(true)} actionDataTutorial="new-supplier" />
         <Card>
           <div className="p-4 border-b"><SearchInput placeholder="Rechercher..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
@@ -91,6 +92,7 @@ export default function SuppliersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="suppliers" />
     </div>
   )
 }

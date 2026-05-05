@@ -14,6 +14,7 @@ import {
   Eye, ChevronDown, Loader2, AlertCircle, Phone, MapPin
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   PENDING:          { label: 'En attente',       color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',      icon: Clock },
@@ -109,7 +110,7 @@ export default function EcomOrdersPage() {
           <Button variant="outline" size="sm" asChild>
             <Link href="/dashboard/ecommerce/delivery">Livraison</Link>
           </Button>
-          <Button asChild>
+          <Button asChild data-tutorial="new-order">
             <Link href="/dashboard/ecommerce/new">
               <Plus className="h-4 w-4 mr-2" />Nouvelle commande
             </Link>
@@ -118,7 +119,7 @@ export default function EcomOrdersPage() {
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide" data-tutorial="order-status">
         <button
           onClick={() => { setStatus('ALL'); setPage(1) }}
           className={cn(
@@ -292,6 +293,7 @@ export default function EcomOrdersPage() {
           )}
         </div>
       )}
+      <TutorialOverlay pageKey="ecommerce" />
     </div>
   )
 }

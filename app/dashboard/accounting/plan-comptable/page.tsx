@@ -140,7 +140,7 @@ export default function PlanComptablePage() {
         <Select value={classFilter} onValueChange={setClassFilter}>
           <SelectTrigger className="w-52"><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Toutes les classes</SelectItem>
+            <SelectItem value="ALL">Toutes les classes</SelectItem>
             {[1,2,3,4,5,6,7].map(c => <SelectItem key={c} value={String(c)}>Classe {c}</SelectItem>)}
           </SelectContent>
         </Select>

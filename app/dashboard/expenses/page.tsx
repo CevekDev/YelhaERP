@@ -15,6 +15,7 @@ import { formatDA } from '@/lib/algerian/format'
 import { EXPENSE_ACCOUNTS } from '@/lib/algerian/expense-accounts'
 import { toast } from 'sonner'
 import { Plus, Loader2, CheckCircle, XCircle, Download } from 'lucide-react'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Expense {
   id: string; category: string; description: string; amount: number
@@ -182,7 +183,7 @@ export default function ExpensesPage() {
               </SelectContent>
             </Select>
             <div className="flex-1" />
-            <Button className="gap-2" onClick={() => setShowForm(true)}>
+            <Button className="gap-2" onClick={() => setShowForm(true)} data-tutorial="new-expense">
               <Plus className="h-4 w-4" />Nouvelle dépense
             </Button>
           </div>
@@ -245,6 +246,7 @@ export default function ExpensesPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="expenses" />
     </div>
   )
 }

@@ -12,6 +12,7 @@ import { StatCard } from '@/components/ui/stat-card'
 import { formatDA } from '@/lib/algerian/format'
 import { Plus, User, Building2, Euro } from 'lucide-react'
 import Link from 'next/link'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Lead {
   id: string
@@ -107,7 +108,7 @@ export default function PipelinePage() {
         <h1 className="text-2xl font-bold">Pipeline Commercial</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />Nouveau lead</Button>
+            <Button data-tutorial="new-lead"><Plus className="w-4 h-4 mr-2" />Nouveau lead</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nouveau lead</DialogTitle></DialogHeader>
@@ -220,6 +221,7 @@ export default function PipelinePage() {
           </div>
         ))}
       </div>
+      <TutorialOverlay pageKey="crm" />
     </div>
   )
 }

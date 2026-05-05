@@ -12,6 +12,7 @@ import { formatDA } from '@/lib/algerian/format'
 import { Eye, Plus, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Quote {
   id: string; number: string; status: string; issueDate: string; expiryDate?: string
@@ -94,7 +95,7 @@ export default function QuotesPage() {
         <Card>
           <div className="p-4 border-b flex items-center gap-3">
             <Select value={status} onValueChange={v => { setStatus(v); setPage(1) }}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-40" data-tutorial="quote-status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tous les statuts</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([k, v]) => (
@@ -103,7 +104,7 @@ export default function QuotesPage() {
               </SelectContent>
             </Select>
             <div className="flex-1" />
-            <Link href="/dashboard/quotes/new">
+            <Link href="/dashboard/quotes/new" data-tutorial="new-quote">
               <Button className="gap-2"><Plus className="h-4 w-4" />Nouveau devis</Button>
             </Link>
           </div>
@@ -118,6 +119,7 @@ export default function QuotesPage() {
           </CardContent>
         </Card>
       </div>
+      <TutorialOverlay pageKey="quotes" />
     </div>
   )
 }

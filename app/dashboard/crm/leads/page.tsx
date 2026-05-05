@@ -52,7 +52,7 @@ export default function LeadsPage() {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), limit: String(limit) })
     if (search) params.set('search', search)
-    if (stage) params.set('stage', stage)
+    if (stage && stage !== 'ALL') params.set('stage', stage)
     const res = await fetch(`/api/crm/leads?${params}`)
     const data = await res.json()
     setLeads(data.data?.leads ?? [])
@@ -83,7 +83,7 @@ export default function LeadsPage() {
         <Select value={stage} onValueChange={setStage}>
           <SelectTrigger className="w-44"><SelectValue placeholder="Tous les stades" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tous les stades</SelectItem>
+            <SelectItem value="ALL">Tous les stades</SelectItem>
             {Object.entries(STAGE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectContent>
         </Select>

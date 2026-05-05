@@ -15,6 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 // Types
 type Product = {
@@ -131,7 +132,22 @@ export default function POSPage() {
         body: JSON.stringify({ openingCash: Number(openingCash) || 0, resetInterval }),
       })
       const data = await res.json()
-      if (!res.ok) { toast.error(data.message ?? 'Erreur'); return }
+      if (res.status === 409) {
+        // Session already open — just use it
+        const existing = data.data ?? data.session
+        if (existing) {
+          setSession(existing)
+          setShowOpenSession(false)
+          fetchProducts('')
+          toast.info('Session de caisse déjà ouverte — reprise en cours.')
+        } else {
+          // Re-fetch to get the open session
+          await fetchSession()
+          setShowOpenSession(false)
+        }
+        return
+      }
+      if (!res.ok) { toast.error(data.message ?? data.error ?? 'Erreur'); return }
       setSession(data.data)
       setShowOpenSession(false)
       fetchProducts('')
@@ -450,7 +466,7 @@ export default function POSPage() {
           {/* Payment panel */}
           <div className="border-t p-4 space-y-3">
             {/* Method tabs */}
-            <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted p-1">
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted p-1" data-tutorial="payment-methods">
               {(['CASH', 'DEBT'] as PayMethod[]).map(m => (
                 <button
                   key={m}
@@ -578,7 +594,7 @@ export default function POSPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={openSession} disabled={openingSession} className="w-full h-11">
+            <Button onClick={openSession} disabled={openingSession} className="w-full h-11" data-tutorial="open-session">
               {openingSession
                 ? <Loader2 className="h-4 w-4 animate-spin" />
                 : <><Unlock className="h-4 w-4 mr-2" />Ouvrir la caisse</>
@@ -671,6 +687,7 @@ export default function POSPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TutorialOverlay pageKey="pos" />
     </div>
   )
 }

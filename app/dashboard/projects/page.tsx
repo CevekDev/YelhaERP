@@ -14,6 +14,7 @@ import { StatCard } from '@/components/ui/stat-card'
 import { formatDA } from '@/lib/algerian/format'
 import { Plus, FolderOpen, CheckSquare, Clock } from 'lucide-react'
 import Link from 'next/link'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 interface Client { id: string; name: string }
 interface Project {
@@ -54,7 +55,7 @@ export default function ProjectsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
-        clientId: form.clientId || undefined,
+        clientId: form.clientId === 'none' ? undefined : form.clientId || undefined,
         budget: form.budget ? Number(form.budget) : undefined,
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
@@ -77,7 +78,7 @@ export default function ProjectsPage() {
         <h1 className="text-2xl font-bold">Projets</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />Nouveau projet</Button>
+            <Button data-tutorial="new-project"><Plus className="w-4 h-4 mr-2" />Nouveau projet</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Créer un projet</DialogTitle></DialogHeader>
@@ -91,7 +92,7 @@ export default function ProjectsPage() {
                 <Select value={form.clientId} onValueChange={v => setForm(f => ({ ...f, clientId: v }))}>
                   <SelectTrigger><SelectValue placeholder="Aucun client" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun client</SelectItem>
+                    <SelectItem value="none">Aucun client</SelectItem>
                     {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -162,6 +163,7 @@ export default function ProjectsPage() {
           ))}
         </div>
       )}
+      <TutorialOverlay pageKey="projects" />
     </div>
   )
 }

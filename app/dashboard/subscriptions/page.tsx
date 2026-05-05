@@ -12,6 +12,7 @@ import { formatDA } from '@/lib/algerian/format'
 import { Plus, RefreshCw, Pause, XCircle, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 const STATUS_LABELS: Record<string, string> = {
   TRIAL: 'Essai', ACTIVE: 'Actif', PAUSED: 'Pausé', CANCELLED: 'Annulé', EXPIRED: 'Expiré',
@@ -154,10 +155,10 @@ export default function SubscriptionsPage() {
               ))}
             </div>
             <div className="flex-1" />
-            <Link href="/dashboard/subscriptions/plans">
+            <Link href="/dashboard/subscriptions/plans" data-tutorial="manage-plans">
               <Button variant="outline" className="gap-2"><Users className="h-4 w-4" />Plans</Button>
             </Link>
-            <Link href="/dashboard/subscriptions/new">
+            <Link href="/dashboard/subscriptions/new" data-tutorial="new-sub">
               <Button className="gap-2"><Plus className="h-4 w-4" />Nouvel abonnement</Button>
             </Link>
           </div>
@@ -175,6 +176,7 @@ export default function SubscriptionsPage() {
           </CardContent>
         </Card>
       </div>
+      <TutorialOverlay pageKey="subscriptions" />
     </div>
   )
 }

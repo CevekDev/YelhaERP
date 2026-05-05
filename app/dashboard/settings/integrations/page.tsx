@@ -157,7 +157,7 @@ export default function IntegrationsSettingsPage() {
           {/* URL de base */}
           <div className="bg-muted/40 rounded-lg p-3 font-mono text-sm flex items-center justify-between gap-2">
             <span className="text-muted-foreground">Base URL :</span>
-            <span className="font-semibold">{process.env.NEXT_PUBLIC_APP_URL ?? 'https://yelhaerp.vercel.app'}/api/v1</span>
+            <span className="font-semibold">{process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'}/api/v1</span>
           </div>
 
           {/* Revealed key banner */}
