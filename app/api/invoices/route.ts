@@ -6,6 +6,15 @@ import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { createInvoiceSchema, invoiceQuerySchema } from '@/lib/validations/invoice'
 import { generateInvoiceNumber } from '@/lib/algerian/format'
 
+async function nextInvoiceNumber(companyId: string, prefix: string): Promise<string> {
+  const seq = await prisma.invoiceSequence.upsert({
+    where: { companyId_prefix: { companyId, prefix } },
+    update: { seq: { increment: 1 } },
+    create: { companyId, prefix, seq: 1 },
+  })
+  return generateInvoiceNumber(prefix, seq.seq)
+}
+
 export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
@@ -68,10 +77,9 @@ export async function POST(req: NextRequest) {
     })
     if (!client) return apiError('Client introuvable', 404)
 
-    // Générer le numéro de facture
-    const count = await prisma.invoice.count({ where: { companyId: ctx.companyId } })
+    // Générer le numéro de facture (séquence atomique par préfixe)
     const prefix = parsed.data.type === 'CREDIT_NOTE' ? 'AV' : 'FAC'
-    const number = generateInvoiceNumber(prefix, count + 1)
+    const number = await nextInvoiceNumber(ctx.companyId, prefix)
 
     // Calculer les totaux
     let subtotal = 0

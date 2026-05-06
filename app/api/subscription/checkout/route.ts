@@ -7,6 +7,7 @@ import { z } from 'zod'
 const schema = z.object({
   plan:   z.enum(['STARTER', 'PRO', 'AGENCY']),
   months: z.number().int().min(1).max(12).default(1),
+  locale: z.enum(['fr', 'ar', 'en']).default('ar'),
 })
 
 const PLAN_PRICES: Record<string, number> = {
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return apiError('Plan ou durée invalide', 400)
 
-    const { plan, months } = parsed.data
+    const { plan, months, locale } = parsed.data
     const basePrice = PLAN_PRICES[plan]
     const discount = DISCOUNTS[months] ?? 0
     const amount = Math.round(basePrice * months * (1 - discount))
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       failure_url: `${appUrl}/dashboard/settings/billing?error=1`,
       webhook_url: `${appUrl}/api/webhooks/chargily`,
       description: `Abonnement YelhaERP — Plan ${plan} × ${months} mois${discount > 0 ? ` (−${discount * 100}%)` : ''}`,
-      locale: 'ar',
+      locale,
       metadata: {
         type:       'subscription',
         company_id: ctx.companyId,

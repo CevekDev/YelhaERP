@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
 
-  let event: { type: string; data: { metadata?: Record<string, string> } }
+  let event: { type: string; data: { metadata?: Record<string, string>; amount?: number } }
   try {
     event = JSON.parse(payload)
   } catch {
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.paid') {
     const meta = event.data?.metadata ?? {}
 
+    // ── Subscription upgrade ─────────────────────────────────
     if (meta.type === 'subscription' && meta.company_id && meta.plan) {
       const VALID_PLANS = new Set(['STARTER', 'PRO', 'AGENCY'])
       const VALID_MONTHS = new Set([1, 2, 3, 6, 12])
@@ -48,7 +49,51 @@ export async function POST(req: NextRequest) {
           plan: meta.plan as 'STARTER' | 'PRO' | 'AGENCY',
           trialEndsAt: null,
         },
-      }).catch(() => null)
+      }).catch((e) => console.error('[webhook] company update error:', e))
+    }
+
+    // ── Invoice payment ───────────────────────────────────────
+    if (meta.invoice_id) {
+      try {
+        const invoice = await prisma.invoice.findUnique({
+          where: { id: meta.invoice_id },
+          select: { id: true, total: true, status: true, companyId: true, number: true },
+        })
+
+        if (!invoice || invoice.status === 'PAID') {
+          return NextResponse.json({ received: true }, { status: 200 })
+        }
+
+        const paidAmount = Number(event.data?.amount ?? invoice.total)
+
+        await prisma.$transaction(async (tx) => {
+          await tx.invoicePayment.create({
+            data: {
+              invoiceId: invoice.id,
+              amount: paidAmount,
+              method: 'CHARGILY_EDAHABIA',
+              paidAt: new Date(),
+              reference: `chargily-${Date.now()}`,
+            },
+          })
+
+          const totalPaid = await tx.invoicePayment.aggregate({
+            where: { invoiceId: invoice.id },
+            _sum: { amount: true },
+          })
+          const sumPaid = Number(totalPaid._sum.amount ?? 0)
+          const invoiceTotal = Number(invoice.total)
+
+          const newStatus = sumPaid >= invoiceTotal ? 'PAID' : 'PARTIAL'
+
+          await tx.invoice.update({
+            where: { id: invoice.id },
+            data: { status: newStatus },
+          })
+        })
+      } catch (e) {
+        console.error('[webhook] invoice payment error:', e)
+      }
     }
   }
 

@@ -29,7 +29,13 @@ export async function GET(req: NextRequest) {
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        select: { id: true, name: true, sku: true, unitPrice: true, taxRate: true, stockQty: true, stockAlert: true, unit: true },
+        select: {
+          id: true, name: true, sku: true, barcode: true, unitPrice: true,
+          taxRate: true, stockQty: true, stockAlert: true, unit: true,
+          weight: true, dimensions: true, format: true, isFragile: true,
+          description: true,
+          variants: { select: { id: true, name: true, size: true, color: true, barcode: true, stockQty: true, priceOverride: true, sku: true }, where: { isActive: true } },
+        },
         orderBy: { name: 'asc' },
         take: limit,
         skip: (page - 1) * limit,

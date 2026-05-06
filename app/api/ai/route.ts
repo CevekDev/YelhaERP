@@ -30,8 +30,6 @@ export async function POST(req: NextRequest) {
     const resetDate = new Date(company.aiQuotaReset)
     const needsReset = now.getMonth() !== resetDate.getMonth() || now.getFullYear() !== resetDate.getFullYear()
     const quota = AI_QUOTAS[company.plan] ?? 30
-    const currentUsage = needsReset ? 0 : company.aiQuotaUsed
-    if (currentUsage >= quota) return apiError('Quota IA mensuel atteint. Passez à un plan supérieur.', 429)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
@@ -108,10 +106,26 @@ Ne jamais inventer de données non fournies — indique clairement ce que tu ne 
 
     if (!process.env.DEEPSEEK_API_KEY) return apiError('Service IA non configuré', 503)
 
-    await prisma.company.update({
-      where: { id: ctx.companyId },
-      data: { aiQuotaUsed: needsReset ? 1 : { increment: 1 }, ...(needsReset && { aiQuotaReset: now }) },
-    })
+    // Atomic quota check + increment — prevents race conditions under concurrent requests
+    if (quota !== Infinity) {
+      if (needsReset) {
+        await prisma.company.update({
+          where: { id: ctx.companyId },
+          data: { aiQuotaUsed: 1, aiQuotaReset: now },
+        })
+      } else {
+        const updated = await prisma.company.updateMany({
+          where: { id: ctx.companyId, aiQuotaUsed: { lt: quota } },
+          data: { aiQuotaUsed: { increment: 1 } },
+        })
+        if (updated.count === 0) return apiError('Quota IA mensuel atteint. Passez à un plan supérieur.', 429)
+      }
+    } else {
+      await prisma.company.update({
+        where: { id: ctx.companyId },
+        data: { aiQuotaUsed: needsReset ? 1 : { increment: 1 }, ...(needsReset && { aiQuotaReset: now }) },
+      })
+    }
 
     const response = await fetch(`${process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com'}/chat/completions`, {
       method: 'POST',

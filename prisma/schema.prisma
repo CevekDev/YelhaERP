@@ -78,6 +78,7 @@ model Company {
   apiKeys            ApiKey[]
   webhooks           Webhook[]
   // POS
+  posRegisters       PosRegister[]
   posSessions        PosSession[]
   posSales           PosSale[]
   posDebts           PosDebt[]
@@ -88,6 +89,20 @@ model Company {
   // Abonnements
   subscriptionPlans  SubscriptionPlan[]
   subscriptions      Subscription[]
+  // Restaurant
+  restaurantConfig   RestaurantConfig?
+  restaurantRooms    RestaurantRoom[]
+  restaurantTables   RestaurantTable[]
+  reservations       Reservation[]
+  menuCategories     MenuCategory[]
+  menuItems          MenuItem[]
+  ingredients        Ingredient[]
+  ingredientMovements IngredientMovement[]
+  restaurantOrders   RestaurantOrder[]
+  kdsTickets         KdsTicket[]
+  loyaltyClients           LoyaltyClient[]
+  restaurantOrderSequences RestaurantOrderSequence[]
+  invoiceSequences         InvoiceSequence[]
 }
 
 enum BusinessType {
@@ -403,19 +418,27 @@ model QuoteLine {
 // PRODUITS & STOCK
 // ============================================================
 model Product {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   companyId   String
   name        String
   sku         String?
+  barcode     String?
   description String?
-  unitPrice   Decimal @db.Decimal(15, 2)
-  taxRate     Decimal @db.Decimal(5, 2) @default(19)
-  stockQty    Decimal @db.Decimal(10, 3) @default(0)
-  stockAlert  Decimal @db.Decimal(10, 3) @default(0)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  taxRate     Decimal  @db.Decimal(5, 2) @default(19)
+  stockQty    Decimal  @db.Decimal(10, 3) @default(0)
+  stockAlert  Decimal  @db.Decimal(10, 3) @default(0)
   unit        String?
-  isActive    Boolean @default(true)
+  weight      Decimal? @db.Decimal(10, 3)
+  dimensions  String?
+  format      String?
+  isFragile   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   company                Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  variants               ProductVariant[]
   stockMovements         StockMovement[]
   quoteLines             QuoteLine[]
   boms                   BOM[]
@@ -426,6 +449,26 @@ model Product {
 
   @@index([companyId])
   @@index([companyId, sku])
+  @@index([companyId, barcode])
+}
+
+model ProductVariant {
+  id           String   @id @default(cuid())
+  productId    String
+  name         String
+  sku          String?
+  barcode      String?
+  size         String?
+  color        String?
+  stockQty     Decimal  @db.Decimal(10, 3) @default(0)
+  priceOverride Decimal? @db.Decimal(15, 2)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([barcode])
 }
 
 model StockMovement {
@@ -708,6 +751,10 @@ enum NotificationType {
   PO_APPROVAL_NEEDED
   PRODUCTION_ORDER_DELAYED
   PROJECT_BUDGET_EXCEEDED
+  RESERVATION_REMINDER
+  ORDER_DELAYED
+  SUBSCRIPTION_EXPIRING
+  SUBSCRIPTION_EXPIRED
 }
 
 // ============================================================
@@ -1470,9 +1517,23 @@ model Webhook {
 // ============================================================
 // POINT DE VENTE (POS)
 // ============================================================
+model PosRegister {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sessions PosSession[]
+
+  @@index([companyId])
+}
+
 model PosSession {
   id            String           @id @default(cuid())
   companyId     String
+  registerId    String?
   number        Int
   status        PosSessionStatus @default(OPEN)
   openingCash   Decimal          @db.Decimal(15, 2) @default(0)
@@ -1486,8 +1547,9 @@ model PosSession {
   openedAt      DateTime         @default(now())
   closedAt      DateTime?
 
-  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  sales   PosSale[]
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  register PosRegister? @relation(fields: [registerId], references: [id])
+  sales    PosSale[]
 
   @@index([companyId, status])
   @@index([companyId, openedAt])
@@ -1770,4 +1832,421 @@ enum SubStatus {
   PAUSED
   CANCELLED
   EXPIRED
+}
+
+// ============================================================
+// RESTAURANT
+// ============================================================
+
+model RestaurantConfig {
+  id                 String   @id @default(cuid())
+  companyId          String   @unique
+  name               String
+  address            String?
+  phone              String?
+  logo               String?
+  currency           String   @default("DZD")
+  taxRate            Decimal  @db.Decimal(5, 2) @default(19)
+  serviceCharge      Decimal  @db.Decimal(5, 2) @default(0)
+  receiptFooter      String?
+  tablePrefix        String   @default("T")
+  orderPrefix        String   @default("CMD")
+  enableQrMenu       Boolean  @default(true)
+  enableLoyalty      Boolean  @default(false)
+  loyaltyPointsRate  Decimal  @db.Decimal(5, 2) @default(1)
+  enableDelivery     Boolean  @default(false)
+  deliveryFeeDefault Decimal  @db.Decimal(10, 2) @default(0)
+  activeStations     String[] @default(["MAIN"])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model RestaurantRoom {
+  id          String  @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tables  RestaurantTable[]
+
+  @@index([companyId])
+}
+
+model RestaurantTable {
+  id        String      @id @default(cuid())
+  companyId String
+  roomId    String
+  number    String
+  capacity  Int         @default(4)
+  shape     TableShape  @default(SQUARE)
+  posX      Int         @default(0)
+  posY      Int         @default(0)
+  width     Int         @default(80)
+  height    Int         @default(80)
+  status    TableStatus @default(AVAILABLE)
+  qrToken   String?     @unique
+  isActive  Boolean     @default(true)
+
+  company      Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  room         RestaurantRoom    @relation(fields: [roomId], references: [id])
+  orders       RestaurantOrder[]
+  reservations Reservation[]
+
+  @@index([companyId, status])
+  @@index([companyId, roomId])
+}
+
+enum TableShape {
+  SQUARE
+  ROUND
+  RECTANGLE
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+model Reservation {
+  id           String            @id @default(cuid())
+  companyId    String
+  tableId      String?
+  guestName    String
+  guestPhone   String
+  guestCount   Int               @default(2)
+  date         DateTime
+  duration     Int               @default(90)
+  status       ReservationStatus @default(CONFIRMED)
+  notes        String?
+  reminderSent Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  table   RestaurantTable? @relation(fields: [tableId], references: [id])
+
+  @@index([companyId, date])
+  @@index([companyId, status])
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  ARRIVED
+  CANCELLED
+  NO_SHOW
+}
+
+model MenuCategory {
+  id          String  @id @default(cuid())
+  companyId   String
+  name        String
+  nameAr      String?
+  description String?
+  imageUrl    String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  isAvailable Boolean @default(true)
+
+  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   MenuItem[]
+
+  @@index([companyId, isActive])
+}
+
+model MenuItem {
+  id              String   @id @default(cuid())
+  companyId       String
+  categoryId      String
+  name            String
+  nameAr          String?
+  description     String?  @db.Text
+  imageUrl        String?
+  price           Decimal  @db.Decimal(10, 2)
+  taxRate         Decimal  @db.Decimal(5, 2) @default(19)
+  preparationTime Int      @default(10)
+  isAvailable     Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  allergens       String[] @default([])
+  tags            String[] @default([])
+  sortOrder       Int      @default(0)
+  loyaltyPoints   Int      @default(0)
+
+  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category    MenuCategory         @relation(fields: [categoryId], references: [id])
+  orderLines  RestaurantOrderLine[]
+  ingredients MenuIngredient[]
+
+  @@index([companyId, categoryId])
+  @@index([companyId, isAvailable])
+}
+
+model MenuIngredient {
+  id           String  @id @default(cuid())
+  menuItemId   String
+  ingredientId String
+  quantity     Decimal @db.Decimal(10, 4)
+  unit         String  @default("g")
+
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([menuItemId, ingredientId])
+}
+
+model Ingredient {
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  unit         String   @default("g")
+  currentStock Decimal  @db.Decimal(10, 3) @default(0)
+  minStock     Decimal  @db.Decimal(10, 3) @default(0)
+  unitCost     Decimal  @db.Decimal(10, 2) @default(0)
+  erpProductId String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  menuIngredients MenuIngredient[]
+  stockMovements  IngredientMovement[]
+
+  @@index([companyId])
+}
+
+model IngredientMovement {
+  id           String             @id @default(cuid())
+  companyId    String
+  ingredientId String
+  type         IngredientMoveType
+  quantity     Decimal            @db.Decimal(10, 3)
+  unitCost     Decimal?           @db.Decimal(10, 2)
+  reference    String?
+  note         String?
+  createdAt    DateTime           @default(now())
+
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@index([companyId, ingredientId])
+  @@index([companyId, createdAt])
+}
+
+enum IngredientMoveType {
+  IN
+  OUT
+  WASTE
+  ADJUSTMENT
+}
+
+model RestaurantOrder {
+  id              String              @id @default(cuid())
+  companyId       String
+  number          String
+  type            OrderType           @default(DINE_IN)
+  status          OrderStatus         @default(PENDING)
+  tableId         String?
+  guestCount      Int?
+  customerName    String?
+  customerPhone   String?
+  customerAddress String?
+  deliveryNote    String?
+  deliveryFee     Decimal             @db.Decimal(10, 2) @default(0)
+  loyaltyClientId String?
+  subtotal        Decimal             @db.Decimal(10, 2) @default(0)
+  taxAmount       Decimal             @db.Decimal(10, 2) @default(0)
+  serviceCharge   Decimal             @db.Decimal(10, 2) @default(0)
+  discount        Decimal             @db.Decimal(10, 2) @default(0)
+  discountReason  String?
+  total           Decimal             @db.Decimal(10, 2) @default(0)
+  paymentMethod   RestaurantPayMethod?
+  paymentStatus   RestaurantPayStatus @default(UNPAID)
+  chargilyLink    String?
+  paidAt          DateTime?
+  notes           String?
+  estimatedReady  DateTime?
+  acceptedAt      DateTime?
+  readyAt         DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  company       Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  table         RestaurantTable?      @relation(fields: [tableId], references: [id])
+  loyaltyClient LoyaltyClient?        @relation(fields: [loyaltyClientId], references: [id])
+  lines         RestaurantOrderLine[]
+  kdsTickets    KdsTicket[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, type])
+  @@index([companyId, tableId])
+  @@index([companyId, createdAt])
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+  CLOSED
+}
+
+enum RestaurantPayMethod {
+  CASH
+  CHARGILY_EDAHABIA
+  CHARGILY_CIB
+  CCP_VIREMENT
+}
+
+enum RestaurantPayStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model RestaurantOrderLine {
+  id         String     @id @default(cuid())
+  orderId    String
+  menuItemId String
+  name       String
+  price      Decimal    @db.Decimal(10, 2)
+  taxRate    Decimal    @db.Decimal(5, 2)
+  quantity   Int        @default(1)
+  total      Decimal    @db.Decimal(10, 2)
+  notes      String?
+  status     LineStatus @default(PENDING)
+  sentToKds  Boolean    @default(false)
+
+  order    RestaurantOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem        @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+}
+
+enum LineStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+model KdsTicket {
+  id         String     @id @default(cuid())
+  companyId  String
+  orderId    String
+  station    KdsStation @default(MAIN)
+  status     KdsStatus  @default(NEW)
+  priority   Int        @default(0)
+  printedAt  DateTime?
+  acceptedAt DateTime?
+  doneAt     DateTime?
+  createdAt  DateTime   @default(now())
+
+  company Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order   RestaurantOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([companyId, station])
+}
+
+enum KdsStation {
+  MAIN
+  GRILL
+  COLD
+  DRINKS
+  DESSERT
+}
+
+enum KdsStatus {
+  NEW
+  ACCEPTED
+  DONE
+}
+
+model LoyaltyClient {
+  id          String      @id @default(cuid())
+  companyId   String
+  name        String
+  phone       String
+  email       String?
+  points      Int         @default(0)
+  totalSpent  Decimal     @db.Decimal(15, 2) @default(0)
+  visitsCount Int         @default(0)
+  tier        LoyaltyTier @default(STANDARD)
+  qrCode      String      @unique
+  isActive    Boolean     @default(true)
+  joinedAt    DateTime    @default(now())
+  lastVisit   DateTime?
+
+  company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  orders       RestaurantOrder[]
+  transactions LoyaltyTransaction[]
+
+  @@unique([companyId, phone])
+  @@index([companyId])
+}
+
+enum LoyaltyTier {
+  STANDARD
+  SILVER
+  GOLD
+  VIP
+}
+
+model LoyaltyTransaction {
+  id          String        @id @default(cuid())
+  clientId    String
+  type        LoyaltyTxType
+  points      Int
+  description String
+  orderId     String?
+  createdAt   DateTime      @default(now())
+
+  client LoyaltyClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+enum LoyaltyTxType {
+  EARNED
+  REDEEMED
+  BONUS
+  EXPIRED
+}
+
+model RestaurantOrderSequence {
+  id        String @id @default(cuid())
+  companyId String @unique
+  seq       Int    @default(0)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model InvoiceSequence {
+  id        String @id @default(cuid())
+  companyId String
+  prefix    String
+  seq       Int    @default(0)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, prefix])
 }

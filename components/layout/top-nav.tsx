@@ -10,6 +10,7 @@ import {
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers,
   Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, RefreshCw,
+  UtensilsCrossed, CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -78,7 +79,7 @@ export const MODULES = [
     icon: Calculator,
     color: 'bg-violet-600',
     href: '/dashboard/accounting',
-    prefixes: ['/dashboard/accounting', '/dashboard/tax', '/dashboard/expenses'],
+    prefixes: ['/dashboard/accounting', '/dashboard/tax', '/dashboard/expenses', '/dashboard/accounting/g50'],
     subNav: [
       { label: 'Journal', href: '/dashboard/accounting/journal' },
       { label: 'Grand livre', href: '/dashboard/accounting/grand-livre' },
@@ -89,6 +90,7 @@ export const MODULES = [
       { label: 'Périodes', href: '/dashboard/accounting/periodes' },
       { label: 'Dépenses', href: '/dashboard/expenses' },
       { label: 'Fiscalité', href: '/dashboard/tax' },
+      { label: 'G50 — Déclaration', href: '/dashboard/accounting/g50' },
     ],
   },
   {
@@ -146,7 +148,7 @@ export const MODULES = [
   {
     id: 'pos',
     label: 'Caisse',
-    icon: ShoppingCart,
+    icon: CreditCard,
     color: 'bg-green-600',
     href: '/dashboard/pos',
     prefixes: ['/dashboard/pos'],
@@ -178,6 +180,25 @@ export const MODULES = [
     subNav: [
       { label: 'Abonnements', href: '/dashboard/subscriptions' },
       { label: 'Plans', href: '/dashboard/subscriptions/plans' },
+    ],
+  },
+  {
+    id: 'restaurant',
+    label: 'Restaurant',
+    icon: UtensilsCrossed,
+    color: 'bg-orange-500',
+    href: '/dashboard/restaurant',
+    prefixes: ['/dashboard/restaurant'],
+    subNav: [
+      { label: 'Salle & tables',   href: '/dashboard/restaurant' },
+      { label: 'Commandes',        href: '/dashboard/restaurant/orders' },
+      { label: 'Cuisine (KDS)',    href: '/dashboard/restaurant/kds' },
+      { label: 'Menu',             href: '/dashboard/restaurant/menu' },
+      { label: 'Réservations',     href: '/dashboard/restaurant/reservations' },
+      { label: 'Stocks cuisine',   href: '/dashboard/restaurant/ingredients' },
+      { label: 'Fidélité',         href: '/dashboard/restaurant/loyalty' },
+      { label: 'Statistiques',     href: '/dashboard/restaurant/stats' },
+      { label: 'Configuration',    href: '/dashboard/restaurant/config' },
     ],
   },
 ] as const

@@ -20,6 +20,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!invoice) return apiError('Facture introuvable', 404)
     if (invoice.status === 'PAID') return apiError('Facture déjà payée', 400)
 
+    let locale = 'ar'
+    try {
+      const body = await req.json()
+      if (['fr', 'ar', 'en'].includes(body?.locale)) locale = body.locale
+    } catch { /* locale optionnel */ }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     const token = invoice.portalToken
 
@@ -30,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       failure_url: `${appUrl}/portal/${token}?paid=0`,
       webhook_url: `${appUrl}/api/webhooks/chargily`,
       description: `Facture ${invoice.number}`,
-      locale: 'ar',
+      locale,
       metadata: { invoice_id: params.id, portal_token: token ?? '' },
       customer: {
         name: invoice.client.name,

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   ShoppingCart, Search, Plus, Minus, X, Banknote,
   UserCircle, CheckCircle2, RotateCcw, Lock, Unlock,
-  AlertTriangle, Loader2, Package,
+  AlertTriangle, Loader2, Package, CreditCard, Settings2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
@@ -22,6 +24,7 @@ type Product = {
   id: string
   name: string
   sku: string | null
+  barcode: string | null
   unitPrice: number
   taxRate: number
   stockQty: number
@@ -29,6 +32,7 @@ type Product = {
 }
 type CartItem = Product & { quantity: number; lineTotal: number; lineTax: number }
 type PayMethod = 'CASH' | 'DEBT'
+type PosRegister = { id: string; name: string }
 type PosSession = {
   id: string
   number: number
@@ -37,6 +41,7 @@ type PosSession = {
   totalSales: number
   resetInterval: string
   openedAt: string
+  register?: PosRegister | null
 }
 
 export default function POSPage() {
@@ -47,6 +52,13 @@ export default function POSPage() {
   const [openingCash, setOpeningCash] = useState('')
   const [resetInterval, setResetInterval] = useState<'daily' | '2days' | 'weekly' | 'monthly'>('daily')
   const [openingSession, setOpeningSession] = useState(false)
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>('')
+
+  // Registers state
+  const [registers, setRegisters] = useState<PosRegister[]>([])
+  const [showManageRegisters, setShowManageRegisters] = useState(false)
+  const [newRegisterName, setNewRegisterName] = useState('')
+  const [savingRegister, setSavingRegister] = useState(false)
 
   // Products state
   const [products, setProducts] = useState<Product[]>([])
@@ -77,23 +89,29 @@ export default function POSPage() {
 
   const searchRef = useRef<HTMLInputElement>(null)
 
-  // Load current session on mount
   useEffect(() => {
     fetchSession()
+    fetchRegisters()
   }, [])
 
-  // Auto-focus search
   useEffect(() => {
     if (session && !showOpenSession) {
       setTimeout(() => searchRef.current?.focus(), 100)
     }
   }, [session, showOpenSession])
 
-  // Search products when query changes
   useEffect(() => {
     const timer = setTimeout(() => fetchProducts(search), search ? 200 : 0)
     return () => clearTimeout(timer)
   }, [search])
+
+  async function fetchRegisters() {
+    try {
+      const res = await fetch('/api/pos/registers')
+      const data = await res.json()
+      setRegisters(data.data ?? [])
+    } catch { /* ignore */ }
+  }
 
   async function fetchSession() {
     setLoadingSession(true)
@@ -129,19 +147,21 @@ export default function POSPage() {
       const res = await fetch('/api/pos/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ openingCash: Number(openingCash) || 0, resetInterval }),
+        body: JSON.stringify({
+          openingCash: Number(openingCash) || 0,
+          resetInterval,
+          ...(selectedRegisterId ? { registerId: selectedRegisterId } : {}),
+        }),
       })
       const data = await res.json()
       if (res.status === 409) {
-        // Session already open — just use it
         const existing = data.data ?? data.session
         if (existing) {
           setSession(existing)
           setShowOpenSession(false)
           fetchProducts('')
-          toast.info('Session de caisse déjà ouverte — reprise en cours.')
+          toast.info('Session déjà ouverte sur cette caisse — reprise en cours.')
         } else {
-          // Re-fetch to get the open session
           await fetchSession()
           setShowOpenSession(false)
         }
@@ -151,7 +171,8 @@ export default function POSPage() {
       setSession(data.data)
       setShowOpenSession(false)
       fetchProducts('')
-      toast.success(`Session #${data.data.number} ouverte`)
+      const registerName = registers.find(r => r.id === selectedRegisterId)?.name
+      toast.success(`Session #${data.data.number} ouverte${registerName ? ` — ${registerName}` : ''}`)
     } catch {
       toast.error('Erreur réseau')
     } finally {
@@ -179,6 +200,26 @@ export default function POSPage() {
       toast.error('Erreur réseau')
     } finally {
       setClosingSession(false)
+    }
+  }
+
+  async function createRegister() {
+    if (!newRegisterName.trim()) { toast.error('Nom requis'); return }
+    setSavingRegister(true)
+    try {
+      const res = await fetch('/api/pos/registers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newRegisterName.trim() }),
+      })
+      if (!res.ok) { toast.error('Erreur'); return }
+      setNewRegisterName('')
+      await fetchRegisters()
+      toast.success('Caisse créée')
+    } catch {
+      toast.error('Erreur réseau')
+    } finally {
+      setSavingRegister(false)
     }
   }
 
@@ -253,7 +294,6 @@ export default function POSPage() {
       setAmountReceived('')
       setClientName('')
       setPayMethod('CASH')
-      // Refresh session totals
       fetchSession()
     } catch {
       toast.error('Erreur réseau')
@@ -278,6 +318,7 @@ export default function POSPage() {
             <Badge className="bg-green-500 text-white gap-1">
               <Unlock className="h-3 w-3" />
               Session #{session.number}
+              {session.register && ` — ${session.register.name}`}
             </Badge>
           ) : (
             <Badge variant="destructive" className="gap-1">
@@ -307,6 +348,9 @@ export default function POSPage() {
               </Button>
             </>
           )}
+          <Button variant="ghost" size="icon" onClick={() => setShowManageRegisters(true)} title="Gérer les caisses">
+            <Settings2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -314,7 +358,6 @@ export default function POSPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Products */}
         <div className="flex-1 flex flex-col min-w-0 border-r">
-          {/* Search bar */}
           <div className="p-3 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -322,14 +365,13 @@ export default function POSPage() {
                 ref={searchRef}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Scan code-barres ou rechercher un produit... (SKU, nom)"
+                placeholder="Scan code-barres ou rechercher un produit..."
                 className="pl-9 h-11 text-base"
                 disabled={!session}
               />
             </div>
           </div>
 
-          {/* Products grid */}
           <div className="flex-1 overflow-y-auto p-3">
             {!session ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
@@ -386,7 +428,6 @@ export default function POSPage() {
 
         {/* Right: Cart + Payment */}
         <div className="w-80 xl:w-96 flex flex-col bg-card shrink-0">
-          {/* Cart header */}
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
@@ -400,7 +441,6 @@ export default function POSPage() {
             )}
           </div>
 
-          {/* Cart items */}
           <div className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
@@ -445,7 +485,6 @@ export default function POSPage() {
             )}
           </div>
 
-          {/* Totals */}
           {cart.length > 0 && (
             <div className="border-t px-4 py-3 space-y-1.5 bg-muted/30">
               <div className="flex justify-between text-sm text-muted-foreground">
@@ -463,9 +502,7 @@ export default function POSPage() {
             </div>
           )}
 
-          {/* Payment panel */}
           <div className="border-t p-4 space-y-3">
-            {/* Method tabs */}
             <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted p-1" data-tutorial="payment-methods">
               {(['CASH', 'DEBT'] as PayMethod[]).map(m => (
                 <button
@@ -485,7 +522,6 @@ export default function POSPage() {
               ))}
             </div>
 
-            {/* Cash input */}
             {payMethod === 'CASH' && (
               <div className="space-y-2">
                 <label className="text-xs text-muted-foreground font-medium">Montant reçu</label>
@@ -511,7 +547,6 @@ export default function POSPage() {
               </div>
             )}
 
-            {/* Debt: client name */}
             {payMethod === 'DEBT' && (
               <div className="space-y-2">
                 <label className="text-xs text-muted-foreground font-medium">Nom du client *</label>
@@ -528,7 +563,6 @@ export default function POSPage() {
               </div>
             )}
 
-            {/* Checkout button */}
             <Button
               onClick={processSale}
               disabled={!canPay || processing || !session}
@@ -557,19 +591,37 @@ export default function POSPage() {
             <DialogTitle>Ouvrir la caisse</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {/* Register selector */}
+            {registers.length > 0 && (
+              <div className="space-y-2">
+                <Label>Caisse</Label>
+                <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Caisse générale (sans sélection)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Caisse générale</SelectItem>
+                    {registers.map(r => (
+                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Fonds de caisse initial (DA)</label>
+              <Label>Fonds de caisse initial (DA)</Label>
               <Input
                 type="number"
                 value={openingCash}
                 onChange={e => setOpeningCash(e.target.value)}
                 placeholder="Ex: 5000"
                 className="h-12 text-lg"
-                autoFocus
+                autoFocus={registers.length === 0}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Réinitialisation automatique</label>
+              <Label>Réinitialisation automatique</Label>
               <div className="grid grid-cols-2 gap-2">
                 {([
                   ['daily', 'Chaque jour'],
@@ -613,6 +665,12 @@ export default function POSPage() {
           {session && (
             <div className="space-y-4 py-2">
               <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
+                {session.register && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Caisse</span>
+                    <span className="font-semibold">{session.register.name}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Ventes totales</span>
                   <span className="font-semibold da-amount">{formatDA(Number(session.totalSales))}</span>
@@ -643,6 +701,53 @@ export default function POSPage() {
                 : <><Lock className="h-4 w-4 mr-2" />Confirmer la fermeture</>
               }
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage registers modal */}
+      <Dialog open={showManageRegisters} onOpenChange={setShowManageRegisters}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />Gérer les caisses
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Créez plusieurs caisses pour gérer des postes de vente indépendants dans le même magasin.
+            </p>
+            {registers.length > 0 && (
+              <div className="border rounded-lg divide-y">
+                {registers.map(r => (
+                  <div key={r.id} className="flex items-center justify-between px-3 py-2.5 text-sm">
+                    <span className="font-medium">{r.name}</span>
+                    <Badge variant="outline" className="text-[10px]">Active</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+            {registers.length === 0 && (
+              <div className="text-center py-6 text-muted-foreground text-sm">
+                <CreditCard className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                Aucune caisse configurée — toutes les sessions utilisent la caisse générale.
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nom de la caisse (ex: Caisse 1, Vitrine...)"
+                value={newRegisterName}
+                onChange={e => setNewRegisterName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && createRegister()}
+                className="flex-1"
+              />
+              <Button onClick={createRegister} disabled={savingRegister}>
+                {savingRegister ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowManageRegisters(false)}>Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

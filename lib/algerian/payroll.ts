@@ -17,24 +17,29 @@ export interface PayrollCalculation {
   netSalary: number
 }
 
-/**
- * Barème IRG mensuel (DA) — décret 2022
- * Tranche : [min, max, taux, déduction fixe]
- */
+// Barème IRG mensuel progressif par tranches (DA) — décret 2022
 const IRG_BRACKETS = [
-  { min: 0,       max: 20000,  rate: 0,    deduction: 0 },
-  { min: 20001,   max: 40000,  rate: 0.23, deduction: 4600 },
-  { min: 40001,   max: 80000,  rate: 0.27, deduction: 6200 },
-  { min: 80001,   max: 160000, rate: 0.30, deduction: 8600 },
-  { min: 160001,  max: 320000, rate: 0.33, deduction: 13400 },
-  { min: 320001,  max: Infinity, rate: 0.35, deduction: 19800 },
+  { min: 0,      max: 20000,   rate: 0 },
+  { min: 20001,  max: 40000,   rate: 0.23 },
+  { min: 40001,  max: 80000,   rate: 0.27 },
+  { min: 80001,  max: 160000,  rate: 0.30 },
+  { min: 160001, max: 320000,  rate: 0.33 },
+  { min: 320001, max: Infinity, rate: 0.35 },
 ]
 
 export function calculateIRG(taxableIncome: number): number {
-  const bracket = IRG_BRACKETS.find(b => taxableIncome >= b.min && taxableIncome <= b.max)
-  if (!bracket || bracket.rate === 0) return 0
-  const irg = taxableIncome * bracket.rate - bracket.deduction
-  return Math.max(0, Math.round(irg * 100) / 100)
+  if (taxableIncome <= 20000) return 0
+
+  let irg = 0
+  for (const bracket of IRG_BRACKETS) {
+    if (taxableIncome <= bracket.min) break
+    const taxable = Math.min(taxableIncome, bracket.max) - bracket.min
+    irg += taxable * bracket.rate
+  }
+
+  // Abattement salaire unique : 40% (min 1 000 DA, max 1 500 DA)
+  const abattement = Math.min(Math.max(irg * 0.4, 1000), 1500)
+  return Math.max(0, Math.round((irg - abattement) * 100) / 100)
 }
 
 export function calculatePayroll(baseSalary: number, allowances = 0): PayrollCalculation {

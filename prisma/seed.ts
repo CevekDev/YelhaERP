@@ -251,6 +251,157 @@ async function main() {
     prisma.currency.upsert({ where: { code: 'DZD' }, update: {}, create: { code: 'DZD', name: 'Dinar algérien', symbol: 'DA', isBase: true } }),
   ])
 
+  // ── Restaurant demo data ──────────────────────────────────
+  const restConfig = await prisma.restaurantConfig.upsert({
+    where: { companyId: company.id },
+    update: {},
+    create: {
+      companyId: company.id,
+      name: 'Restaurant Al Baraka',
+      address: '12 Rue Didouche Mourad, Alger-Centre',
+      phone: '0551 23 45 67',
+      taxRate: 19,
+      serviceCharge: 0,
+      tablePrefix: 'T',
+      orderPrefix: 'CMD',
+      enableQrMenu: true,
+      enableLoyalty: true,
+      loyaltyPointsRate: 10,
+      enableDelivery: true,
+      deliveryFeeDefault: 200,
+      receiptFooter: 'Merci et à bientôt ! — Al Baraka',
+      activeStations: ['MAIN', 'COLD', 'DRINKS'],
+    },
+  })
+
+  const salleRoom = await prisma.restaurantRoom.upsert({
+    where: { id: 'room-salle' },
+    update: {},
+    create: { id: 'room-salle', companyId: company.id, name: 'Salle principale', sortOrder: 0 },
+  })
+  const terrasseRoom = await prisma.restaurantRoom.upsert({
+    where: { id: 'room-terrasse' },
+    update: {},
+    create: { id: 'room-terrasse', companyId: company.id, name: 'Terrasse', sortOrder: 1 },
+  })
+
+  // Create tables for salle
+  const tableSalleData = [
+    { id: 'table-t1', number: 'T1', capacity: 4, posX: 40, posY: 40, width: 80, height: 80 },
+    { id: 'table-t2', number: 'T2', capacity: 4, posX: 160, posY: 40, width: 80, height: 80 },
+    { id: 'table-t3', number: 'T3', capacity: 2, posX: 280, posY: 40, width: 60, height: 60 },
+    { id: 'table-t4', number: 'T4', capacity: 6, posX: 40, posY: 160, width: 100, height: 80 },
+    { id: 'table-t5', number: 'T5', capacity: 4, posX: 180, posY: 160, width: 80, height: 80 },
+    { id: 'table-t6', number: 'T6', capacity: 8, posX: 300, posY: 160, width: 120, height: 80 },
+    { id: 'table-t7', number: 'T7', capacity: 2, posX: 40, posY: 280, width: 60, height: 60 },
+    { id: 'table-t8', number: 'T8', capacity: 4, posX: 160, posY: 280, width: 80, height: 80 },
+    { id: 'table-t9', number: 'T9', capacity: 4, posX: 280, posY: 280, width: 80, height: 80 },
+    { id: 'table-t10', number: 'T10', capacity: 6, posX: 400, posY: 40, width: 100, height: 100 },
+  ]
+  for (const t of tableSalleData) {
+    await prisma.restaurantTable.upsert({
+      where: { id: t.id },
+      update: {},
+      create: { ...t, companyId: company.id, roomId: salleRoom.id, qrToken: `qr-${t.id}` },
+    })
+  }
+
+  // Create tables for terrasse
+  const tableTerrData = [
+    { id: 'table-terr1', number: 'TR1', capacity: 2, posX: 40, posY: 40 },
+    { id: 'table-terr2', number: 'TR2', capacity: 4, posX: 160, posY: 40 },
+    { id: 'table-terr3', number: 'TR3', capacity: 4, posX: 280, posY: 40 },
+    { id: 'table-terr4', number: 'TR4', capacity: 6, posX: 40, posY: 160 },
+    { id: 'table-terr5', number: 'TR5', capacity: 2, posX: 160, posY: 160 },
+    { id: 'table-terr6', number: 'TR6', capacity: 4, posX: 280, posY: 160 },
+  ]
+  for (const t of tableTerrData) {
+    await prisma.restaurantTable.upsert({
+      where: { id: t.id },
+      update: {},
+      create: { ...t, companyId: company.id, roomId: terrasseRoom.id, width: 80, height: 80, qrToken: `qr-${t.id}` },
+    })
+  }
+
+  // Menu categories
+  const [catEntrees, catPlats, catGrillades, catBoissons] = await Promise.all([
+    prisma.menuCategory.upsert({ where: { id: 'cat-entrees' }, update: {}, create: { id: 'cat-entrees', companyId: company.id, name: 'Entrées', nameAr: 'مقبلات', sortOrder: 0 } }),
+    prisma.menuCategory.upsert({ where: { id: 'cat-plats' }, update: {}, create: { id: 'cat-plats', companyId: company.id, name: 'Plats chauds', nameAr: 'أطباق ساخنة', sortOrder: 1 } }),
+    prisma.menuCategory.upsert({ where: { id: 'cat-grillades' }, update: {}, create: { id: 'cat-grillades', companyId: company.id, name: 'Grillades', nameAr: 'مشويات', sortOrder: 2 } }),
+    prisma.menuCategory.upsert({ where: { id: 'cat-boissons' }, update: {}, create: { id: 'cat-boissons', companyId: company.id, name: 'Boissons', nameAr: 'مشروبات', sortOrder: 3 } }),
+  ])
+
+  // Menu items
+  const menuItemsData = [
+    { id: 'item-chorba', categoryId: catEntrees.id, name: 'Chorba', nameAr: 'شوربة', description: 'Soupe traditionnelle algérienne au mouton et vermicelles', price: 250, tags: ['populaire'], preparationTime: 5 },
+    { id: 'item-salade', categoryId: catEntrees.id, name: 'Salade algérienne', nameAr: 'سلطة جزائرية', description: 'Tomates, concombres, poivrons, olives, menthe fraîche', price: 200, tags: ['végétarien'], preparationTime: 5 },
+    { id: 'item-hrira', categoryId: catEntrees.id, name: 'Hrira', nameAr: 'هريرة', description: 'Soupe épaisse aux légumineuses et épices', price: 280, tags: ['populaire'], preparationTime: 10 },
+    { id: 'item-couscous', categoryId: catPlats.id, name: 'Couscous Royal', nameAr: 'كسكس ملكي', description: 'Couscous à la semoule fine, mouton, merguez, légumes de saison', price: 1200, tags: ['populaire'], preparationTime: 20 },
+    { id: 'item-tajine', categoryId: catPlats.id, name: 'Tajine Zitoune', nameAr: 'طاجين الزيتون', description: 'Poulet mijoté aux olives, citron confit et épices', price: 950, tags: [], preparationTime: 25 },
+    { id: 'item-chakhchoukha', categoryId: catPlats.id, name: 'Chakhchoukha', nameAr: 'شخشوخة', description: 'Galette brisée au bouillon de viande et pois chiches', price: 800, tags: ['nouveau'], preparationTime: 15 },
+    { id: 'item-brochettes', categoryId: catGrillades.id, name: 'Brochettes Mixtes', nameAr: 'مشاوي مشكلة', description: '3 brochettes mouton + 2 merguez + accompagnements', price: 1100, tags: ['populaire'], preparationTime: 20 },
+    { id: 'item-kebab', categoryId: catGrillades.id, name: 'Kebab Maison', nameAr: 'كباب', description: 'Viande hachée épicée grillée, sauce tomate maison', price: 750, tags: ['épicé'], preparationTime: 15 },
+    { id: 'item-poulet', categoryId: catGrillades.id, name: 'Poulet Rôti 1/2', nameAr: 'دجاج مشوي', description: 'Demi-poulet mariné aux épices algériennes, frites et salade', price: 900, tags: [], preparationTime: 25 },
+    { id: 'item-jus-orange', categoryId: catBoissons.id, name: 'Jus d\'orange frais', nameAr: 'عصير برتقال', description: 'Pressé à la commande', price: 300, tags: ['nouveau'], preparationTime: 5 },
+    { id: 'item-cafe', categoryId: catBoissons.id, name: 'Café Maure', nameAr: 'قهوة', description: 'Café à la cardamome et rose', price: 150, tags: [], preparationTime: 3 },
+    { id: 'item-the', categoryId: catBoissons.id, name: 'Thé à la menthe', nameAr: 'شاي بالنعناع', description: 'Thé vert à la menthe fraîche', price: 200, tags: ['végétarien'], preparationTime: 5 },
+    { id: 'item-eau', categoryId: catBoissons.id, name: 'Eau minérale', nameAr: 'ماء معدني', description: '50cl', price: 100, tags: [], preparationTime: 1 },
+    { id: 'item-lben', categoryId: catBoissons.id, name: 'Lben', nameAr: 'لبن', description: 'Lait fermenté frais 25cl', price: 120, tags: [], preparationTime: 1 },
+    { id: 'item-kalb', categoryId: catEntrees.id, name: 'Kalb el louz', nameAr: 'قلب اللوز', description: 'Gâteau traditionnel à la semoule et amandes', price: 180, tags: ['nouveau'], preparationTime: 2 },
+  ]
+  for (const item of menuItemsData) {
+    await prisma.menuItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: {
+        id: item.id, companyId: company.id, categoryId: item.categoryId,
+        name: item.name, nameAr: item.nameAr, description: item.description,
+        price: item.price, taxRate: 19, preparationTime: item.preparationTime,
+        tags: item.tags, sortOrder: menuItemsData.indexOf(item),
+      },
+    })
+  }
+
+  // Ingredients
+  const ingredientData = [
+    { id: 'ing-mouton', name: 'Mouton (kg)', unit: 'kg', currentStock: 15, minStock: 5, unitCost: 2000 },
+    { id: 'ing-poulet', name: 'Poulet (kg)', unit: 'kg', currentStock: 20, minStock: 8, unitCost: 650 },
+    { id: 'ing-semoule', name: 'Semoule fine (kg)', unit: 'kg', currentStock: 50, minStock: 10, unitCost: 120 },
+    { id: 'ing-tomates', name: 'Tomates (kg)', unit: 'kg', currentStock: 8, minStock: 5, unitCost: 100 },
+    { id: 'ing-olives', name: 'Olives (kg)', unit: 'kg', currentStock: 3, minStock: 2, unitCost: 400 },
+    { id: 'ing-oranges', name: 'Oranges (kg)', unit: 'kg', currentStock: 10, minStock: 5, unitCost: 80 },
+    { id: 'ing-menthe', name: 'Menthe fraîche', unit: 'botte', currentStock: 5, minStock: 3, unitCost: 50 },
+    { id: 'ing-cafe', name: 'Café (kg)', unit: 'kg', currentStock: 2, minStock: 1, unitCost: 1200 },
+    { id: 'ing-the', name: 'Thé vert (kg)', unit: 'kg', currentStock: 1.5, minStock: 0.5, unitCost: 800 },
+    { id: 'ing-pois-chiches', name: 'Pois chiches (kg)', unit: 'kg', currentStock: 12, minStock: 3, unitCost: 200 },
+  ]
+  for (const ing of ingredientData) {
+    await prisma.ingredient.upsert({
+      where: { id: ing.id },
+      update: {},
+      create: { ...ing, companyId: company.id },
+    })
+  }
+
+  // Loyalty clients
+  await Promise.all([
+    prisma.loyaltyClient.upsert({
+      where: { qrCode: 'LYL-demo-001' },
+      update: {},
+      create: { companyId: company.id, name: 'Karim Bensalem', phone: '0661000101', points: 1250, totalSpent: 12500, visitsCount: 15, tier: 'SILVER', qrCode: 'LYL-demo-001' },
+    }),
+    prisma.loyaltyClient.upsert({
+      where: { qrCode: 'LYL-demo-002' },
+      update: {},
+      create: { companyId: company.id, name: 'Fatima Mansouri', phone: '0551000202', points: 3400, totalSpent: 34000, visitsCount: 42, tier: 'GOLD', qrCode: 'LYL-demo-002' },
+    }),
+    prisma.loyaltyClient.upsert({
+      where: { qrCode: 'LYL-demo-003' },
+      update: {},
+      create: { companyId: company.id, name: 'Youcef Ouadah', phone: '0771000303', points: 280, totalSpent: 2800, visitsCount: 5, tier: 'STANDARD', qrCode: 'LYL-demo-003' },
+    }),
+  ])
+
   console.log('✅ Seed terminé. Email: demo@yelhaerp.dz / Password: Admin1234')
 }
 
