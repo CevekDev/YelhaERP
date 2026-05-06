@@ -403,7 +403,7 @@ function Footer() {
           <div>
             <h4 className="text-white text-sm font-semibold mb-3">{t('footer.contact')}</h4>
             <ul className="space-y-2 text-xs">
-              <li><a href="mailto:contact@yelha.net" className="hover:text-yelha-400 transition-colors">contact@yelha.net</a></li>
+              <li><a href="mailto:cvkdev@outlook.fr" className="hover:text-yelha-400 transition-colors">cvkdev@outlook.fr</a></li>
               <li><span>{t('footer.location')}</span></li>
             </ul>
           </div>

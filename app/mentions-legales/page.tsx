@@ -44,7 +44,7 @@ export default function MentionsLegalesPage() {
                 </tr>
                 <tr className="border-b border-slate-200">
                   <td className="py-2 font-medium text-slate-700">Email</td>
-                  <td className="py-2"><a href="mailto:contact@yelha.net" className="text-yelha-600 hover:underline">contact@yelha.net</a></td>
+                  <td className="py-2"><a href="mailto:cvkdev@outlook.fr" className="text-yelha-600 hover:underline">cvkdev@outlook.fr</a></td>
                 </tr>
                 <tr>
                   <td className="py-2 font-medium text-slate-700">Site web</td>

@@ -1,45 +1,79 @@
 import { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { getTenantContext } from '@/lib/security/tenant'
-import { apiSuccess, apiError } from '@/lib/security/api-response'
+import { prisma } from '@/lib/prisma'
+import { getTenantContext, requireRole } from '@/lib/security/tenant'
+import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
+import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 
-const VALID_MODULES = ['dashboard', 'ventes', 'achats', 'stocks', 'compta', 'rh', 'projets', 'production', 'crm', 'pos', 'ecommerce', 'abonnements']
-const REQUIRED_MODULES = ['dashboard', 'ventes', 'achats', 'stocks']
-
-const schema = z.object({
-  modules: z.array(z.string()).min(1),
+const patchSchema = z.object({
+  crm: z.boolean().optional(),
+  invoices: z.boolean().optional(),
+  quotes: z.boolean().optional(),
+  clients: z.boolean().optional(),
+  suppliers: z.boolean().optional(),
+  purchases: z.boolean().optional(),
+  stock: z.boolean().optional(),
+  accounting: z.boolean().optional(),
+  hr: z.boolean().optional(),
+  payroll: z.boolean().optional(),
+  projects: z.boolean().optional(),
+  production: z.boolean().optional(),
+  pos: z.boolean().optional(),
+  ecommerce: z.boolean().optional(),
+  restaurant: z.boolean().optional(),
+  subscriptions: z.boolean().optional(),
+  tax: z.boolean().optional(),
+  expenses: z.boolean().optional(),
 })
 
-export async function GET() {
-  const ctx = await getTenantContext()
-  if (!ctx) return apiError('Non autorisé', 401)
+export async function GET(req: NextRequest) {
+  const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
+  if (!success) return rateLimitResponse(reset)
 
-  const company = await prisma.company.findUnique({
-    where: { id: ctx.companyId },
-    select: { activeModules: true },
-  })
-  return apiSuccess({ activeModules: company?.activeModules ?? REQUIRED_MODULES })
+  try {
+    const ctx = await getTenantContext()
+
+    const modules = await prisma.companyModules.upsert({
+      where: { companyId: ctx.companyId },
+      update: {},
+      create: { companyId: ctx.companyId },
+    })
+
+    return apiSuccess(modules)
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message === 'UNAUTHORIZED') return apiError('Non authentifié', 401)
+    return apiError('Erreur serveur', 500)
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  const ctx = await getTenantContext()
-  if (!ctx) return apiError('Non autorisé', 401)
+  const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
+  if (!success) return rateLimitResponse(reset)
 
-  let body: unknown
-  try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
-  const parsed = schema.safeParse(body)
-  if (!parsed.success) return apiError('Données invalides', 400)
+  try {
+    const ctx = await getTenantContext()
+    requireRole(ctx.role, 'OWNER')
 
-  // Merge required + requested, deduplicate, filter valid
-  const merged = Array.from(
-    new Set([...REQUIRED_MODULES, ...parsed.data.modules.filter((m: string) => VALID_MODULES.includes(m))])
-  )
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return apiError('Corps invalide', 400)
+    }
 
-  const company = await prisma.company.update({
-    where: { id: ctx.companyId },
-    data:  { activeModules: merged },
-    select: { activeModules: true },
-  })
-  return apiSuccess({ activeModules: company.activeModules })
+    const parsed = patchSchema.safeParse(body)
+    if (!parsed.success) return apiError('Données invalides', 422, parsed.error.flatten())
+
+    const modules = await prisma.companyModules.upsert({
+      where: { companyId: ctx.companyId },
+      update: parsed.data,
+      create: { companyId: ctx.companyId, ...parsed.data },
+    })
+
+    return apiSuccess(modules)
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message === 'UNAUTHORIZED') return apiError('Non authentifié', 401)
+    if (e instanceof Error && e.message === 'FORBIDDEN') return apiError('Accès refusé', 403)
+    return apiError('Erreur serveur', 500)
+  }
 }

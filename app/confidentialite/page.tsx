@@ -72,7 +72,7 @@ export default function ConfidentialitePage() {
               <li>Droit à la portabilité de vos données</li>
             </ul>
             <p className="text-slate-600 leading-relaxed mt-3">
-              Pour exercer ces droits, contactez-nous à : <a href="mailto:privacy@yelha.net" className="text-yelha-600 hover:underline">privacy@yelha.net</a>
+              Pour exercer ces droits, contactez-nous à : <a href="mailto:cvkdev@outlook.fr" className="text-yelha-600 hover:underline">cvkdev@outlook.fr</a>
             </p>
           </section>
 

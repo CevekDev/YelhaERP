@@ -37,6 +37,13 @@ export async function POST(req: NextRequest) {
       data: parsed.data,
     })
 
+    // Créer CompanyModules par défaut si inexistant
+    await prisma.companyModules.upsert({
+      where: { companyId: ctx.companyId },
+      update: {},
+      create: { companyId: ctx.companyId },
+    })
+
     return apiSuccess({ ok: true })
   } catch (e: unknown) {
     if (e instanceof Error && e.message === 'UNAUTHORIZED') return apiError('Non authentifié', 401)

@@ -144,6 +144,10 @@ export default async function DashboardPage() {
     redirect('/onboarding')
   }
 
+  const modules = await prisma.companyModules.findUnique({
+    where: { companyId: session.user.companyId },
+  }).catch(() => null)
+
   let data
   try {
     data = await getDashboardData(session.user.companyId)
@@ -183,6 +187,7 @@ export default async function DashboardPage() {
           leaveRequests={data.leaveRequests as number}
           activeProjects={data.activeProjects as number}
           unmatchedInvoices={data.unmatchedInvoices as number}
+          modules={modules}
         />
 
         {/* Financial KPIs */}
@@ -193,6 +198,7 @@ export default async function DashboardPage() {
           lowStockCount={data.lowStockCount as number}
           pendingQuotes={data.pendingQuotes}
           pendingExpenses={data.pendingExpenses}
+          modules={modules}
         />
 
         {/* Charts row 1 */}

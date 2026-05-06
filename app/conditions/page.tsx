@@ -89,7 +89,7 @@ export default function ConditionsPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-800 mb-3">9. Contact</h2>
             <p className="text-slate-600 leading-relaxed">
-              Pour toute question relative aux présentes conditions, contactez-nous à : <a href="mailto:contact@yelha.net" className="text-yelha-600 hover:underline">contact@yelha.net</a>
+              Pour toute question relative aux présentes conditions, contactez-nous à : <a href="mailto:cvkdev@outlook.fr" className="text-yelha-600 hover:underline">cvkdev@outlook.fr</a>
             </p>
           </section>
         </div>

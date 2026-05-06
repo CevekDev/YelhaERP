@@ -10,7 +10,7 @@ import {
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers,
   Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, RefreshCw,
-  UtensilsCrossed, CreditCard,
+  UtensilsCrossed, CreditCard, Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { MobileSidebarTrigger } from '@/components/layout/sidebar'
+import { useT } from '@/lib/i18n'
 
 
 // ── Module definitions ──────────────────────────────────────
@@ -334,22 +335,87 @@ function AppsMenu() {
   )
 }
 
+// ── Module → CompanyModules field mapping ────────────────────
+const MODULE_FLAGS: Record<string, (keyof CompanyModulesData)[]> = {
+  ventes:      ['invoices', 'quotes', 'clients'],
+  achats:      ['purchases', 'suppliers'],
+  stocks:      ['stock'],
+  compta:      ['accounting', 'tax', 'expenses'],
+  rh:          ['hr', 'payroll'],
+  projets:     ['projects'],
+  production:  ['production'],
+  crm:         ['crm'],
+  pos:         ['pos'],
+  ecommerce:   ['ecommerce'],
+  abonnements: ['subscriptions'],
+  restaurant:  ['restaurant'],
+}
+
+interface CompanyModulesData {
+  crm: boolean; invoices: boolean; quotes: boolean; clients: boolean
+  suppliers: boolean; purchases: boolean; stock: boolean; accounting: boolean
+  hr: boolean; payroll: boolean; projects: boolean; production: boolean
+  pos: boolean; ecommerce: boolean; restaurant: boolean; subscriptions: boolean
+  tax: boolean; expenses: boolean
+}
+
+// ── Language switcher ────────────────────────────────────────
+const LOCALES = [
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'en', label: 'English',  flag: '🇬🇧' },
+  { code: 'ar', label: 'العربية',  flag: '🇩🇿' },
+] as const
+
+function LanguageSwitcher() {
+  const { locale, setLocale } = useT()
+  const current = LOCALES.find(l => l.code === locale) ?? LOCALES[0]
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <span className="text-base leading-none">{current.flag}</span>
+          <Globe className="h-3.5 w-3.5 hidden sm:block" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-36">
+        {LOCALES.map(loc => (
+          <DropdownMenuItem
+            key={loc.code}
+            onClick={() => setLocale(loc.code)}
+            className={cn('flex items-center gap-2 cursor-pointer', locale === loc.code && 'font-semibold')}
+          >
+            <span>{loc.flag}</span>
+            <span>{loc.label}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 // ── Top Navbar ───────────────────────────────────────────────
 export function TopNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [activeModules, setActiveModules] = useState<string[]>(['dashboard', 'ventes', 'achats', 'stocks'])
+  const [companyModules, setCompanyModules] = useState<CompanyModulesData | null>(null)
 
   useEffect(() => {
     if (session?.user) {
       fetch('/api/settings/modules')
         .then(r => r.json())
-        .then(d => { if (d.activeModules) setActiveModules(d.activeModules) })
+        .then(d => { if (d.data) setCompanyModules(d.data) })
         .catch(() => {})
     }
   }, [session?.user])
 
-  const visibleModules = MODULES.filter(m => activeModules.includes(m.id))
+  const visibleModules = MODULES.filter(m => {
+    if (m.id === 'dashboard') return true
+    if (!companyModules) return true // show all while loading
+    const flags = MODULE_FLAGS[m.id]
+    if (!flags) return true
+    return flags.some(flag => companyModules[flag])
+  })
 
   const activeModule = getActiveModule(pathname)
   const initials = (session?.user?.name ?? 'U')
@@ -402,6 +468,7 @@ export function TopNav() {
         {/* Right side — always visible */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
 
+          <LanguageSwitcher />
           <NotificationBell />
 
           {/* User menu */}

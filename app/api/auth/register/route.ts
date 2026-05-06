@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
         verificationToken: code, verificationExpiry: expiry,
       },
     })
+    await tx.companyModules.create({
+      data: { companyId: company.id },
+    })
   })
 
   const lang = req.headers.get('accept-language')?.startsWith('ar') ? 'ar'

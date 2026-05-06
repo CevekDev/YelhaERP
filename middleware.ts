@@ -16,7 +16,7 @@ const PUBLIC_PATHS = [
   '/favicon.ico',
 ]
 
-const AUTH_PAGES = ['/login', '/register']
+const AUTH_PAGES = ['/login', '/register', '/']
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/') || (p !== '/' && pathname.startsWith(p)))
@@ -36,7 +36,7 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const loggedIn = hasSession(req)
 
-  // Redirect logged-in users away from auth pages
+  // Redirect logged-in users away from auth/landing pages
   if (loggedIn && AUTH_PAGES.some(p => pathname === p)) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }

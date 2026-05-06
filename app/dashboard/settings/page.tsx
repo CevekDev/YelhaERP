@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, LayoutGrid, User } from 'lucide-react'
+import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, LayoutGrid, User, Layers } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -41,6 +41,13 @@ const SECTIONS = [
     label: 'Applications',
     description: 'Activer ou désactiver les modules : Compta, RH, CRM, Production, POS...',
     color: 'bg-emerald-50 text-emerald-600',
+  },
+  {
+    href: '/dashboard/settings/modules',
+    icon: Layers,
+    label: 'Modules',
+    description: 'Gérer précisément les modules actifs de votre espace (CRM, Paie, POS, etc.)',
+    color: 'bg-teal-50 text-teal-600',
   },
   {
     href: '/dashboard/settings/profile',
@@ -87,7 +94,7 @@ function SettingsContent() {
         ))}
       </div>
 
-      <p className="text-xs text-muted-foreground">Plan actuel : <strong>{plan}</strong> · contact@yelhaerp.dz</p>
+      <p className="text-xs text-muted-foreground">Plan actuel : <strong>{plan}</strong> · cvkdev@outlook.fr</p>
     </div>
   )
 }
