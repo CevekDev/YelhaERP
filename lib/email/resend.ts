@@ -208,3 +208,84 @@ export async function sendWelcomeEmail(email: string, name: string, locale = 'fr
     html: wrap(locale, content),
   })
 }
+
+// ── Billing emails ────────────────────────────────────────────
+
+export async function sendTrialWelcome({ to, name }: { to: string; name: string }) {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">🎁 Bonjour ${name} !</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;line-height:1.6;">Votre essai gratuit de <strong>30 jours</strong> vient de commencer.</p>
+    <div style="background:#E1F5EE;border:1px solid #1D9E75;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;color:#0F6E56;font-size:14px;">✅ Inclus : Facturation · Clients · Stock · Dépenses · Devis + 3 apps au choix</p>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://erp.yelha.net/onboarding/apps" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Choisir mes 3 apps →</a>
+    </div>`
+  await getResend().emails.send({ from: FROM, to, subject: 'Bienvenue sur YelhaERP — votre essai de 30 jours commence', html: wrap('fr', content) }).catch(() => {})
+}
+
+export async function sendTrialReminder({ to, name, daysLeft }: { to: string; name: string; daysLeft: number }) {
+  const urgent = daysLeft <= 3
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">⏰ Votre essai expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, continuez avec le plan <strong>Starter à 990 DA/mois</strong>.</p>
+    <div style="background:${urgent ? '#FEF2F2' : '#FFF7ED'};border:1px solid ${urgent ? '#FCA5A5' : '#FCD34D'};border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:${urgent ? '#991B1B' : '#92400E'};font-size:14px;font-weight:600;">${urgent ? '🚨' : '⏳'} Il vous reste ${daysLeft} jour${daysLeft > 1 ? 's' : ''}.</p>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://erp.yelha.net/pricing" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Choisir un plan →</a>
+    </div>`
+  await getResend().emails.send({ from: FROM, to, subject: `Votre essai YelhaERP expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`, html: wrap('fr', content) }).catch(() => {})
+}
+
+export async function sendTrialExpired({ to, name }: { to: string; name: string }) {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Votre essai YelhaERP est terminé</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, vos données sont conservées pendant 30 jours supplémentaires.</p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://erp.yelha.net/pricing" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Voir les plans →</a>
+    </div>`
+  await getResend().emails.send({ from: FROM, to, subject: 'Votre essai YelhaERP est terminé — vos données sont conservées 30 jours', html: wrap('fr', content) }).catch(() => {})
+}
+
+export async function sendPaymentConfirmation({ to, name, planName, amount, nextBillingDate, apps }: {
+  to: string; name: string; planName: string; amount: number; nextBillingDate: Date; apps: string[]
+}) {
+  const nextDate = nextBillingDate.toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Paiement reçu ✅</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, plan <strong>${planName}</strong> activé. Prochaine facture : <strong>${nextDate}</strong> — ${amount.toLocaleString('fr-DZ')} DA.</p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://erp.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Accéder à mon dashboard →</a>
+    </div>
+    ${apps.length > 0 ? `<p style="color:#64748b;font-size:13px;text-align:center;">Apps : ${apps.join(' · ')}</p>` : ''}`
+  await getResend().emails.send({ from: FROM, to, subject: `Paiement reçu — Plan ${planName} activé`, html: wrap('fr', content) }).catch(() => {})
+}
+
+export async function sendCCPInstructions({ to, name, amount, ccpRef, planName }: {
+  to: string; name: string; amount: number; ccpRef: string; planName: string
+}) {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Instructions de virement CCP</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, pour activer votre plan <strong>${planName}</strong> :</p>
+    <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:12px;padding:24px;margin-bottom:24px;">
+      <p style="margin:4px 0;font-size:14px;"><strong>CCP :</strong> 00123456789 CCP Alger</p>
+      <p style="margin:4px 0;font-size:14px;"><strong>Titulaire :</strong> Yelha Technologies</p>
+      <p style="margin:4px 0;font-size:16px;color:#1D9E75;font-weight:700;"><strong>Montant :</strong> ${amount.toLocaleString('fr-DZ')} DA</p>
+      <p style="margin:4px 0;font-size:14px;"><strong>Référence :</strong> ${ccpRef}</p>
+    </div>
+    <p style="color:#92400e;font-size:13px;">Envoyez votre reçu à <a href="mailto:cvkdev@outlook.fr">cvkdev@outlook.fr</a> avec la référence <strong>${ccpRef}</strong>. Activation sous 24–48h.</p>`
+  await getResend().emails.send({ from: FROM, to, subject: 'Instructions de virement CCP — YelhaERP', html: wrap('fr', content) }).catch(() => {})
+}
+
+export async function sendPaymentFailed({ to, name, planName }: { to: string; name: string; planName: string }) {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Problème de paiement ⚠️</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, votre paiement pour le plan <strong>${planName}</strong> n'a pas pu être traité.</p>
+    <div style="margin-bottom:24px;">
+      <a href="https://erp.yelha.net/subscriptions/checkout" style="display:inline-block;background:#1D9E75;color:#fff;font-size:14px;font-weight:600;padding:12px 24px;border-radius:10px;text-decoration:none;margin-right:8px;">Réessayer →</a>
+      <a href="https://erp.yelha.net/subscriptions/checkout?method=ccp" style="display:inline-block;background:#f8fafc;color:#0f172a;border:1px solid #e2e8f0;font-size:14px;padding:12px 24px;border-radius:10px;text-decoration:none;">Payer par CCP →</a>
+    </div>
+    <p style="color:#94a3b8;font-size:13px;">Aide : <a href="mailto:cvkdev@outlook.fr" style="color:#1D9E75;">cvkdev@outlook.fr</a></p>`
+  await getResend().emails.send({ from: FROM, to, subject: 'Problème de paiement — Action requise', html: wrap('fr', content) }).catch(() => {})
+}

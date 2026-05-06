@@ -499,6 +499,11 @@ export function TopNav() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link href="/dashboard/settings/billing" className="flex items-center gap-2 cursor-pointer">
+                  <CreditCard className="h-4 w-4" />Mon abonnement
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
                   <Settings className="h-4 w-4" />Paramètres
                 </Link>

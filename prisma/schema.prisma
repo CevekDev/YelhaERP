@@ -104,6 +104,7 @@ model Company {
   restaurantOrderSequences RestaurantOrderSequence[]
   invoiceSequences         InvoiceSequence[]
   modules                  CompanyModules?
+  yelhaSubscription        YelhaSubscription?
 }
 
 model CompanyModules {
@@ -144,6 +145,22 @@ enum Plan {
   STARTER
   PRO
   AGENCY
+  BUSINESS
+  ENTERPRISE
+}
+
+enum YelhaSubStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  PAUSED
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
 }
 
 // ============================================================
@@ -2277,4 +2294,66 @@ model InvoiceSequence {
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, prefix])
+}
+
+// ============================================================
+// YELHA SUBSCRIPTION (abonnement YelhaERP)
+// ============================================================
+model YelhaSubscription {
+  id                 String         @id @default(cuid())
+  companyId          String         @unique
+  planId             String         @default("trial")
+  status             YelhaSubStatus @default(TRIAL)
+  billingCycle       BillingCycle   @default(MONTHLY)
+
+  extraApps          String[]       @default([])
+  trialApps          String[]       @default([])
+
+  trialEndsAt        DateTime?
+  currentPeriodStart DateTime       @default(now())
+  currentPeriodEnd   DateTime
+  cancelledAt        DateTime?
+  pausedAt           DateTime?
+
+  monthlyAmount      Int            @default(0)
+  lastPaymentAt      DateTime?
+  lastPaymentRef     String?
+  chargilySubId      String?
+
+  limitEmails        Int            @default(50)
+  limitApiReq        Int            @default(500)
+  limitDeliverers    Int            @default(0)
+  limitSkus          Int            @default(50)
+  limitAiReq         Int            @default(15)
+
+  usageEmails        Int            @default(0)
+  usageApiReq        Int            @default(0)
+  usageAiReq         Int            @default(0)
+  usageResetAt       DateTime       @default(now())
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  company            Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payments           YelhaPayment[]
+}
+
+model YelhaPayment {
+  id             String            @id @default(cuid())
+  subscriptionId String
+  amount         Int
+  planId         String
+  extraApps      String[]
+  billingCycle   BillingCycle
+  method         String
+  status         String            @default("PENDING")
+  chargilyId     String?
+  chargilyLink   String?
+  ccpRef         String?
+  periodStart    DateTime
+  periodEnd      DateTime
+  paidAt         DateTime?
+  createdAt      DateTime          @default(now())
+
+  subscription   YelhaSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 }

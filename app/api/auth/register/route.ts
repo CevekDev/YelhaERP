@@ -47,6 +47,24 @@ export async function POST(req: NextRequest) {
     await tx.companyModules.create({
       data: { companyId: company.id },
     })
+    const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    await tx.yelhaSubscription.create({
+      data: {
+        companyId: company.id,
+        planId: 'trial',
+        status: 'TRIAL',
+        billingCycle: 'MONTHLY',
+        trialEndsAt: trialEnd,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: trialEnd,
+        monthlyAmount: 0,
+        limitEmails: 50,
+        limitApiReq: 500,
+        limitDeliverers: 0,
+        limitSkus: 50,
+        limitAiReq: 15,
+      },
+    })
   })
 
   const lang = req.headers.get('accept-language')?.startsWith('ar') ? 'ar'

@@ -8,167 +8,322 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Loader2, CheckCircle, CreditCard, Landmark } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
-import { toast } from 'sonner'
-import { Loader2, TrendingUp, CheckCircle, CreditCard, Landmark, Shield } from 'lucide-react'
-import { formatDA } from '@/lib/algerian/format'
+  PLANS,
+  APPS,
+  TRIAL_ELIGIBLE_APPS,
+  ANNUAL_DISCOUNT,
+  calcMonthlyTotal,
+  isAppIncluded,
+  type PlanId,
+  type AppId,
+} from '@/lib/pricing/config'
 
-// ── Plan config ───────────────────────────────────────────────────────────────
-
-const PLANS: Record<string, { label: string; price: number; color: string }> = {
-  STARTER: { label: 'Starter',  price: 1500, color: 'bg-blue-50 border-blue-200 text-blue-700' },
-  PRO:     { label: 'Pro',      price: 3200, color: 'bg-yelha-50 border-yelha-200 text-yelha-700' },
-  AGENCY:  { label: 'Agency',   price: 9900, color: 'bg-purple-50 border-purple-200 text-purple-700' },
+// French number format: 4 900 DA (space as thousands separator)
+function fmtDA(n: number): string {
+  return n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' DA'
 }
 
-const DURATIONS = [
-  { months: 1,  label: '1 mois',   discount: 0 },
-  { months: 3,  label: '3 mois',   discount: 10 },
-  { months: 6,  label: '6 mois',   discount: 15 },
-  { months: 12, label: '12 mois',  discount: 20 },
-]
+type PaymentMethod = 'CHARGILY' | 'CCP' | null
 
-type PaymentMethod = 'chargily' | 'ccp' | null
+interface CcpResult {
+  ccpRef: string
+  amount: number
+  instructions?: string
+}
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { data: session } = useSession()
 
-  const planKey = (searchParams.get('plan') ?? 'STARTER').toUpperCase()
-  const plan = PLANS[planKey] ?? PLANS.STARTER
+  // Parse query params
+  const planParam = (searchParams.get('plan') ?? 'pro') as PlanId
+  const planId: PlanId = planParam in PLANS ? planParam : 'pro'
+  const cycleParam = searchParams.get('cycle') ?? 'monthly'
+  const appsParam = searchParams.get('apps') ?? ''
 
-  const [months, setMonths] = useState(1)
+  const initialExtra: AppId[] = appsParam
+    ? (appsParam.split(',').filter(a => a in APPS && !isAppIncluded(planId, a as AppId)) as AppId[])
+    : []
+
+  const [extraApps, setExtraApps] = useState<AppId[]>(initialExtra)
+  const [annual, setAnnual] = useState(cycleParam === 'annual')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null)
   const [loading, setLoading] = useState(false)
-  const [showCcpModal, setShowCcpModal] = useState(false)
+  const [ccpResult, setCcpResult] = useState<CcpResult | null>(null)
 
-  const [info, setInfo] = useState({ name: '', email: '', phone: '' })
+  const [info, setInfo] = useState({ name: '', email: '', company: '', phone: '' })
 
   useEffect(() => {
     if (session?.user) {
       setInfo(i => ({
         ...i,
-        name:  session.user.name ?? '',
+        name: session.user.name ?? '',
         email: session.user.email ?? '',
       }))
     }
   }, [session])
 
-  const durOpt = DURATIONS.find(d => d.months === months) ?? DURATIONS[0]
-  const baseTotal = plan.price * months
-  const discount = Math.round(baseTotal * durOpt.discount / 100)
-  const total = baseTotal - discount
+  const plan = PLANS[planId]
+  const includedApps: AppId[] = 'includedApps' in plan
+    ? (plan.includedApps === 'ALL'
+      ? (Object.keys(APPS) as AppId[])
+      : [...(plan.includedApps as readonly AppId[])])
+    : []
 
-  const handleSubmit = async () => {
-    if (!paymentMethod) { toast.error('Choisissez une méthode de paiement'); return }
-    if (!info.name || !info.email) { toast.error('Veuillez remplir vos informations'); return }
+  // All non-included, non-core apps available as extras
+  const availableExtras: AppId[] = (Object.keys(APPS) as AppId[]).filter(
+    a => !isAppIncluded(planId, a) && !APPS[a].core
+  )
 
-    if (paymentMethod === 'chargily') {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/subscription/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planKey, months, locale: 'fr' }),
-        })
-        const data = await res.json()
-        if (!res.ok || !data.checkout_url) {
-          toast.error(data.error ?? 'Erreur lors de la redirection vers le paiement')
-          return
-        }
-        window.location.href = data.checkout_url
-      } catch {
-        toast.error('Une erreur est survenue')
-      } finally {
-        setLoading(false)
-      }
+  function toggleExtra(appId: AppId) {
+    setExtraApps(prev =>
+      prev.includes(appId) ? prev.filter(a => a !== appId) : [...prev, appId]
+    )
+  }
+
+  // Pricing calculations
+  const planPrice = plan.price
+  const extrasPrice = extraApps.reduce((s, a) => s + APPS[a].price, 0)
+  const subtotal = planPrice + extrasPrice
+  const annualSaving = annual ? Math.round(subtotal * ANNUAL_DISCOUNT) : 0
+  const monthlyTotal = annual ? Math.round(subtotal * (1 - ANNUAL_DISCOUNT)) : subtotal
+  const annualTotal = monthlyTotal * 12
+
+  async function handleSubmit() {
+    if (!paymentMethod) return
+    if (!info.name || !info.email || !info.phone) {
+      alert('Veuillez remplir tous les champs obligatoires (*).')
       return
     }
 
-    // CCP
-    setShowCcpModal(true)
-  }
-
-  const handleCcpConfirm = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/subscriptions/ccp-pending', {
+      const body = {
+        planId,
+        extraApps,
+        billingCycle: annual ? 'ANNUAL' : 'MONTHLY',
+        method: paymentMethod,
+        name: info.name,
+        email: info.email,
+        company: info.company,
+        phone: info.phone,
+      }
+
+      const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planKey, months, name: info.name, email: info.email, phone: info.phone }),
+        body: JSON.stringify(body),
       })
+      const data = await res.json()
+
       if (!res.ok) {
-        const data = await res.json()
-        toast.error(data.error ?? 'Erreur lors de l\'envoi')
+        alert(data.error ?? 'Une erreur est survenue.')
         return
       }
-      setShowCcpModal(false)
-      toast.success('Votre demande est enregistrée. Nous validerons votre paiement sous 24h.')
-      router.push('/dashboard')
+
+      if (paymentMethod === 'CHARGILY') {
+        if (data.url) window.location.href = data.url
+      } else {
+        // CCP
+        setCcpResult({
+          ccpRef: data.ccpRef ?? 'YELHA-' + Math.random().toString(36).slice(2, 10).toUpperCase(),
+          amount: data.amount ?? monthlyTotal,
+          instructions: data.instructions,
+        })
+      }
     } catch {
-      toast.error('Une erreur est survenue')
+      alert('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)
     }
   }
 
+  // ── CCP Instructions panel ──────────────────────────────────────────────────
+  if (ccpResult) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6 pt-16">
+        <div className="max-w-lg w-full">
+          <Card className="p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <Landmark className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h1 className="font-bold text-slate-900 text-lg">Instructions de virement CCP</h1>
+                <p className="text-sm text-slate-500">Votre demande a été enregistrée</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3 text-sm mb-6">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Numéro CCP</span>
+                <span className="font-bold text-slate-800">00123456789 CCP Alger</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Titulaire</span>
+                <span className="font-bold text-slate-800">Yelha Technologies</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Montant exact</span>
+                <span className="font-bold text-amber-700 da-amount">{fmtDA(ccpResult.amount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Référence à indiquer</span>
+                <span className="font-bold text-slate-800">{ccpResult.ccpRef}</span>
+              </div>
+              <Separator />
+              <p className="text-slate-600">
+                Envoyez votre reçu à{' '}
+                <a href="mailto:cvkdev@outlook.fr" className="underline text-amber-700">
+                  cvkdev@outlook.fr
+                </a>
+              </p>
+              <p className="text-slate-500">Activation sous 24–48h ouvrables.</p>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={() => router.push(`/subscriptions/success?method=ccp&plan=${planId}`)}
+            >
+              Compris, aller au dashboard →
+            </Button>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Main checkout layout ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center gap-2">
-          <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-yelha-700 text-lg">YelhaERP</span>
-          <Badge className={`ml-3 ${plan.color} border`}>{plan.label}</Badge>
+          <span className="font-bold text-lg text-slate-900">YelhaERP</span>
+          <span className="text-slate-300 mx-1">·</span>
+          <span className="text-slate-500 text-sm">Finaliser votre abonnement</span>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
 
-        {/* ── Left column ── */}
+        {/* ── LEFT COLUMN ── */}
         <div className="space-y-6">
 
-          {/* Durée */}
+          {/* 1. Plan sélectionné */}
           <Card className="p-6">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Durée de l&apos;abonnement</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {DURATIONS.map(d => (
-                <button
-                  key={d.months}
-                  type="button"
-                  onClick={() => setMonths(d.months)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border-2 p-4 transition-all ${
-                    months === d.months
-                      ? 'border-yelha-500 bg-yelha-50'
-                      : 'border-slate-200 bg-white hover:border-yelha-300'
-                  }`}
-                >
-                  <span className="font-semibold text-sm text-slate-800">{d.label}</span>
-                  {d.discount > 0 && (
-                    <Badge className="bg-green-100 text-green-700 border-0 text-xs">-{d.discount}%</Badge>
-                  )}
-                  <span className="text-xs text-slate-500 mt-1">
-                    {formatDA(plan.price * (1 - d.discount / 100))}/mois
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Plan sélectionné</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <Badge className="bg-emerald-100 text-emerald-700 border-0 text-sm px-3 py-1">
+                {plan.name}
+              </Badge>
+              <span className="text-slate-500 text-sm da-amount">{fmtDA(plan.price)}/mois</span>
+            </div>
+
+            {/* Included apps */}
+            {includedApps.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
+                  Inclus dans ce plan
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {includedApps.map(appId => (
+                    <span
+                      key={appId}
+                      className="inline-flex items-center gap-1 text-xs bg-slate-100 text-slate-600 rounded-full px-2.5 py-1"
+                    >
+                      {APPS[appId as AppId]?.icon} {APPS[appId as AppId]?.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Extra apps toggle */}
+            {availableExtras.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
+                  Modules supplémentaires (optionnels)
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availableExtras.map(appId => {
+                    const app = APPS[appId]
+                    const selected = extraApps.includes(appId)
+                    return (
+                      <button
+                        key={appId}
+                        type="button"
+                        onClick={() => toggleExtra(appId)}
+                        className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-all ${
+                          selected
+                            ? 'border-emerald-400 bg-emerald-50'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span>{app.icon}</span>
+                          <span className="font-medium text-slate-700">{app.name}</span>
+                        </span>
+                        <span className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-slate-400 text-xs da-amount">+{fmtDA(app.price)}/mois</span>
+                          {selected && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* 2. Durée */}
+          <Card className="p-6">
+            <h2 className="text-base font-semibold text-slate-900 mb-4">Durée</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Monthly */}
+              <button
+                type="button"
+                onClick={() => setAnnual(false)}
+                className={`flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all ${
+                  !annual ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <span className="font-semibold text-slate-800 mb-1">Mensuel</span>
+                <span className="text-sm text-slate-500 da-amount">{fmtDA(subtotal)}/mois</span>
+              </button>
+
+              {/* Annual */}
+              <button
+                type="button"
+                onClick={() => setAnnual(true)}
+                className={`flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all ${
+                  annual ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <span className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
+                  Annuel
+                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">-20%</Badge>
+                </span>
+                <span className="text-sm text-slate-500 da-amount">
+                  {fmtDA(Math.round(subtotal * (1 - ANNUAL_DISCOUNT)))}/mois
+                </span>
+                {subtotal > 0 && (
+                  <span className="text-xs text-green-600 mt-1 da-amount">
+                    Économie de {fmtDA(annualSaving * 12)}/an
                   </span>
-                </button>
-              ))}
+                )}
+              </button>
             </div>
           </Card>
 
-          {/* Informations */}
+          {/* 3. Vos informations */}
           <Card className="p-6">
             <h2 className="text-base font-semibold text-slate-900 mb-4">Vos informations</h2>
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Nom complet <span className="text-red-500">*</span></Label>
                 <Input
                   value={info.name}
@@ -176,161 +331,173 @@ function CheckoutContent() {
                   placeholder="Karim Benali"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Email <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="email"
-                    value={info.email}
-                    onChange={e => setInfo(i => ({ ...i, email: e.target.value }))}
-                    placeholder="karim@exemple.dz"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Téléphone</Label>
-                  <Input
-                    value={info.phone}
-                    onChange={e => setInfo(i => ({ ...i, phone: e.target.value }))}
-                    placeholder="0555 123 456"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <Label>Email <span className="text-red-500">*</span></Label>
+                <Input
+                  type="email"
+                  value={info.email}
+                  onChange={e => setInfo(i => ({ ...i, email: e.target.value }))}
+                  placeholder="karim@exemple.dz"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Société <span className="text-slate-400 text-xs font-normal">(optionnel)</span></Label>
+                <Input
+                  value={info.company}
+                  onChange={e => setInfo(i => ({ ...i, company: e.target.value }))}
+                  placeholder="Bati-Pro SARL"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Téléphone <span className="text-red-500">*</span></Label>
+                <Input
+                  type="tel"
+                  value={info.phone}
+                  onChange={e => setInfo(i => ({ ...i, phone: e.target.value }))}
+                  placeholder="0555 123 456"
+                />
               </div>
             </div>
           </Card>
 
-          {/* Méthode de paiement */}
+          {/* 4. Méthode de paiement */}
           <Card className="p-6">
             <h2 className="text-base font-semibold text-slate-900 mb-4">Méthode de paiement</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setPaymentMethod('chargily')}
+                onClick={() => setPaymentMethod('CHARGILY')}
                 className={`flex items-center gap-4 rounded-xl border-2 p-5 text-left transition-all ${
-                  paymentMethod === 'chargily'
-                    ? 'border-yelha-500 bg-yelha-50'
-                    : 'border-slate-200 bg-white hover:border-yelha-300'
+                  paymentMethod === 'CHARGILY'
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <CreditCard className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 text-lg">
+                  💳
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-slate-800">Chargily Pay</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Edahabia / CIB</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Edahabia · CIB</p>
                 </div>
-                {paymentMethod === 'chargily' && (
-                  <CheckCircle className="w-5 h-5 text-yelha-500 ml-auto flex-shrink-0" />
+                {paymentMethod === 'CHARGILY' && (
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                 )}
               </button>
 
               <button
                 type="button"
-                onClick={() => setPaymentMethod('ccp')}
+                onClick={() => setPaymentMethod('CCP')}
                 className={`flex items-center gap-4 rounded-xl border-2 p-5 text-left transition-all ${
-                  paymentMethod === 'ccp'
-                    ? 'border-yelha-500 bg-yelha-50'
-                    : 'border-slate-200 bg-white hover:border-yelha-300'
+                  paymentMethod === 'CCP'
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Landmark className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center flex-shrink-0 text-lg">
+                  🏦
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-slate-800">Virement CCP</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Validation sous 24h</p>
+                  <p className="text-xs text-slate-500 mt-0.5">24–48h ouvrables</p>
                 </div>
-                {paymentMethod === 'ccp' && (
-                  <CheckCircle className="w-5 h-5 text-yelha-500 ml-auto flex-shrink-0" />
+                {paymentMethod === 'CCP' && (
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                 )}
               </button>
             </div>
           </Card>
 
           <Button
-            className="w-full h-12 text-base"
+            className="w-full h-12 text-base font-semibold"
             onClick={handleSubmit}
             disabled={loading || !paymentMethod}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Confirmer et payer →
+            Confirmer et payer → {fmtDA(monthlyTotal)}
           </Button>
         </div>
 
-        {/* ── Right column — récapitulatif ── */}
-        <div className="lg:sticky lg:top-8 h-fit space-y-4">
+        {/* ── RIGHT COLUMN — sticky summary ── */}
+        <div className="lg:sticky lg:top-8 h-fit">
           <Card className="p-6">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Récapitulatif</h2>
-            <div className="space-y-3 text-sm">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">
+              Récapitulatif
+            </h2>
+
+            <div className="space-y-2 text-sm">
+              {/* Plan line */}
               <div className="flex justify-between">
-                <span className="text-slate-500">Plan</span>
-                <span className="font-semibold text-slate-800">{plan.label}</span>
+                <span className="text-slate-600">Plan {plan.name}</span>
+                <span className="font-medium text-slate-800 da-amount">{fmtDA(planPrice)}</span>
               </div>
+
+              {/* Extra app lines */}
+              {extraApps.map(appId => (
+                <div key={appId} className="flex justify-between text-slate-500">
+                  <span>+ {APPS[appId].name}</span>
+                  <span className="da-amount">{fmtDA(APPS[appId].price)}</span>
+                </div>
+              ))}
+            </div>
+
+            <Separator className="my-3" />
+
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">Durée</span>
-                <span className="font-semibold text-slate-800">{durOpt.label}</span>
+                <span className="text-slate-500">Sous-total</span>
+                <span className="text-slate-700 da-amount">{fmtDA(subtotal)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Prix / mois</span>
-                <span className="font-medium text-slate-700 da-amount">{formatDA(plan.price)}</span>
-              </div>
-              {durOpt.discount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Remise ({durOpt.discount}%)</span>
-                  <span className="font-medium text-green-600 da-amount">- {formatDA(discount)}</span>
+
+              {annual && subtotal > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Remise annuelle -20%</span>
+                  <span className="da-amount">-{fmtDA(annualSaving)}</span>
                 </div>
               )}
-              <div className="border-t border-slate-200 pt-3 flex justify-between">
-                <span className="font-bold text-slate-900">Total TTC</span>
-                <span className="font-bold text-lg text-yelha-700 da-amount">{formatDA(total)}</span>
-              </div>
             </div>
-          </Card>
 
-          <Card className="p-5">
-            <div className="space-y-3">
+            <Separator className="my-3" />
+
+            <div className="flex justify-between items-baseline">
+              <span className="font-bold text-slate-900">TOTAL / mois</span>
+              <span className="font-bold text-xl text-emerald-700 da-amount">{fmtDA(monthlyTotal)}</span>
+            </div>
+
+            {annual && (
+              <p className="text-xs text-slate-400 mt-1 text-right da-amount">
+                Soit {fmtDA(annualTotal)}/an
+              </p>
+            )}
+
+            <Separator className="my-4" />
+
+            <div className="space-y-2">
               {[
-                { icon: Shield,       text: 'Paiement sécurisé' },
-                { icon: CheckCircle,  text: 'Sans engagement' },
-                { icon: CheckCircle,  text: 'Support inclus' },
-              ].map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-3">
-                  <Icon className="w-4 h-4 text-yelha-500 flex-shrink-0" />
-                  <span className="text-sm text-slate-600">{text}</span>
-                </div>
+                annual ? '✓ Sans engagement annuel résiliable' : '✓ Sans engagement',
+                '✓ Résiliation à tout moment',
+                '✓ Support inclus',
+                '✓ Données sécurisées',
+              ].map(item => (
+                <p key={item} className="text-xs text-slate-500 flex items-center gap-1.5">
+                  {item}
+                </p>
               ))}
             </div>
           </Card>
         </div>
       </div>
-
-      {/* ── Modal CCP ── */}
-      <Dialog open={showCcpModal} onOpenChange={setShowCcpModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Virement CCP</DialogTitle>
-            <DialogDescription>
-              Effectuez un virement vers notre compte CCP en indiquant la référence ci-dessous.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Compte CCP</span><span className="font-bold text-slate-800">1234567890</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Clé</span><span className="font-bold text-slate-800">42</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Montant</span><span className="font-bold text-yelha-700 da-amount">{formatDA(total)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Référence</span><span className="font-bold text-slate-800">{info.email || 'votre email'}</span></div>
-          </div>
-          <Button className="w-full mt-2" onClick={handleCcpConfirm} disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            J&apos;ai effectué le virement
-          </Button>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center text-slate-400">
+        Chargement…
+      </div>
+    }>
       <CheckoutContent />
     </Suspense>
   )
