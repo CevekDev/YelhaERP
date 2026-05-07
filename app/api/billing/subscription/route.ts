@@ -20,11 +20,31 @@ export async function GET(req: NextRequest) {
 
     const { companyId } = await getTenantContext()
 
-    const sub = await prisma.yelhaSubscription.findUnique({
+    let sub = await prisma.yelhaSubscription.findUnique({
       where: { companyId },
     })
 
-    if (!sub) return apiError('Abonnement introuvable', 404)
+    // Auto-create trial subscription for companies created before the billing system
+    if (!sub) {
+      const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      sub = await prisma.yelhaSubscription.create({
+        data: {
+          companyId,
+          planId: 'trial',
+          status: 'TRIAL',
+          billingCycle: 'MONTHLY',
+          trialEndsAt: trialEnd,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: trialEnd,
+          monthlyAmount: 0,
+          limitEmails: 50,
+          limitApiReq: 500,
+          limitDeliverers: 0,
+          limitSkus: 50,
+          limitAiReq: 15,
+        },
+      })
+    }
 
     // Compute active apps
     const allAppIds = Object.keys(APPS) as AppId[]
@@ -34,8 +54,8 @@ export async function GET(req: NextRequest) {
       if (CORE_APPS.includes(appId)) return true
       if (planId === 'enterprise') return true
       if (isAppIncluded(planId, appId)) return true
-      if (sub.extraApps.includes(appId)) return true
-      if (sub.status === 'TRIAL' && sub.trialApps.includes(appId)) return true
+      if (sub!.extraApps.includes(appId)) return true
+      if (sub!.status === 'TRIAL' && sub!.trialApps.includes(appId)) return true
       return false
     })
 
