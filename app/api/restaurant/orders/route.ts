@@ -5,10 +5,13 @@ import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { z } from 'zod'
 
+const ACTIVE_STATUSES = ['PENDING', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERED']
+
 const orderQuerySchema = z.object({
   status: z.string().optional(),
   type: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  tableId: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
@@ -47,7 +50,7 @@ export async function GET(req: NextRequest) {
     const query = orderQuerySchema.safeParse(Object.fromEntries(searchParams))
     if (!query.success) return apiError('Paramètres invalides', 400)
 
-    const { page, limit, status, type, date } = query.data
+    const { page, limit, status, type, date, tableId } = query.data
     const skip = (page - 1) * limit
 
     let dateFilter: { gte?: Date; lt?: Date } | undefined
@@ -58,10 +61,18 @@ export async function GET(req: NextRequest) {
       dateFilter = { gte: d, lt: next }
     }
 
+    // 'active' = pseudo-status → toutes les commandes non terminées
+    const statusFilter = status === 'active'
+      ? { status: { in: ACTIVE_STATUSES as never[] } }
+      : status
+        ? { status: status as never }
+        : {}
+
     const where = {
       companyId: ctx.companyId,
-      ...(status && { status: status as never }),
+      ...statusFilter,
       ...(type && { type: type as never }),
+      ...(tableId && { tableId }),
       ...(dateFilter && { createdAt: dateFilter }),
     }
 
