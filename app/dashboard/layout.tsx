@@ -61,9 +61,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       )}
 
-      <TopNav />
+      <TopNav hasBanner={isTrial && !isExpired} />
       <KeyboardShortcuts />
-      <main className={`pt-14 md:pt-24 min-h-screen${isTrial && !isExpired ? ' mt-9' : ''}`}>
+      <main className={isTrial && !isExpired ? 'pt-[92px] md:pt-[132px] min-h-screen' : 'pt-14 md:pt-24 min-h-screen'}>
         {children}
       </main>
       <ChatWidget />

@@ -387,7 +387,7 @@ function LanguageSwitcher() {
 }
 
 // ── Top Navbar ───────────────────────────────────────────────
-export function TopNav() {
+export function TopNav({ hasBanner = false }: { hasBanner?: boolean }) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [activeApps, setActiveApps] = useState<string[] | null>(null)
@@ -424,7 +424,7 @@ export function TopNav() {
   return (
     <>
       {/* Main top bar */}
-      <header className="fixed top-0 w-full h-14 bg-background border-b border-border z-50 flex items-center px-4 gap-3">
+      <header className={cn("fixed w-full h-14 bg-background border-b border-border z-50 flex items-center px-4 gap-3", hasBanner ? "top-9" : "top-0")}>
         {/* Mobile hamburger (legacy sidebar on small screens) */}
         <div className="md:hidden">
           <MobileSidebarTrigger />
@@ -514,16 +514,16 @@ export function TopNav() {
 
       {/* Contextual sub-nav */}
       {activeModule && activeModule.subNav.length > 0 && (
-        <SubNav module={activeModule} pathname={pathname} />
+        <SubNav module={activeModule} pathname={pathname} hasBanner={hasBanner} />
       )}
     </>
   )
 }
 
 // ── Sub Navigation ───────────────────────────────────────────
-function SubNav({ module, pathname }: { module: Module; pathname: string }) {
+function SubNav({ module, pathname, hasBanner }: { module: Module; pathname: string; hasBanner: boolean }) {
   return (
-    <nav className="fixed top-14 w-full h-10 bg-background border-b border-border z-40 flex items-center px-4 gap-1 overflow-x-auto">
+    <nav className={cn("fixed w-full h-10 bg-background border-b border-border z-40 flex items-center px-4 gap-1 overflow-x-auto", hasBanner ? "top-[92px]" : "top-14")}>
       {module.subNav.map((item: { label: string; href: string }) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
         return (
