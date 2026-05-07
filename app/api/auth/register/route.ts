@@ -44,9 +44,6 @@ export async function POST(req: NextRequest) {
         verificationToken: code, verificationExpiry: expiry,
       },
     })
-    await tx.companyModules.create({
-      data: { companyId: company.id },
-    })
     const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     await tx.yelhaSubscription.create({
       data: {

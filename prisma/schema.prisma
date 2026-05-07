@@ -103,35 +103,7 @@ model Company {
   loyaltyClients           LoyaltyClient[]
   restaurantOrderSequences RestaurantOrderSequence[]
   invoiceSequences         InvoiceSequence[]
-  modules                  CompanyModules?
   yelhaSubscription        YelhaSubscription?
-}
-
-model CompanyModules {
-  id            String  @id @default(cuid())
-  companyId     String  @unique
-  crm           Boolean @default(true)
-  invoices      Boolean @default(true)
-  quotes        Boolean @default(true)
-  clients       Boolean @default(true)
-  suppliers     Boolean @default(true)
-  purchases     Boolean @default(true)
-  stock         Boolean @default(true)
-  accounting    Boolean @default(false)
-  hr            Boolean @default(false)
-  payroll       Boolean @default(false)
-  projects      Boolean @default(false)
-  production    Boolean @default(false)
-  pos           Boolean @default(false)
-  ecommerce     Boolean @default(false)
-  restaurant    Boolean @default(false)
-  subscriptions Boolean @default(false)
-  tax           Boolean @default(false)
-  expenses      Boolean @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 enum BusinessType {

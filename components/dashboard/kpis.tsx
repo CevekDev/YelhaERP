@@ -3,12 +3,6 @@ import { TrendingUp, AlertCircle, Package, CreditCard, FileCheck, Receipt } from
 import { formatDA } from '@/lib/algerian/format'
 import Link from 'next/link'
 
-interface ModulesState {
-  quotes?: boolean
-  expenses?: boolean
-  stock?: boolean
-}
-
 interface KPIsProps {
   monthRevenue: number
   unpaidTotal: number
@@ -16,7 +10,6 @@ interface KPIsProps {
   lowStockCount: number
   pendingQuotes?: number
   pendingExpenses?: number
-  modules?: ModulesState | null
 }
 
 export function DashboardKPIs({
@@ -26,7 +19,6 @@ export function DashboardKPIs({
   lowStockCount,
   pendingQuotes = 0,
   pendingExpenses = 0,
-  modules,
 }: KPIsProps) {
   const allKpis = [
     {
@@ -90,10 +82,7 @@ export function DashboardKPIs({
     },
   ]
 
-  // Filter by active modules when modules are provided
-  const kpis = modules
-    ? allKpis.filter(k => k.key === null || modules[k.key] !== false)
-    : allKpis
+  const kpis = allKpis
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">

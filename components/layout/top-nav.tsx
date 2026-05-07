@@ -335,13 +335,13 @@ function AppsMenu() {
   )
 }
 
-// ── Module → CompanyModules field mapping ────────────────────
-const MODULE_FLAGS: Record<string, (keyof CompanyModulesData)[]> = {
+// ── Module → App IDs mapping ─────────────────────────────────
+const MODULE_APPS: Record<string, string[]> = {
   ventes:      ['invoices', 'quotes', 'clients'],
-  achats:      ['purchases', 'suppliers'],
+  achats:      ['purchases'],
   stocks:      ['stock'],
-  compta:      ['accounting', 'tax', 'expenses'],
-  rh:          ['hr', 'payroll'],
+  compta:      ['accounting', 'expenses'],
+  rh:          ['hr'],
   projets:     ['projects'],
   production:  ['production'],
   crm:         ['crm'],
@@ -349,14 +349,6 @@ const MODULE_FLAGS: Record<string, (keyof CompanyModulesData)[]> = {
   ecommerce:   ['ecommerce'],
   abonnements: ['subscriptions'],
   restaurant:  ['restaurant'],
-}
-
-interface CompanyModulesData {
-  crm: boolean; invoices: boolean; quotes: boolean; clients: boolean
-  suppliers: boolean; purchases: boolean; stock: boolean; accounting: boolean
-  hr: boolean; payroll: boolean; projects: boolean; production: boolean
-  pos: boolean; ecommerce: boolean; restaurant: boolean; subscriptions: boolean
-  tax: boolean; expenses: boolean
 }
 
 // ── Language switcher ────────────────────────────────────────
@@ -398,23 +390,23 @@ function LanguageSwitcher() {
 export function TopNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [companyModules, setCompanyModules] = useState<CompanyModulesData | null>(null)
+  const [activeApps, setActiveApps] = useState<string[] | null>(null)
 
   useEffect(() => {
     if (session?.user) {
-      fetch('/api/settings/modules')
+      fetch('/api/billing/subscription')
         .then(r => r.json())
-        .then(d => { if (d.data) setCompanyModules(d.data) })
+        .then(d => { if (d.data?.activeApps) setActiveApps(d.data.activeApps) })
         .catch(() => {})
     }
   }, [session?.user])
 
   const visibleModules = MODULES.filter(m => {
     if (m.id === 'dashboard') return true
-    if (!companyModules) return true // show all while loading
-    const flags = MODULE_FLAGS[m.id]
-    if (!flags) return true
-    return flags.some(flag => companyModules[flag])
+    if (!activeApps) return true // show all while loading
+    const appIds = MODULE_APPS[m.id]
+    if (!appIds) return true
+    return appIds.some(appId => activeApps.includes(appId))
   })
 
   const activeModule = getActiveModule(pathname)

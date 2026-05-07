@@ -12,12 +12,6 @@ const schema = z.object({
     .length(3, 'Vous devez choisir exactement 3 applications'),
 })
 
-// CompanyModules fields that can be toggled
-type ModuleField = keyof Omit<
-  Parameters<typeof prisma.companyModules.upsert>[0]['create'],
-  'companyId' | 'id' | 'createdAt' | 'updatedAt'
->
-
 export async function POST(req: NextRequest) {
   try {
     const rl = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
@@ -44,26 +38,9 @@ export async function POST(req: NextRequest) {
       return apiError('Les apps d\'essai ne peuvent être définies que pendant la période d\'essai', 422)
     }
 
-    // Update trialApps
     const updated = await prisma.yelhaSubscription.update({
       where: { companyId },
       data: { trialApps: apps },
-    })
-
-    // Upsert CompanyModules to reflect chosen trial apps
-    const moduleData: Record<string, boolean> = {}
-    for (const appId of apps) {
-      // Map AppId to CompanyModules field name (they match exactly in the schema)
-      moduleData[appId] = true
-    }
-
-    await prisma.companyModules.upsert({
-      where: { companyId },
-      create: {
-        companyId,
-        ...moduleData,
-      },
-      update: moduleData,
     })
 
     return apiSuccess({ subscription: updated, trialApps: apps })
