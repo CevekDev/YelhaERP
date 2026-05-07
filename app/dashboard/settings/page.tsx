@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, LayoutGrid, User, Layers } from 'lucide-react'
+import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, User } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -18,7 +18,7 @@ const SECTIONS = [
     href: '/dashboard/settings/billing',
     icon: CreditCard,
     label: 'Abonnement & facturation',
-    description: 'Gérer votre plan, payer par EDAHABIA/CIB ou virement CCP',
+    description: 'Gérer votre plan, vos apps et payer par EDAHABIA/CIB ou CCP',
     color: 'bg-yelha-50 text-yelha-600',
   },
   {
@@ -34,20 +34,6 @@ const SECTIONS = [
     label: 'Collaborateurs & accès',
     description: 'Ajouter des administrateurs, comptables ou employés à votre espace',
     color: 'bg-purple-50 text-purple-600',
-  },
-  {
-    href: '/dashboard/settings/applications',
-    icon: LayoutGrid,
-    label: 'Applications',
-    description: 'Activer ou désactiver les modules : Compta, RH, CRM, Production, POS...',
-    color: 'bg-emerald-50 text-emerald-600',
-  },
-  {
-    href: '/dashboard/settings/modules',
-    icon: Layers,
-    label: 'Modules',
-    description: 'Gérer précisément les modules actifs de votre espace (CRM, Paie, POS, etc.)',
-    color: 'bg-teal-50 text-teal-600',
   },
   {
     href: '/dashboard/settings/profile',
