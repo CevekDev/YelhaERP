@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { isAppIncluded, type AppId } from '@/lib/pricing/config'
 
-const CORE_APPS: AppId[] = ['invoices', 'quotes', 'clients', 'stock', 'expenses']
+const CORE_APPS: AppId[] = ['invoices', 'quotes', 'clients', 'purchases', 'stock']
 
 export async function canAccessApp(companyId: string, appId: AppId): Promise<boolean> {
   const sub = await prisma.yelhaSubscription.findUnique({

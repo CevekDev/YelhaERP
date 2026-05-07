@@ -6,7 +6,7 @@ import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { isAppIncluded, APPS, type AppId } from '@/lib/pricing/config'
 
-const CORE_APPS: AppId[] = ['invoices', 'quotes', 'clients', 'stock', 'expenses']
+const CORE_APPS: AppId[] = ['invoices', 'quotes', 'clients', 'purchases', 'stock']
 
 const patchSchema = z.object({
   addApps:    z.array(z.enum(Object.keys(APPS) as [AppId, ...AppId[]])).optional(),

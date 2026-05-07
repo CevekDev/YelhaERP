@@ -23,7 +23,7 @@ export const PLANS = {
     description: 'Auto-entrepreneur, artisan, commerçant',
     durationDays: null,
     freeApps: 0,
-    includedApps: ['invoices', 'quotes', 'clients', 'stock', 'expenses'] as const,
+    includedApps: ['invoices', 'quotes', 'clients', 'purchases', 'stock', 'expenses'] as const,
     limits: {
       emails: 200,
       apiRequests: 2000,
@@ -41,8 +41,8 @@ export const PLANS = {
     durationDays: null,
     freeApps: 0,
     includedApps: [
-      'invoices', 'quotes', 'clients', 'stock', 'expenses',
-      'crm', 'purchases', 'projects', 'subscriptions',
+      'invoices', 'quotes', 'clients', 'purchases', 'stock', 'expenses',
+      'crm', 'projects', 'subscriptions',
     ] as const,
     limits: {
       emails: 1000,
@@ -61,8 +61,8 @@ export const PLANS = {
     durationDays: null,
     freeApps: 0,
     includedApps: [
-      'invoices', 'quotes', 'clients', 'stock', 'expenses',
-      'crm', 'purchases', 'projects', 'subscriptions',
+      'invoices', 'quotes', 'clients', 'purchases', 'stock', 'expenses',
+      'crm', 'projects', 'subscriptions',
       'hr', 'payroll', 'accounting', 'tax', 'pos', 'production',
     ] as const,
     limits: {
@@ -99,10 +99,10 @@ export const APPS = {
   quotes:        { id: 'quotes',        name: 'Devis',                  icon: '📄', price: 0,    core: true,  description: 'Inclus avec Factures' },
   clients:       { id: 'clients',       name: 'Clients & fournisseurs', icon: '👥', price: 0,    core: true,  description: 'Base de contacts illimitée' },
   stock:         { id: 'stock',         name: 'Stock',                  icon: '📦', price: 0,    core: true,  description: 'Mouvements, alertes de rupture' },
-  expenses:      { id: 'expenses',      name: 'Dépenses',               icon: '💸', price: 0,    core: true,  description: 'Notes de frais, validation' },
+  expenses:      { id: 'expenses',      name: 'Dépenses',               icon: '💸', price: 400,  core: false, description: 'Notes de frais, validation' },
 
   crm:           { id: 'crm',           name: 'CRM pipeline',           icon: '📊', price: 500,  core: false, description: 'Leads, opportunités, Kanban commercial' },
-  purchases:     { id: 'purchases',     name: 'Achats',                 icon: '🛒', price: 400,  core: false, description: 'Bons de commande fournisseur, réceptions' },
+  purchases:     { id: 'purchases',     name: 'Achats',                 icon: '🛒', price: 0,    core: true,  description: 'Bons de commande fournisseur, réceptions' },
   projects:      { id: 'projects',      name: 'Projets & timesheets',   icon: '📋', price: 600,  core: false, description: 'Tâches, temps passé, facturation projet' },
   subscriptions: { id: 'subscriptions', name: 'Abonnements clients',    icon: '🔄', price: 600,  core: false, description: 'Récurrent, Chargily Pay, virement CCP' },
   hr:            { id: 'hr',            name: 'RH',                     icon: '👤', price: 800,  core: false, description: 'Employés, congés, recrutement, évaluations' },
@@ -120,7 +120,7 @@ export type AppId = keyof typeof APPS
 export const ANNUAL_DISCOUNT = 0.20
 
 export const TRIAL_ELIGIBLE_APPS: AppId[] = [
-  'crm', 'purchases', 'projects', 'subscriptions',
+  'expenses', 'crm', 'projects', 'subscriptions',
   'hr', 'payroll', 'accounting', 'tax', 'pos',
   'production', 'restaurant', 'ecommerce',
 ]
