@@ -13,23 +13,21 @@ import { formatDA } from '@/lib/algerian/format'
 interface SubscriptionData {
   id: string
   planId: PlanId
-  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'EXPIRED' | 'CANCELLED'
+  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'EXPIRED' | 'CANCELLED' | 'PAUSED'
   billingCycle: 'MONTHLY' | 'ANNUAL'
   currentPeriodStart: string
   currentPeriodEnd: string
   trialEndsAt: string | null
   trialApps: string[]
   extraApps: string[]
-  usage: {
-    emailsSent: number
-    apiRequests: number
-    aiRequests: number
-    resetDate: string
-  }
-  payments: Array<{
+  usageEmails: number
+  usageApiReq: number
+  usageAiReq: number
+  usageResetAt: string
+  payments?: Array<{
     id: string
     createdAt: string
-    planName: string
+    planId: string
     amount: number
     method: string
     status: string
@@ -47,6 +45,7 @@ function statusBadge(status: SubscriptionData['status']) {
     PAST_DUE: { label: 'Paiement dû',   className: 'bg-red-100 text-red-800 border-red-200' },
     EXPIRED:  { label: 'Expiré',        className: 'bg-slate-100 text-slate-600 border-slate-200' },
     CANCELLED:{ label: 'Résilié',       className: 'bg-slate-100 text-slate-500 border-slate-200' },
+    PAUSED:   { label: 'En pause',      className: 'bg-blue-100 text-blue-700 border-blue-200' },
   }
   const s = map[status]
   return (
@@ -223,7 +222,7 @@ export default function BillingPage() {
     fetch('/api/billing/subscription')
       .then(r => r.json())
       .then(d => {
-        if (d.data?.subscription) setSub(d.data.subscription)
+        if (d.subscription) setSub(d.subscription)
         else setError("Impossible de charger l'abonnement.")
       })
       .catch(() => setError('Erreur réseau.'))
@@ -237,7 +236,7 @@ export default function BillingPage() {
       body: JSON.stringify({ addApps: [appId] }),
     })
     const d = await res.json()
-    if (d.data?.subscription) setSub(d.data.subscription)
+    if (d.subscription) setSub(d.subscription)
   }
 
   const handleRemoveApp = async (appId: AppId) => {
@@ -248,7 +247,7 @@ export default function BillingPage() {
       body: JSON.stringify({ removeApps: [appId] }),
     })
     const d = await res.json()
-    if (d.data?.subscription) setSub(d.data.subscription)
+    if (d.subscription) setSub(d.subscription)
     setRemovingApp(null)
   }
 
@@ -394,21 +393,21 @@ export default function BillingPage() {
         <div className="grid sm:grid-cols-2 gap-6">
           <UsageBar
             label="Emails envoyés"
-            used={sub.usage.emailsSent}
+            used={sub.usageEmails ?? 0}
             limit={limits.emails}
-            resetDate={sub.usage.resetDate}
+            resetDate={sub.usageResetAt ?? new Date().toISOString()}
           />
           <UsageBar
             label="Requêtes API"
-            used={sub.usage.apiRequests}
+            used={sub.usageApiReq ?? 0}
             limit={limits.apiRequests}
-            resetDate={sub.usage.resetDate}
+            resetDate={sub.usageResetAt ?? new Date().toISOString()}
           />
           <UsageBar
             label="Requêtes IA"
-            used={sub.usage.aiRequests}
+            used={sub.usageAiReq ?? 0}
             limit={limits.aiRequests}
-            resetDate={sub.usage.resetDate}
+            resetDate={sub.usageResetAt ?? new Date().toISOString()}
           />
         </div>
       </section>
@@ -542,7 +541,7 @@ export default function BillingPage() {
                     <td className="py-2.5 pr-4 text-foreground">
                       {new Date(p.createdAt).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="py-2.5 pr-4 font-medium">{p.planName}</td>
+                    <td className="py-2.5 pr-4 font-medium">{p.planId}</td>
                     <td className="py-2.5 pr-4 da-amount font-semibold">{formatDA(p.amount)}</td>
                     <td className="py-2.5 pr-4 text-muted-foreground">{methodLabel[p.method] ?? p.method}</td>
                     <td className="py-2.5">{paymentStatusBadge(p.status)}</td>

@@ -396,7 +396,7 @@ export function TopNav({ hasBanner = false }: { hasBanner?: boolean }) {
     if (session?.user) {
       fetch('/api/billing/subscription')
         .then(r => r.json())
-        .then(d => { if (d.data?.activeApps) setActiveApps(d.data.activeApps) })
+        .then(d => { if (d.activeApps) setActiveApps(d.activeApps) })
         .catch(() => {})
     }
   }, [session?.user])

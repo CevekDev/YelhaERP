@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
 
     let sub = await prisma.yelhaSubscription.findUnique({
       where: { companyId },
+      include: { payments: { orderBy: { createdAt: 'desc' }, take: 10 } },
     })
 
     // Auto-create trial subscription for companies created before the billing system
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
           limitSkus: 50,
           limitAiReq: 15,
         },
+        include: { payments: true },
       })
     }
 
