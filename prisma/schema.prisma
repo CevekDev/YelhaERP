@@ -2330,3 +2330,12 @@ model YelhaPayment {
 
   subscription   YelhaSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 }
+
+// ============================================================
+// CONFIG SYSTÈME (tarification admin)
+// ============================================================
+model SystemConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
