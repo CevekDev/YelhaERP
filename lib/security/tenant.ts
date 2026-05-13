@@ -26,6 +26,12 @@ export async function getTenantContext(): Promise<TenantContext> {
   }
 }
 
+export async function requireSuperAdmin(): Promise<void> {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('UNAUTHORIZED')
+  if (!session.user.isSuperAdmin) throw new Error('FORBIDDEN')
+}
+
 /**
  * Vérifie qu'une ressource appartient bien à l'entreprise de l'utilisateur.
  */

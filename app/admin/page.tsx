@@ -171,12 +171,12 @@ export default function AdminPanel() {
   const [confirmCcpId, setConfirmCcpId] = useState<string | null>(null)
   const [confirmingCcp, setConfirmingCcp] = useState(false)
 
-  const isOwner = session?.user?.role === 'OWNER'
+  const isSuperAdmin = session?.user?.isSuperAdmin === true
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.push('/login'); return }
-    if (status === 'authenticated' && !isOwner) { router.push('/dashboard'); return }
-  }, [status, isOwner, router])
+    if (status === 'authenticated' && !isSuperAdmin) { router.push('/dashboard'); return }
+  }, [status, isSuperAdmin, router])
 
   const fetchStats = useCallback(async () => {
     setLoadingStats(true)
@@ -214,16 +214,16 @@ export default function AdminPanel() {
   }, [])
 
   useEffect(() => {
-    if (status === 'authenticated' && isOwner) {
+    if (status === 'authenticated' && isSuperAdmin) {
       fetchStats()
       fetchCompanies()
       fetchPricing()
     }
-  }, [status, isOwner, fetchStats, fetchCompanies, fetchPricing])
+  }, [status, isSuperAdmin, fetchStats, fetchCompanies, fetchPricing])
 
   useEffect(() => {
-    if (status === 'authenticated' && isOwner) fetchCompanies()
-  }, [compPage, search, statusFilter, fetchCompanies, status, isOwner])
+    if (status === 'authenticated' && isSuperAdmin) fetchCompanies()
+  }, [compPage, search, statusFilter, fetchCompanies, status, isSuperAdmin])
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
@@ -296,7 +296,7 @@ export default function AdminPanel() {
 
   // ── Guard ─────────────────────────────────────────────────────────────────
 
-  if (status === 'loading' || (status === 'authenticated' && !isOwner)) {
+  if (status === 'loading' || (status === 'authenticated' && !isSuperAdmin)) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Chargement...</div>
   }
 

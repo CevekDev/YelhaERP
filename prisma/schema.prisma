@@ -149,6 +149,7 @@ model User {
   verificationToken  String?   @unique
   verificationExpiry DateTime?
   role               Role      @default(EMPLOYEE)
+  isSuperAdmin       Boolean   @default(false)
   companyId          String
   company            Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt          DateTime  @default(now())

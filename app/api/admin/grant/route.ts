@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { getTenantContext, requireRole } from '@/lib/security/tenant'
+import { requireSuperAdmin } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { PLANS } from '@/lib/pricing/config'
@@ -34,8 +34,7 @@ export async function POST(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    const ctx = await getTenantContext()
-    requireRole(ctx.role, 'OWNER')
+    await requireSuperAdmin()
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
 
     if (type === 'confirm_ccp') {
       if (!paymentId) return apiError('paymentId requis', 422)
-
       const payment = await prisma.yelhaPayment.findUnique({
         where: { id: paymentId },
         include: { subscription: true },
@@ -60,10 +58,7 @@ export async function POST(req: NextRequest) {
 
       const now = new Date()
       await prisma.$transaction([
-        prisma.yelhaPayment.update({
-          where: { id: paymentId },
-          data: { status: 'PAID', paidAt: now },
-        }),
+        prisma.yelhaPayment.update({ where: { id: paymentId }, data: { status: 'PAID', paidAt: now } }),
         prisma.yelhaSubscription.update({
           where: { id: payment.subscriptionId },
           data: {
@@ -80,7 +75,6 @@ export async function POST(req: NextRequest) {
       return apiSuccess({ confirmed: true })
     }
 
-    // free or activate
     if (!companyId) return apiError('companyId requis', 422)
     const sub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
     if (!sub) return apiError('Abonnement introuvable', 404)

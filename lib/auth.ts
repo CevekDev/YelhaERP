@@ -114,6 +114,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
           if (dbUser) {
             token.role         = dbUser.role
+            token.isSuperAdmin = dbUser.isSuperAdmin
             token.companyId    = dbUser.companyId
             token.companyName  = dbUser.company.name
             token.plan         = dbUser.company.plan
@@ -121,6 +122,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         } else {
           token.role         = (user as { role: Role }).role
+          token.isSuperAdmin = (user as { isSuperAdmin: boolean }).isSuperAdmin ?? false
           token.companyId    = (user as { companyId: string }).companyId
           token.companyName  = (user as { companyName: string }).companyName
           token.plan         = (user as { plan: string }).plan
@@ -129,16 +131,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.roleRefreshedAt = Date.now()
       }
 
-      // Rafraîchir le rôle depuis la DB toutes les 5 minutes
-      // pour que les changements de rôle (ex: OWNER) prennent effet sans reconnexion
+      // Rafraîchir rôle + isSuperAdmin depuis la DB toutes les 5 minutes
       const FIVE_MIN = 5 * 60 * 1000
       const lastRefresh = (token.roleRefreshedAt as number | undefined) ?? 0
       if (token.id && Date.now() - lastRefresh > FIVE_MIN) {
         const dbUser = await prisma.user.findUnique({
           where:  { id: token.id as string },
-          select: { role: true },
+          select: { role: true, isSuperAdmin: true },
         })
-        if (dbUser) token.role = dbUser.role
+        if (dbUser) {
+          token.role         = dbUser.role
+          token.isSuperAdmin = dbUser.isSuperAdmin
+        }
         token.roleRefreshedAt = Date.now()
       }
 
@@ -148,6 +152,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token) {
         session.user.id           = token.id as string
         session.user.role         = token.role as Role
+        session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
         session.user.companyId    = token.companyId as string
         session.user.companyName  = token.companyName as string
         session.user.plan         = token.plan as string

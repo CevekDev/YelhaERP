@@ -9,6 +9,7 @@ declare module 'next-auth' {
       email: string
       name: string
       role: Role
+      isSuperAdmin: boolean
       companyId: string
       companyName: string
       plan: string
@@ -21,6 +22,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role: Role
+    isSuperAdmin: boolean
     companyId: string
     companyName: string
     plan: string
