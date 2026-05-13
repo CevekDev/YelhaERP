@@ -237,7 +237,7 @@ export default function ModulesPage() {
   return (
     <div className="p-4 md:p-6 space-y-8 max-w-4xl">
       <nav className="text-sm text-muted-foreground">
-        <Link href="/dashboard/settings" className="hover:text-foreground">Paramètres</Link> / Modules
+        <Link href="/dashboard/settings" className="hover:text-foreground">Paramètres</Link> / Applications
       </nav>
 
       <div className="flex items-center gap-3">
@@ -245,8 +245,8 @@ export default function ModulesPage() {
           <Button variant="outline" size="sm"><ArrowLeft className="w-4 h-4" /></Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Modules</h1>
-          <p className="text-muted-foreground text-sm">Activez les modules dont vous avez besoin · Essai gratuit 15 jours par module</p>
+          <h1 className="text-2xl font-bold">Applications</h1>
+          <p className="text-muted-foreground text-sm">Activez les applications dont vous avez besoin · Essai gratuit 15 jours</p>
         </div>
       </div>
 

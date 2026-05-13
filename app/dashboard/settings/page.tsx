@@ -17,15 +17,15 @@ const SECTIONS = [
   {
     href: '/dashboard/settings/modules',
     icon: LayoutGrid,
-    label: 'Modules',
+    label: 'Applications',
     description: 'Activer ou essayer gratuitement les applications supplémentaires',
     color: 'bg-violet-50 text-violet-600',
   },
   {
     href: '/dashboard/settings/billing',
     icon: CreditCard,
-    label: 'Abonnement & facturation',
-    description: 'Consulter vos abonnements actifs, renouveler ou résilier',
+    label: 'Abonnement',
+    description: 'Vos abonnements actifs, renouveler ou résilier',
     color: 'bg-yelha-50 text-yelha-600',
   },
   {

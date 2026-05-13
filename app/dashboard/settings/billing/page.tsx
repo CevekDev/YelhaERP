@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, AlertTriangle, CheckCircle, Clock,
-  TrendingUp, Plus, X, RefreshCw, Zap, Package,
+  TrendingUp, X, RefreshCw, Zap, Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { APPS, type AppId } from '@/lib/pricing/config'
@@ -183,104 +183,6 @@ function AppSubCard({
   )
 }
 
-// ── Add app drawer ─────────────────────────────────────────────
-
-function AddAppPanel({ activeIds, onStart }: { activeIds: Set<string>; onStart: (appId: AppId) => Promise<void> }) {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState<AppId | null>(null)
-
-  const available = (Object.keys(APPS) as AppId[]).filter(
-    id => !APPS[id].core && !APPS[id].comingSoon && !activeIds.has(id)
-  )
-  const comingSoon = (Object.keys(APPS) as AppId[]).filter(
-    id => !APPS[id].core && APPS[id].comingSoon && !activeIds.has(id)
-  )
-
-  if (available.length === 0 && comingSoon.length === 0) return null
-
-  return (
-    <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-1.5">
-        <Plus className="h-3.5 w-3.5" />Ajouter un module
-      </Button>
-
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4" onClick={() => setOpen(false)}>
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-border">
-              <h3 className="font-semibold text-lg">Ajouter un module</h3>
-              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto p-4 space-y-3">
-              {available.length > 0 && (
-                <>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Disponible maintenant</p>
-                  {available.map(appId => {
-                    const app = APPS[appId]
-                    return (
-                      <div key={appId} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/40 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl">{app.icon}</span>
-                          <div>
-                            <p className="text-sm font-semibold">{app.name}</p>
-                            <p className="text-xs text-muted-foreground">{app.description}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0 ml-3">
-                          <div className="text-right">
-                            <div className="text-xs font-bold text-slate-700 da-amount">{formatDA(app.price)}/mois</div>
-                            <div className="text-[10px] text-emerald-600 font-medium">15j gratuits</div>
-                          </div>
-                          <Button
-                            size="sm"
-                            disabled={loading === appId}
-                            onClick={async () => {
-                              setLoading(appId)
-                              await onStart(appId)
-                              setLoading(null)
-                              setOpen(false)
-                            }}
-                          >
-                            {loading === appId ? '…' : 'Essayer'}
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-
-              {comingSoon.length > 0 && (
-                <>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-2">Bientôt disponibles</p>
-                  {comingSoon.map(appId => {
-                    const app = APPS[appId]
-                    return (
-                      <div key={appId} className="flex items-center justify-between p-4 rounded-xl border border-dashed border-slate-200 opacity-60">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl">{app.icon}</span>
-                          <div>
-                            <p className="text-sm font-semibold">{app.name}</p>
-                            <p className="text-xs text-muted-foreground">{app.description}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full shrink-0 ml-3">⏳ Bientôt</span>
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
 // ── Main Page ──────────────────────────────────────────────────
 
 export default function BillingPage() {
@@ -301,17 +203,6 @@ export default function BillingPage() {
   }
 
   useEffect(() => { loadSub() }, [])
-
-  // Start 15-day trial for an app
-  async function handleStartTrial(appId: AppId) {
-    const res = await fetch('/api/billing/app-trial', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appId }),
-    })
-    const d = await res.json()
-    if (d.subscription) setSub(d.subscription)
-  }
 
   // Cancel / stop trial or subscription for an app
   async function handleCancel(appId: AppId) {
@@ -342,7 +233,6 @@ export default function BillingPage() {
 
   // Build app entries
   const appTrialsEndsAt = (sub.appTrialsEndsAt as Record<string, string>) ?? {}
-  const activeSet = new Set<string>([...sub.extraApps, ...sub.trialApps])
 
   const entries: AppEntry[] = [
     // Paid (extraApps)
@@ -388,24 +278,18 @@ export default function BillingPage() {
 
       {/* ── Mes abonnements ── */}
       <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-muted-foreground" />
-            <h2 className="font-semibold text-lg">Mes abonnements</h2>
-          </div>
-          <AddAppPanel
-            activeIds={activeSet}
-            onStart={handleStartTrial}
-          />
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-muted-foreground" />
+          <h2 className="font-semibold text-lg">Mes abonnements</h2>
         </div>
 
         {entries.length === 0 ? (
           <div className="text-center py-10 space-y-3">
             <div className="text-4xl">📦</div>
             <p className="text-slate-500 text-sm font-medium">Aucun module souscrit pour l'instant</p>
-            <p className="text-xs text-slate-400">Cliquez sur « Ajouter un module » pour essayer gratuitement pendant 15 jours.</p>
-            <Link href="/pricing#modules">
-              <Button variant="outline" size="sm" className="mt-2">Voir les modules →</Button>
+            <p className="text-xs text-slate-400">Rendez-vous dans Applications pour essayer gratuitement pendant 15 jours.</p>
+            <Link href="/dashboard/settings/modules">
+              <Button variant="outline" size="sm" className="mt-2">Voir les applications →</Button>
             </Link>
           </div>
         ) : (
