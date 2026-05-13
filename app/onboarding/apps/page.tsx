@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import { APPS, TRIAL_ELIGIBLE_APPS, type AppId } from '@/lib/pricing/config'
 
-const CORE_APPS: AppId[] = ['invoices', 'quotes', 'clients', 'stock', 'expenses']
+const CORE_APPS: AppId[] = ['invoices', 'quotes', 'clients', 'purchases', 'stock']
 const MAX_SELECTION = 3
 
 // French number format: 4 900 DA
@@ -120,8 +120,16 @@ export default function OnboardingAppsPage() {
                       )}
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      <span className="line-through">Valeur : {fmtDA(app.price)}/mois</span>{' '}
-                      <span className="text-emerald-600 font-medium not-italic">offert</span>
+                      {app.comingSoon ? (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          ⏳ Bientôt disponible
+                        </span>
+                      ) : (
+                        <>
+                          <span className="line-through">Valeur : {fmtDA(app.price)}/mois</span>{' '}
+                          <span className="text-emerald-600 font-medium not-italic">offert</span>
+                        </>
+                      )}
                     </p>
                     <p className="text-xs text-slate-500 mt-1 leading-snug">{app.description}</p>
                   </div>

@@ -20,6 +20,7 @@ import {
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { MobileSidebarTrigger } from '@/components/layout/sidebar'
 import { useT } from '@/lib/i18n'
+import { APPS } from '@/lib/pricing/config'
 
 
 // ── Module definitions ──────────────────────────────────────
@@ -439,6 +440,26 @@ export function TopNav({ hasBanner = false }: { hasBanner?: boolean }) {
         <nav className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto scrollbar-hide flex-1">
           {visibleModules.map(module => {
             const isActive = activeModule?.id === module.id
+            const appIds = MODULE_APPS[module.id]
+            const isComingSoon = !!appIds?.length &&
+              appIds.every(id => (APPS as Record<string, { comingSoon: boolean }>)[id]?.comingSoon)
+
+            if (isComingSoon) {
+              return (
+                <span
+                  key={module.id}
+                  title="Bientôt disponible"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-muted-foreground/40 cursor-not-allowed select-none"
+                >
+                  <module.icon className="h-3.5 w-3.5" />
+                  <span>{module.label}</span>
+                  <span className="text-[9px] font-bold bg-slate-100 text-slate-400 px-1 py-0.5 rounded-full leading-none">
+                    Bientôt
+                  </span>
+                </span>
+              )
+            }
+
             return (
               <Link
                 key={module.id}

@@ -274,9 +274,15 @@ function AppCard({
   includedInPlan: boolean
 }) {
   const app = APPS[appId]
+  const comingSoon = app.comingSoon
   return (
-    <div className="relative bg-white border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition-colors">
-      {includedInPlan && (
+    <div className={`relative bg-white border rounded-xl p-4 transition-colors ${comingSoon ? 'border-slate-100 opacity-70' : 'border-slate-200 hover:border-slate-300'}`}>
+      {comingSoon && (
+        <span className="absolute top-3 right-3 bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+          ⏳ Bientôt
+        </span>
+      )}
+      {!comingSoon && includedInPlan && (
         <span className="absolute top-3 right-3 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
           Inclus ★
         </span>
@@ -284,7 +290,9 @@ function AppCard({
       <div className="text-2xl mb-2">{app.icon}</div>
       <div className="font-semibold text-sm text-slate-800 mb-0.5">{app.name}</div>
       <div className="text-xs text-slate-500 mb-2">{app.description}</div>
-      {app.price > 0 ? (
+      {comingSoon ? (
+        <div className="text-xs text-amber-500 font-medium">Disponible prochainement</div>
+      ) : app.price > 0 ? (
         <div className="text-sm font-bold text-slate-700">{fDA(app.price)}<span className="text-xs font-normal text-slate-400">/mois</span></div>
       ) : (
         <div className="text-sm font-bold text-[#1D9E75]">Inclus dans les plans</div>
@@ -624,7 +632,7 @@ export default function PricingPage() {
             <div>
               <span className="font-bold text-slate-800">Essai gratuit 30 jours</span>
               <span className="text-slate-600 ml-2 text-sm">
-                — Choisissez 3 apps parmi nos 12 modules, sans carte bancaire
+                — Ventes, Achats &amp; Stock inclus gratuitement + 3 apps au choix, sans carte bancaire
               </span>
             </div>
           </div>

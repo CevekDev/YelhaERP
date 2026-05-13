@@ -19,11 +19,14 @@ export const PLANS = {
     id: 'starter',
     name: 'Starter',
     price: 990,
-    maxUsers: 1,
+    maxUsers: 2,
     description: 'Auto-entrepreneur, artisan, commerçant',
     durationDays: null,
     freeApps: 0,
-    includedApps: ['invoices', 'quotes', 'clients', 'purchases', 'stock', 'expenses'] as const,
+    includedApps: [
+      'invoices', 'quotes', 'clients', 'purchases', 'stock',
+      'expenses', 'subscriptions',
+    ] as const,
     limits: {
       emails: 200,
       apiRequests: 2000,
@@ -41,8 +44,8 @@ export const PLANS = {
     durationDays: null,
     freeApps: 0,
     includedApps: [
-      'invoices', 'quotes', 'clients', 'purchases', 'stock', 'expenses',
-      'crm', 'projects', 'subscriptions',
+      'invoices', 'quotes', 'clients', 'purchases', 'stock',
+      'expenses', 'subscriptions', 'crm', 'projects', 'hr',
     ] as const,
     limits: {
       emails: 1000,
@@ -61,8 +64,8 @@ export const PLANS = {
     durationDays: null,
     freeApps: 0,
     includedApps: [
-      'invoices', 'quotes', 'clients', 'purchases', 'stock', 'expenses',
-      'crm', 'projects', 'subscriptions',
+      'invoices', 'quotes', 'clients', 'purchases', 'stock',
+      'expenses', 'subscriptions', 'crm', 'projects',
       'hr', 'payroll', 'accounting', 'tax', 'pos', 'production',
     ] as const,
     limits: {
@@ -95,24 +98,27 @@ export const PLANS = {
 export type PlanId = keyof typeof PLANS
 
 export const APPS = {
-  invoices:      { id: 'invoices',      name: 'Factures & devis',      icon: '🧾', price: 0,    core: true,  description: 'Illimitées, PDF professionnel, portail client' },
-  quotes:        { id: 'quotes',        name: 'Devis',                  icon: '📄', price: 0,    core: true,  description: 'Inclus avec Factures' },
-  clients:       { id: 'clients',       name: 'Clients & fournisseurs', icon: '👥', price: 0,    core: true,  description: 'Base de contacts illimitée' },
-  stock:         { id: 'stock',         name: 'Stock',                  icon: '📦', price: 0,    core: true,  description: 'Mouvements, alertes de rupture' },
-  expenses:      { id: 'expenses',      name: 'Dépenses',               icon: '💸', price: 400,  core: false, description: 'Notes de frais, validation' },
+  // ── Core — toujours gratuit ─────────────────────────────────
+  invoices:      { id: 'invoices',      name: 'Factures',              icon: '🧾', price: 0,    core: true,  comingSoon: false, description: 'Illimitées, PDF professionnel, portail client' },
+  quotes:        { id: 'quotes',        name: 'Devis',                 icon: '📄', price: 0,    core: true,  comingSoon: false, description: 'Inclus avec Factures' },
+  clients:       { id: 'clients',       name: 'Clients',               icon: '👥', price: 0,    core: true,  comingSoon: false, description: 'Base de contacts illimitée' },
+  purchases:     { id: 'purchases',     name: 'Achats',                icon: '🛒', price: 0,    core: true,  comingSoon: false, description: 'Bons de commande fournisseur, réceptions' },
+  stock:         { id: 'stock',         name: 'Stock',                 icon: '📦', price: 0,    core: true,  comingSoon: false, description: 'Mouvements, alertes de rupture' },
 
-  crm:           { id: 'crm',           name: 'CRM pipeline',           icon: '📊', price: 500,  core: false, description: 'Leads, opportunités, Kanban commercial' },
-  purchases:     { id: 'purchases',     name: 'Achats',                 icon: '🛒', price: 0,    core: true,  description: 'Bons de commande fournisseur, réceptions' },
-  projects:      { id: 'projects',      name: 'Projets & timesheets',   icon: '📋', price: 600,  core: false, description: 'Tâches, temps passé, facturation projet' },
-  subscriptions: { id: 'subscriptions', name: 'Abonnements clients',    icon: '🔄', price: 600,  core: false, description: 'Récurrent, Chargily Pay, virement CCP' },
-  hr:            { id: 'hr',            name: 'RH',                     icon: '👤', price: 800,  core: false, description: 'Employés, congés, recrutement, évaluations' },
-  payroll:       { id: 'payroll',       name: 'Paie (IRG/CNAS)',         icon: '💰', price: 800,  core: false, description: 'Bulletins de paie conformes législation DZ' },
-  accounting:    { id: 'accounting',    name: 'Comptabilité PCN',        icon: '📒', price: 900,  core: false, description: 'Journal PCN algérien, bilan, grand livre' },
-  tax:           { id: 'tax',           name: 'G50 automatique',         icon: '🧮', price: 500,  core: false, description: 'Déclaration fiscale mensuelle pré-remplie' },
-  pos:           { id: 'pos',           name: 'POS caisse',              icon: '🖥️', price: 700,  core: false, description: 'Caisse tactile, impression thermique' },
-  production:    { id: 'production',    name: 'Production (BOM/OF)',     icon: '⚙️', price: 900,  core: false, description: 'Nomenclatures, ordres de fabrication' },
-  restaurant:    { id: 'restaurant',    name: 'Restaurant',              icon: '🍽️', price: 1500, core: false, description: 'Tables, KDS cuisine, menu QR, fidélité' },
-  ecommerce:     { id: 'ecommerce',     name: 'E-commerce',              icon: '🛍️', price: 1000, core: false, description: 'Sync Shopify / WooCommerce' },
+  // ── Apps payantes ───────────────────────────────────────────
+  subscriptions: { id: 'subscriptions', name: 'Abonnements clients',   icon: '🔄', price: 600,  core: false, comingSoon: false, description: 'Récurrent, Chargily Pay, virement CCP' },
+
+  expenses:      { id: 'expenses',      name: 'Dépenses',              icon: '💸', price: 400,  core: false, comingSoon: true,  description: 'Notes de frais, validation' },
+  crm:           { id: 'crm',           name: 'CRM pipeline',          icon: '📊', price: 500,  core: false, comingSoon: true,  description: 'Leads, opportunités, Kanban commercial' },
+  projects:      { id: 'projects',      name: 'Projets & timesheets',  icon: '📋', price: 600,  core: false, comingSoon: true,  description: 'Tâches, temps passé, facturation projet' },
+  hr:            { id: 'hr',            name: 'RH',                    icon: '👤', price: 800,  core: false, comingSoon: true,  description: 'Employés, congés, recrutement, évaluations' },
+  payroll:       { id: 'payroll',       name: 'Paie (IRG/CNAS)',        icon: '💰', price: 800,  core: false, comingSoon: true,  description: 'Bulletins de paie conformes législation DZ' },
+  accounting:    { id: 'accounting',    name: 'Comptabilité PCN',       icon: '📒', price: 900,  core: false, comingSoon: true,  description: 'Journal PCN algérien, bilan, grand livre' },
+  tax:           { id: 'tax',           name: 'G50 automatique',        icon: '🧮', price: 500,  core: false, comingSoon: true,  description: 'Déclaration fiscale mensuelle pré-remplie' },
+  pos:           { id: 'pos',           name: 'POS caisse',             icon: '🖥️', price: 700,  core: false, comingSoon: true,  description: 'Caisse tactile, impression thermique' },
+  production:    { id: 'production',    name: 'Production (BOM/OF)',    icon: '⚙️', price: 900,  core: false, comingSoon: true,  description: 'Nomenclatures, ordres de fabrication' },
+  restaurant:    { id: 'restaurant',    name: 'Restaurant',             icon: '🍽️', price: 1500, core: false, comingSoon: true,  description: 'Tables, KDS cuisine, menu QR, fidélité' },
+  ecommerce:     { id: 'ecommerce',     name: 'E-commerce',             icon: '🛍️', price: 1000, core: false, comingSoon: true,  description: 'Sync Shopify / WooCommerce' },
 } as const
 
 export type AppId = keyof typeof APPS
@@ -120,7 +126,8 @@ export type AppId = keyof typeof APPS
 export const ANNUAL_DISCOUNT = 0.20
 
 export const TRIAL_ELIGIBLE_APPS: AppId[] = [
-  'expenses', 'crm', 'projects', 'subscriptions',
+  'subscriptions',
+  'expenses', 'crm', 'projects',
   'hr', 'payroll', 'accounting', 'tax', 'pos',
   'production', 'restaurant', 'ecommerce',
 ]
