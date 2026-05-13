@@ -104,6 +104,7 @@ model Company {
   restaurantOrderSequences RestaurantOrderSequence[]
   invoiceSequences         InvoiceSequence[]
   yelhaSubscription        YelhaSubscription?
+  appSubscriptions         AppSubscription[]
 }
 
 enum BusinessType {
@@ -2330,6 +2331,50 @@ model YelhaPayment {
   createdAt      DateTime          @default(now())
 
   subscription   YelhaSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// ABONNEMENTS PAR APP (tarification indépendante)
+// ============================================================
+model AppSubscription {
+  id                 String       @id @default(cuid())
+  companyId          String
+  appId              String       // ex: "subscriptions"
+  planId             String       @default("trial") // trial | starter | premium | pro | agency
+  status             String       @default("TRIAL") // TRIAL | ACTIVE | CANCELLED | EXPIRED
+  trialEndsAt        DateTime?
+  currentPeriodStart DateTime     @default(now())
+  currentPeriodEnd   DateTime
+  monthlyAmount      Int          @default(0)
+  lastPaymentAt      DateTime?
+  lastPaymentRef     String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payments AppPayment[]
+
+  @@unique([companyId, appId])
+  @@index([companyId])
+}
+
+model AppPayment {
+  id                String          @id @default(cuid())
+  appSubscriptionId String
+  appId             String
+  planId            String
+  amount            Int
+  method            String          // CCP | ADMIN_FREE | ADMIN_ACTIVATE
+  status            String          @default("PENDING") // PENDING | PAID
+  ccpRef            String?
+  periodStart       DateTime
+  periodEnd         DateTime
+  paidAt            DateTime?
+  createdAt         DateTime        @default(now())
+
+  appSubscription AppSubscription @relation(fields: [appSubscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([appSubscriptionId])
 }
 
 // ============================================================

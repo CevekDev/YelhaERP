@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { APPS, PLANS } from '@/lib/pricing/config'
+import { APP_PLANS } from '@/lib/pricing/app-plans'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,17 @@ interface PricingData {
   defaults: { plans: Record<string, number>; apps: Record<string, number> }
   overrides: { plans: Record<string, number>; apps: Record<string, number> }
   effective: { plans: Record<string, number>; apps: Record<string, number> }
+}
+interface AppPricingData {
+  defaults: Record<string, number>
+  overrides: Record<string, number>
+  effective: Record<string, number>
+}
+interface AppPaymentAdmin {
+  id: string; appId: string; planId: string; amount: number
+  method: string; status: string; ccpRef: string | null
+  createdAt: string; paidAt: string | null
+  appSubscription: { companyId: string; company: { id: string; name: string; email: string | null } }
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -143,6 +155,20 @@ export default function AdminPanel() {
   const [loadingPricing, setLoadingPricing] = useState(true)
   const [savingPricing, setSavingPricing] = useState(false)
 
+  const [appPricing, setAppPricing] = useState<Record<string, AppPricingData> | null>(null)
+  const [editedAppPrices, setEditedAppPrices] = useState<Record<string, Record<string, number>>>({})
+  const [savingAppPricing, setSavingAppPricing] = useState<string | null>(null)
+  const [loadingAppPricing, setLoadingAppPricing] = useState(true)
+  const [appPayments, setAppPayments] = useState<AppPaymentAdmin[]>([])
+  const [loadingAppPayments, setLoadingAppPayments] = useState(true)
+  const [confirmAppPaymentId, setConfirmAppPaymentId] = useState<string | null>(null)
+  const [confirmingAppPayment, setConfirmingAppPayment] = useState(false)
+  const [appGrantDialog, setAppGrantDialog] = useState<{ company: Company; type: 'free' | 'activate' } | null>(null)
+  const [appGrantAppId, setAppGrantAppId] = useState('subscriptions')
+  const [appGrantPlanId, setAppGrantPlanId] = useState('starter')
+  const [appGrantMonths, setAppGrantMonths] = useState(1)
+  const [appGranting, setAppGranting] = useState(false)
+
   const [grantDialog, setGrantDialog] = useState<{ company: Company; type: 'free' | 'activate' } | null>(null)
   const [grantPlanId, setGrantPlanId] = useState('pro')
   const [grantMonths, setGrantMonths] = useState(1)
@@ -202,9 +228,80 @@ export default function AdminPanel() {
     setLoadingPricing(false)
   }, [])
 
+  const fetchAppPricing = useCallback(async () => {
+    setLoadingAppPricing(true)
+    try {
+      const r = await fetch('/api/admin/app-pricing')
+      if (r.ok) {
+        const d = await r.json()
+        setAppPricing(d.data)
+        const edited: Record<string, Record<string, number>> = {}
+        for (const [appId, data] of Object.entries(d.data as Record<string, AppPricingData>)) {
+          edited[appId] = { ...data.effective }
+        }
+        setEditedAppPrices(edited)
+      }
+    } catch { /* silent */ }
+    setLoadingAppPricing(false)
+  }, [])
+
+  const fetchAppPayments = useCallback(async () => {
+    setLoadingAppPayments(true)
+    try {
+      const r = await fetch('/api/admin/app-payments?status=PENDING')
+      if (r.ok) { const d = await r.json(); setAppPayments(d.data?.payments ?? []) }
+    } catch { /* silent */ }
+    setLoadingAppPayments(false)
+  }, [])
+
+  const handleSaveAppPricing = async (appId: string) => {
+    setSavingAppPricing(appId)
+    const r = await fetch('/api/admin/app-pricing', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appId, prices: editedAppPrices[appId] }),
+    })
+    setSavingAppPricing(null)
+    if (r.ok) { toast.success('Prix sauvegardés !'); fetchAppPricing() }
+    else toast.error('Erreur sauvegarde')
+  }
+
+  const handleConfirmAppPayment = async () => {
+    if (!confirmAppPaymentId) return
+    setConfirmingAppPayment(true)
+    const r = await fetch('/api/admin/app-grant', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'confirm_payment', paymentId: confirmAppPaymentId }),
+    })
+    setConfirmingAppPayment(false)
+    if (r.ok) { toast.success('Paiement confirmé, abonnement activé !'); setConfirmAppPaymentId(null); fetchAppPayments() }
+    else toast.error('Erreur lors de la confirmation')
+  }
+
+  const handleAppGrant = async () => {
+    if (!appGrantDialog) return
+    setAppGranting(true)
+    const r = await fetch('/api/admin/app-grant', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: appGrantDialog.type,
+        companyId: appGrantDialog.company.id,
+        appId: appGrantAppId,
+        planId: appGrantPlanId,
+        months: appGrantMonths,
+      }),
+    })
+    setAppGranting(false)
+    if (r.ok) {
+      toast.success(appGrantDialog.type === 'free' ? 'Pack offert !' : 'Pack activé !')
+      setAppGrantDialog(null)
+    } else {
+      const d = await r.json(); toast.error(d.error ?? 'Erreur')
+    }
+  }
+
   useEffect(() => {
-    if (status === 'authenticated' && isSuperAdmin) { fetchStats(); fetchCompanies(); fetchPricing() }
-  }, [status, isSuperAdmin, fetchStats, fetchCompanies, fetchPricing])
+    if (status === 'authenticated' && isSuperAdmin) { fetchStats(); fetchCompanies(); fetchPricing(); fetchAppPricing(); fetchAppPayments() }
+  }, [status, isSuperAdmin, fetchStats, fetchCompanies, fetchPricing, fetchAppPricing, fetchAppPayments])
 
   useEffect(() => {
     if (status === 'authenticated' && isSuperAdmin) fetchCompanies()
@@ -300,7 +397,8 @@ export default function AdminPanel() {
             {[
               { value: 'overview',   icon: BarChart3,   label: 'Aperçu' },
               { value: 'companies',  icon: Building2,   label: 'Entreprises' },
-              { value: 'pricing',    icon: DollarSign,  label: 'Tarification' },
+              { value: 'pricing',    icon: DollarSign,  label: 'Tarification ERP' },
+              { value: 'apps',       icon: Zap,         label: 'Applications' },
               { value: 'payments',   icon: CreditCard,  label: 'Paiements' },
             ].map(t => (
               <TabsTrigger key={t.value} value={t.value}
@@ -610,6 +708,143 @@ export default function AdminPanel() {
             )}
           </TabsContent>
 
+          {/* ═══ APPLICATIONS ════════════════════════════════════════════════ */}
+          <TabsContent value="apps" className="space-y-6">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3.5 flex items-center gap-3 text-sm text-amber-800">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              Ces prix s'appliquent aux abonnements indépendants par application (hors plan ERP global).
+            </div>
+
+            {/* Paiements CCP apps en attente */}
+            {!loadingAppPayments && appPayments.length > 0 && (
+              <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-amber-100 bg-amber-50/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-500" />
+                    <span className="font-semibold text-slate-800">Paiements CCP en attente</span>
+                  </div>
+                  <span className="text-xs bg-amber-100 text-amber-700 rounded-full px-3 py-1 font-semibold">
+                    {appPayments.length} en attente
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                      <tr>
+                        {['Entreprise','App','Plan','Montant','Référence','Date','Action'].map(h => (
+                          <th key={h} className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {appPayments.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50/60">
+                          <td className="px-5 py-3.5 font-semibold text-slate-800">{p.appSubscription.company.name}</td>
+                          <td className="px-5 py-3.5">
+                            <span className="text-xs bg-indigo-50 text-indigo-700 rounded-lg px-2.5 py-1 font-medium">{p.appId}</span>
+                          </td>
+                          <td className="px-5 py-3.5 text-slate-600">{p.planId}</td>
+                          <td className="px-5 py-3.5 font-bold text-slate-800">{fmt(p.amount)}</td>
+                          <td className="px-5 py-3.5">
+                            <code className="text-xs font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{p.ccpRef ?? '—'}</code>
+                          </td>
+                          <td className="px-5 py-3.5 text-xs text-slate-400">{fmtDate(p.createdAt)}</td>
+                          <td className="px-5 py-3.5">
+                            <Button size="sm" variant="outline"
+                              className="h-7 text-xs gap-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => setConfirmAppPaymentId(p.id)}>
+                              <CheckCircle2 className="w-3 h-3" />Confirmer
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Éditeur de prix par app */}
+            {loadingAppPricing ? (
+              <div className="grid md:grid-cols-2 gap-6">
+                <Skeleton className="h-72" />
+              </div>
+            ) : appPricing ? (
+              <div className="grid md:grid-cols-2 gap-6">
+                {Object.entries(APP_PLANS).map(([appId, appConfig]) => {
+                  const data = appPricing[appId]
+                  const edited = editedAppPrices[appId] ?? {}
+                  return (
+                    <div key={appId} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                        <h3 className="font-semibold text-slate-800">{appConfig.appName}</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">Prix par plan en DA/mois</p>
+                      </div>
+                      <div className="p-6 space-y-4">
+                        {Object.entries(appConfig.plans).filter(([id]) => id !== 'trial').map(([planId, plan]) => {
+                          const isModified = data && edited[planId] !== data.defaults[planId]
+                          return (
+                            <div key={planId} className="flex items-center gap-4">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-slate-800">{(plan as { name: string }).name}</p>
+                                <p className="text-xs text-slate-400">{(plan as { description: string }).description}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isModified && <ChevronRight className="w-3.5 h-3.5 text-yelha-500" />}
+                                <div className="relative">
+                                  <Input type="number" min={0}
+                                    value={edited[planId] ?? (plan as { price: number }).price}
+                                    onChange={e => setEditedAppPrices(prev => ({
+                                      ...prev,
+                                      [appId]: { ...(prev[appId] ?? {}), [planId]: Number(e.target.value) },
+                                    }))}
+                                    className={`w-28 h-9 text-sm text-right pr-10 ${isModified ? 'border-yelha-300 bg-yelha-50' : 'bg-slate-50'}`}
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">DA</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className="px-6 pb-5 flex gap-3">
+                        <Button variant="outline" size="sm" className="text-slate-600 border-slate-200 flex-1"
+                          onClick={() => {
+                            if (data) setEditedAppPrices(prev => ({ ...prev, [appId]: { ...data.defaults } }))
+                          }}>
+                          Réinitialiser
+                        </Button>
+                        <Button size="sm" className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white flex-1"
+                          disabled={savingAppPricing === appId}
+                          onClick={() => handleSaveAppPricing(appId)}>
+                          {savingAppPricing === appId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                          Sauvegarder
+                        </Button>
+                      </div>
+
+                      {/* Offrir / Activer un pack pour une entreprise */}
+                      <div className="px-6 pb-6 border-t border-slate-100 pt-4">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Accorder un pack à une entreprise</p>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button size="sm" variant="outline"
+                            className="gap-1.5 border-purple-200 text-purple-700 hover:bg-purple-50"
+                            onClick={() => { setAppGrantDialog({ company: companies[0] ?? { id: '', name: '', plan: '', email: null, wilaya: null, trialEndsAt: null, createdAt: '', _count: { users: 0, invoices: 0 }, yelhaSubscription: null }, type: 'free' }); setAppGrantAppId(appId); setAppGrantPlanId('starter') }}>
+                            <Gift className="w-3 h-3" />Offrir gratuit
+                          </Button>
+                          <Button size="sm" variant="outline"
+                            className="gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                            onClick={() => { setAppGrantDialog({ company: companies[0] ?? { id: '', name: '', plan: '', email: null, wilaya: null, trialEndsAt: null, createdAt: '', _count: { users: 0, invoices: 0 }, yelhaSubscription: null }, type: 'activate' }); setAppGrantAppId(appId); setAppGrantPlanId('starter') }}>
+                            <Zap className="w-3 h-3" />Activer (payé)
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
+          </TabsContent>
+
           {/* ═══ PAIEMENTS ═══════════════════════════════════════════════════ */}
           <TabsContent value="payments">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -739,6 +974,96 @@ export default function AdminPanel() {
             <Button onClick={handleGrant} disabled={granting} className={`flex-1 gap-2 ${grantDialog?.type === 'free' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}>
               {granting ? <Loader2 className="w-4 h-4 animate-spin" /> : grantDialog?.type === 'free' ? <Gift className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
               {grantDialog?.type === 'free' ? 'Offrir gratuitement' : 'Activer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog : App Grant ────────────────────────────────────────────── */}
+      <Dialog open={!!appGrantDialog} onOpenChange={() => setAppGrantDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${appGrantDialog?.type === 'free' ? 'bg-purple-100' : 'bg-emerald-100'}`}>
+                {appGrantDialog?.type === 'free' ? <Gift className="w-4 h-4 text-purple-600" /> : <Zap className="w-4 h-4 text-emerald-600" />}
+              </div>
+              {appGrantDialog?.type === 'free' ? 'Offrir un pack app gratuit' : 'Activer un pack app'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-slate-600">Entreprise</Label>
+              <Select
+                value={appGrantDialog?.company.id ?? ''}
+                onValueChange={id => {
+                  const c = companies.find(c => c.id === id)
+                  if (c && appGrantDialog) setAppGrantDialog({ ...appGrantDialog, company: c })
+                }}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Choisir une entreprise" /></SelectTrigger>
+                <SelectContent>
+                  {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-slate-600">Plan</Label>
+                <Select value={appGrantPlanId} onValueChange={setAppGrantPlanId}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {appGrantAppId in APP_PLANS && Object.entries(APP_PLANS[appGrantAppId as keyof typeof APP_PLANS].plans)
+                      .filter(([id]) => id !== 'trial')
+                      .map(([id, p]) => (
+                        <SelectItem key={id} value={id}>{(p as { name: string }).name}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-slate-600">Durée</Label>
+                <Select value={String(appGrantMonths)} onValueChange={v => setAppGrantMonths(Number(v))}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[1,2,3,6,12].map(m => <SelectItem key={m} value={String(m)}>{m} mois</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-2">
+            <Button variant="outline" onClick={() => setAppGrantDialog(null)} className="flex-1">Annuler</Button>
+            <Button onClick={handleAppGrant} disabled={appGranting || !appGrantDialog?.company.id}
+              className={`flex-1 gap-2 ${appGrantDialog?.type === 'free' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}>
+              {appGranting ? <Loader2 className="w-4 h-4 animate-spin" /> : appGrantDialog?.type === 'free' ? <Gift className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+              {appGrantDialog?.type === 'free' ? 'Offrir' : 'Activer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog : Confirmer paiement App CCP ─────────────────────────── */}
+      <Dialog open={!!confirmAppPaymentId} onOpenChange={() => setConfirmAppPaymentId(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              Confirmer le paiement CCP (App)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-slate-600">Confirmez-vous avoir reçu le virement CCP pour l'abonnement application ?</p>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-xs text-amber-700">
+              Cette action est irréversible. Vérifiez la réception du virement avant de confirmer.
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmAppPaymentId(null)} className="flex-1">Annuler</Button>
+            <Button onClick={handleConfirmAppPayment} disabled={confirmingAppPayment}
+              className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+              {confirmingAppPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Confirmer
             </Button>
           </DialogFooter>
         </DialogContent>
