@@ -126,7 +126,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.plan         = (user as { plan: string }).plan
           token.businessType = (user as { businessType: string }).businessType
         }
+        token.roleRefreshedAt = Date.now()
       }
+
+      // Rafraîchir le rôle depuis la DB toutes les 5 minutes
+      // pour que les changements de rôle (ex: OWNER) prennent effet sans reconnexion
+      const FIVE_MIN = 5 * 60 * 1000
+      const lastRefresh = (token.roleRefreshedAt as number | undefined) ?? 0
+      if (token.id && Date.now() - lastRefresh > FIVE_MIN) {
+        const dbUser = await prisma.user.findUnique({
+          where:  { id: token.id as string },
+          select: { role: true },
+        })
+        if (dbUser) token.role = dbUser.role
+        token.roleRefreshedAt = Date.now()
+      }
+
       return token
     },
     async session({ session, token }) {
