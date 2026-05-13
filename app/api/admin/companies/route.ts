@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { getTenantContext, requireRole } from '@/lib/security/tenant'
+import { requireSuperAdmin } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 
@@ -15,8 +15,7 @@ export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    const ctx = await getTenantContext()
-    requireRole(ctx.role, 'OWNER')
+    await requireSuperAdmin()
 
     const { searchParams } = req.nextUrl
     const page = Math.max(1, Number(searchParams.get('page') ?? 1))
@@ -69,8 +68,7 @@ export async function PATCH(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    const ctx = await getTenantContext()
-    requireRole(ctx.role, 'OWNER')
+    await requireSuperAdmin()
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }

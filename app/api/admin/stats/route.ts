@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getTenantContext, requireRole } from '@/lib/security/tenant'
+import { requireSuperAdmin } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 
@@ -8,8 +8,7 @@ export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    const ctx = await getTenantContext()
-    requireRole(ctx.role, 'OWNER')
+    await requireSuperAdmin()
 
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
@@ -28,14 +27,8 @@ export async function GET(req: NextRequest) {
       prisma.company.count(),
       prisma.company.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.user.count(),
-      prisma.yelhaSubscription.groupBy({
-        by: ['status'],
-        _count: { id: true },
-      }),
-      prisma.yelhaSubscription.aggregate({
-        where: { status: 'ACTIVE' },
-        _sum: { monthlyAmount: true },
-      }),
+      prisma.yelhaSubscription.groupBy({ by: ['status'], _count: { id: true } }),
+      prisma.yelhaSubscription.aggregate({ where: { status: 'ACTIVE' }, _sum: { monthlyAmount: true } }),
       prisma.yelhaPayment.findMany({
         take: 15,
         orderBy: { createdAt: 'desc' },
