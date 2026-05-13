@@ -2280,6 +2280,7 @@ model YelhaSubscription {
 
   extraApps          String[]       @default([])
   trialApps          String[]       @default([])
+  appTrialsEndsAt    Json           @default("{}")
 
   trialEndsAt        DateTime?
   currentPeriodStart DateTime       @default(now())

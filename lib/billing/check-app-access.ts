@@ -30,8 +30,14 @@ export async function canAccessApp(companyId: string, appId: AppId): Promise<boo
   // Extra apps purchased
   if (sub.extraApps.includes(appId)) return true
 
-  // Trial apps selected
-  if (sub.status === 'TRIAL' && sub.trialApps.includes(appId)) return true
+  // Trial apps — vérifier la date d'expiration par app
+  if (sub.trialApps.includes(appId)) {
+    const appTrialsEndsAt = (sub.appTrialsEndsAt as Record<string, string> | null) ?? {}
+    const trialEnd = appTrialsEndsAt[appId]
+    if (trialEnd && new Date(trialEnd) > new Date()) return true
+    // Compat: essai global (compte créé avant le système per-app)
+    if (!trialEnd && sub.status === 'TRIAL' && sub.trialEndsAt && sub.trialEndsAt > new Date()) return true
+  }
 
   return false
 }

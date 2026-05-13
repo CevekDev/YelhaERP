@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { APPS, ANNUAL_DISCOUNT } from '@/lib/pricing/config'
 import type { AppId } from '@/lib/pricing/config'
 
@@ -63,38 +64,33 @@ function AppSubCard({
   annual,
   selected,
   onToggle,
+  onTrial,
+  trialLoading,
 }: {
   appId: AppId
   annual: boolean
   selected: boolean
   onToggle: () => void
+  onTrial: (id: AppId) => void
+  trialLoading: AppId | null
 }) {
+  const { data: session } = useSession()
   const app = APPS[appId]
   const comingSoon = app.comingSoon
   const monthlyPrice = app.price
   const displayPrice = annual ? Math.round(monthlyPrice * (1 - ANNUAL_DISCOUNT)) : monthlyPrice
+  const isLoading = trialLoading === appId
 
   return (
-    <div
-      onClick={() => !comingSoon && onToggle()}
-      className={`relative flex flex-col rounded-2xl border-2 p-5 transition-all ${
-        comingSoon
-          ? 'border-slate-100 bg-slate-50/50 cursor-not-allowed opacity-60'
-          : selected
-          ? 'border-[#1D9E75] bg-emerald-50/40 cursor-pointer shadow-md shadow-emerald-100'
-          : 'border-slate-200 bg-white cursor-pointer hover:border-slate-300 hover:shadow-sm'
-      }`}
-    >
-      {/* Coming soon badge */}
+    <div className={`relative flex flex-col rounded-2xl border-2 p-5 transition-all bg-white ${
+      comingSoon
+        ? 'border-slate-100 opacity-60'
+        : selected
+        ? 'border-[#1D9E75] bg-emerald-50/40 shadow-md shadow-emerald-100'
+        : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+    }`}>
       {comingSoon && (
-        <span className="absolute top-3 right-3 bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
-          ⏳ Bientôt
-        </span>
-      )}
-
-      {/* Selected checkmark */}
-      {!comingSoon && selected && (
-        <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#1D9E75] flex items-center justify-center text-white text-xs font-bold">✓</span>
+        <span className="absolute top-3 right-3 bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full">⏳ Bientôt</span>
       )}
 
       {/* Icon + name */}
@@ -107,7 +103,7 @@ function AppSubCard({
       </div>
 
       {/* Price */}
-      <div className="mt-auto pt-3 border-t border-slate-100">
+      <div className="pt-3 border-t border-slate-100">
         {comingSoon ? (
           <div className="text-xs text-amber-500 font-medium">Disponible prochainement</div>
         ) : (
@@ -115,15 +111,36 @@ function AppSubCard({
             {annual && (
               <div className="text-xs text-slate-400 line-through mb-0.5">{fDA(monthlyPrice)}/mois</div>
             )}
-            <div className="flex items-baseline gap-1">
+            <div className="flex items-baseline gap-1 mb-3">
               <span className="text-2xl font-extrabold text-slate-900">{fDA(displayPrice)}</span>
               <span className="text-sm text-slate-500 font-medium">/mois</span>
             </div>
-            {annual && (
-              <div className="text-xs text-emerald-600 font-medium mt-0.5">
-                Économie&nbsp;: {fDA((monthlyPrice - displayPrice) * 12)}/an
-              </div>
+
+            {/* CTA */}
+            {session?.user ? (
+              <button
+                onClick={() => onTrial(appId)}
+                disabled={isLoading}
+                className="w-full py-2 rounded-xl text-sm font-semibold bg-[#1D9E75] hover:bg-[#178a64] text-white transition-colors disabled:opacity-60"
+              >
+                {isLoading ? '…' : '🎁 Essayer 15 jours gratuitement'}
+              </button>
+            ) : (
+              <Link
+                href={`/register?trialApp=${appId}`}
+                className="block w-full py-2 text-center rounded-xl text-sm font-semibold bg-[#1D9E75] hover:bg-[#178a64] text-white transition-colors"
+              >
+                🎁 Essayer 15 jours gratuitement
+              </Link>
             )}
+            <button
+              onClick={onToggle}
+              className={`w-full mt-2 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                selected ? 'bg-emerald-50 border-[#1D9E75] text-[#1D9E75]' : 'border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              {selected ? '✓ Ajouté au simulateur' : 'Ajouter au simulateur'}
+            </button>
           </>
         )}
       </div>
@@ -280,9 +297,26 @@ function FAQ() {
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
   const [selected, setSelected] = useState<AppId[]>([])
+  const [trialLoading, setTrialLoading] = useState<AppId | null>(null)
+  const [trialDone, setTrialDone] = useState<AppId | null>(null)
 
   function toggle(id: AppId) {
     setSelected(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id])
+  }
+
+  async function handleTrial(appId: AppId) {
+    setTrialLoading(appId)
+    try {
+      await fetch('/api/billing/app-trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appId }),
+      })
+      setTrialDone(appId)
+      setTimeout(() => setTrialDone(null), 3000)
+    } finally {
+      setTrialLoading(null)
+    }
   }
 
   return (
@@ -358,7 +392,7 @@ export default function PricingPage() {
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Disponible maintenant</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {AVAIL_APPS.map(id => (
-                <AppSubCard key={id} appId={id} annual={annual} selected={selected.includes(id)} onToggle={() => toggle(id)} />
+                <AppSubCard key={id} appId={id} annual={annual} selected={selected.includes(id)} onToggle={() => toggle(id)} onTrial={handleTrial} trialLoading={trialLoading} />
               ))}
             </div>
           </div>
@@ -370,12 +404,19 @@ export default function PricingPage() {
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Bientôt disponibles</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {COMING_APPS.map(id => (
-                <AppSubCard key={id} appId={id} annual={annual} selected={false} onToggle={() => {}} />
+                <AppSubCard key={id} appId={id} annual={annual} selected={false} onToggle={() => {}} onTrial={() => {}} trialLoading={null} />
               ))}
             </div>
           </div>
         )}
       </section>
+
+      {/* ── Trial success toast ── */}
+      {trialDone && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1D9E75] text-white px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2 text-sm font-semibold animate-in slide-in-from-bottom-4">
+          🎉 Essai de {APPS[trialDone]?.name} activé ! <a href="/dashboard/settings/billing" className="underline">Voir mes abonnements →</a>
+        </div>
+      )}
 
       {/* ── Simulator ── */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-16" id="simulator">
