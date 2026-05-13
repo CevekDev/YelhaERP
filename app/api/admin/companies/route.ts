@@ -7,15 +7,9 @@ import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 
 const updatePlanSchema = z.object({
   companyId: z.string().cuid(),
-  plan: z.enum(['TRIAL', 'STARTER', 'PRO', 'AGENCY']),
+  plan: z.enum(['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']),
   trialEndsAt: z.string().datetime().optional(),
 })
-
-function isSuperAdmin(email: string | undefined): boolean {
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL
-  if (!superAdminEmail || !email) return false
-  return email.toLowerCase() === superAdminEmail.toLowerCase()
-}
 
 export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
@@ -24,26 +18,43 @@ export async function GET(req: NextRequest) {
     const ctx = await getTenantContext()
     requireRole(ctx.role, 'OWNER')
 
-    // Seul le super-admin Yelha peut lister toutes les entreprises
-    const user = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { email: true } })
-    if (!isSuperAdmin(user?.email)) return apiError('Accès refusé — super-admin requis', 403)
-
     const { searchParams } = req.nextUrl
     const page = Math.max(1, Number(searchParams.get('page') ?? 1))
-    const limit = 20
+    const search = searchParams.get('search') ?? ''
+    const statusFilter = searchParams.get('status') ?? ''
+    const limit = 25
+
+    const where: Record<string, unknown> = {}
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+    if (statusFilter) where.yelhaSubscription = { status: statusFilter }
 
     const [companies, total] = await Promise.all([
       prisma.company.findMany({
+        where,
         select: {
           id: true, name: true, plan: true, trialEndsAt: true, createdAt: true,
+          email: true, wilaya: true,
           _count: { select: { users: true, invoices: true } },
+          yelhaSubscription: {
+            select: {
+              id: true, status: true, planId: true, monthlyAmount: true,
+              billingCycle: true, currentPeriodEnd: true, extraApps: true,
+              usageEmails: true, usageApiReq: true, usageAiReq: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: (page - 1) * limit,
       }),
-      prisma.company.count(),
+      prisma.company.count({ where }),
     ])
+
     return apiSuccess({ companies, total, page, limit })
   } catch (e: unknown) {
     if (e instanceof Error) {
@@ -60,9 +71,6 @@ export async function PATCH(req: NextRequest) {
   try {
     const ctx = await getTenantContext()
     requireRole(ctx.role, 'OWNER')
-
-    const user = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { email: true } })
-    if (!isSuperAdmin(user?.email)) return apiError('Accès refusé — super-admin requis', 403)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
