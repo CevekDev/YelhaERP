@@ -229,7 +229,6 @@ export default function ModulesPage() {
     return { appId, state: 'available' }
   })
 
-  const coreList    = appInfos.filter(i => i.state === 'core')
   const activeList  = appInfos.filter(i => i.state === 'active' || i.state === 'trial')
   const availList   = appInfos.filter(i => i.state === 'available' || i.state === 'expired-trial')
   const soonList    = appInfos.filter(i => i.state === 'coming-soon')
@@ -256,14 +255,6 @@ export default function ModulesPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Core */}
-          <section>
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Inclus gratuitement — pour toujours</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {coreList.map(info => <AppCard key={info.appId} info={info} onTrial={handleTrial} onCancel={handleCancel} loadingId={loadingId} />)}
-            </div>
-          </section>
-
           {/* Active / en essai */}
           {activeList.length > 0 && (
             <section>
