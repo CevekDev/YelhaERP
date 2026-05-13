@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, User } from 'lucide-react'
+import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, User, LayoutGrid } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -15,10 +15,17 @@ const SECTIONS = [
     color: 'bg-blue-50 text-blue-600',
   },
   {
+    href: '/dashboard/settings/modules',
+    icon: LayoutGrid,
+    label: 'Modules',
+    description: 'Activer ou essayer gratuitement les applications supplémentaires',
+    color: 'bg-violet-50 text-violet-600',
+  },
+  {
     href: '/dashboard/settings/billing',
     icon: CreditCard,
     label: 'Abonnement & facturation',
-    description: 'Gérer votre plan, vos apps et payer par EDAHABIA/CIB ou CCP',
+    description: 'Consulter vos abonnements actifs, renouveler ou résilier',
     color: 'bg-yelha-50 text-yelha-600',
   },
   {

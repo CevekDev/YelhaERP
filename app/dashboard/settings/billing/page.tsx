@@ -51,8 +51,6 @@ interface AppEntry {
 
 // ── Helpers ────────────────────────────────────────────────────
 
-const CORE_APP_IDS = (Object.keys(APPS) as AppId[]).filter(id => APPS[id].core)
-
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
 }
@@ -388,22 +386,7 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* ── 1. Core gratuit ── */}
-      <section className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <CheckCircle className="h-4 w-4 text-emerald-600" />
-          <h2 className="font-semibold text-emerald-900">Inclus gratuitement — pour toujours</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {CORE_APP_IDS.map(id => (
-            <span key={id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-emerald-200 text-emerald-800">
-              <span>{APPS[id].icon}</span>{APPS[id].name}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 2. Mes abonnements ── */}
+      {/* ── Mes abonnements ── */}
       <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
