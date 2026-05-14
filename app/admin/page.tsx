@@ -3,22 +3,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import {
-  ShieldAlert, BarChart3, Building2, Users, CreditCard, DollarSign,
-  Search, Check, X, TrendingUp, Clock, Ban, Star, Gift, RefreshCw,
-  ChevronLeft, ChevronRight, Loader2, Save, AlertTriangle,
+  ShieldAlert, BarChart3, Users, DollarSign,
+  Search, Check, TrendingUp, Clock, Ban, Star, Gift,
+  ChevronLeft, ChevronRight, Loader2, Save,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { APP_PLANS } from '@/lib/pricing/app-plans'
 
 // ── Types ──────────────────────────────────────────────────────
-
-interface Company {
-  id: string; name: string; plan: string; email: string | null; wilaya: string | null
-  createdAt: string; isBanned: boolean; isPartner: boolean
-  _count: { users: number; invoices: number; appSubscriptions: number }
-  yelhaSubscription: { status: string; planId: string; monthlyAmount: number; extraApps: string[] } | null
-}
 
 interface UserRow {
   id: string; name: string; email: string; role: string; createdAt: string
@@ -35,7 +28,7 @@ interface Stats {
   revenue: { mrr: number; thisMonth: number; paymentsThisMonth: number; pendingPayments: number }
   recentPayments: Array<{
     id: string; amount: number; planId: string; method: string; status: string
-    paidAt: string | null; createdAt: string; ccpRef: string | null
+    paidAt: string | null; createdAt: string
     subscription: { company: { id: string; name: string } } | null
   }>
 }
@@ -44,37 +37,24 @@ interface PricingData {
   [appId: string]: { defaults: Record<string, number>; overrides: Record<string, number>; effective: Record<string, number> }
 }
 
-type Tab = 'stats' | 'companies' | 'users' | 'pricing'
+type Tab = 'stats' | 'users' | 'pricing'
 
 // ── Helpers ────────────────────────────────────────────────────
 
 function fmtDA(n: number) {
   return n.toLocaleString('fr-DZ', { maximumFractionDigits: 0 }) + ' DA'
 }
-
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// ── Status badges ──────────────────────────────────────────────
-
-function CompanyBadge({ c }: { c: Company }) {
-  if (c.isBanned) return <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30"><Ban className="w-3 h-3" />Banni</span>
-  if (c.isPartner) return <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30"><Star className="w-3 h-3" />Partenaire</span>
-  const st = c.yelhaSubscription?.status ?? 'TRIAL'
-  const map: Record<string, string> = {
-    ACTIVE:   'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    TRIAL:    'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    EXPIRED:  'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-    PAST_DUE: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    CANCELLED:'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  }
-  return <span className={`inline-flex text-[11px] font-bold px-2 py-0.5 rounded-full border ${map[st] ?? map.TRIAL}`}>{st}</span>
-}
-
 // ── Gift dialog ────────────────────────────────────────────────
 
-function GiftDialog({ company, onClose, onDone }: { company: Company; onClose: () => void; onDone: () => void }) {
+function GiftDialog({ target, onClose, onDone }: {
+  target: { id: string; name: string }
+  onClose: () => void
+  onDone: () => void
+}) {
   const [appId, setAppId]   = useState(Object.keys(APP_PLANS)[0] ?? '')
   const [planId, setPlanId] = useState('')
   const [months, setMonths] = useState(1)
@@ -89,9 +69,8 @@ function GiftDialog({ company, onClose, onDone }: { company: Company; onClose: (
     if (!planId) return
     setLoading(true)
     const res = await fetch('/api/admin/app-grant', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'gift', companyId: company.id, appId, planId, months }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'gift', companyId: target.id, appId, planId, months }),
     })
     const d = await res.json()
     setLoading(false)
@@ -105,7 +84,7 @@ function GiftDialog({ company, onClose, onDone }: { company: Company; onClose: (
         <div className="flex items-center gap-2 mb-6">
           <Gift className="w-5 h-5 text-amber-400" />
           <h3 className="font-bold text-white">Offrir un abonnement</h3>
-          <span className="text-zinc-500 text-sm ml-1">— {company.name}</span>
+          <span className="text-zinc-500 text-sm ml-1">— {target.name}</span>
         </div>
         <div className="space-y-4">
           <div>
@@ -134,7 +113,7 @@ function GiftDialog({ company, onClose, onDone }: { company: Company; onClose: (
             </select>
           </div>
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-300">
-            🎁 Le client recevra un email "Abonnement offert" et sera rappelé 2 jours avant la fin.
+            🎁 Le client recevra un email et sera rappelé 2 jours avant la fin.
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -165,12 +144,12 @@ function StatsTab() {
   if (!stats) return null
 
   const kpis = [
-    { label: 'Entreprises',  value: stats.companies.total,              sub: `+${stats.companies.newThisMonth} ce mois`, icon: Building2,  color: 'text-blue-400' },
-    { label: 'MRR',          value: fmtDA(stats.revenue.mrr),           sub: 'Abonnements actifs',                       icon: TrendingUp, color: 'text-emerald-400' },
-    { label: 'Ce mois',      value: fmtDA(stats.revenue.thisMonth),     sub: `${stats.revenue.paymentsThisMonth} paiements`, icon: DollarSign, color: 'text-indigo-400' },
-    { label: 'En attente',   value: stats.revenue.pendingPayments,      sub: 'Paiements CCP',                            icon: Clock,      color: 'text-amber-400' },
-    { label: 'Utilisateurs', value: stats.users.total,                  sub: 'Comptes actifs',                           icon: Users,      color: 'text-purple-400' },
-    { label: 'Actifs',       value: stats.companies.byStatus.active ?? 0, sub: `Trial: ${stats.companies.byStatus.trial ?? 0}`, icon: Check, color: 'text-emerald-400' },
+    { label: 'Comptes',      value: stats.companies.total,                sub: `+${stats.companies.newThisMonth} ce mois`,       icon: Users,      color: 'text-blue-400' },
+    { label: 'MRR',          value: fmtDA(stats.revenue.mrr),             sub: 'Abonnements actifs',                             icon: TrendingUp, color: 'text-emerald-400' },
+    { label: 'Ce mois',      value: fmtDA(stats.revenue.thisMonth),       sub: `${stats.revenue.paymentsThisMonth} paiements`,   icon: DollarSign, color: 'text-indigo-400' },
+    { label: 'En attente',   value: stats.revenue.pendingPayments,        sub: 'Paiements CCP',                                  icon: Clock,      color: 'text-amber-400' },
+    { label: 'Utilisateurs', value: stats.users.total,                    sub: 'Comptes actifs',                                 icon: Users,      color: 'text-purple-400' },
+    { label: 'Actifs',       value: stats.companies.byStatus.active ?? 0, sub: `Trial: ${stats.companies.byStatus.trial ?? 0}`,  icon: Check,      color: 'text-emerald-400' },
   ]
 
   return (
@@ -230,161 +209,6 @@ function StatsTab() {
   )
 }
 
-// ── Companies tab ──────────────────────────────────────────────
-
-function CompaniesTab() {
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [giftTarget, setGiftTarget] = useState<Company | null>(null)
-  const [acting, setActing] = useState<string | null>(null)
-
-  const load = useCallback(() => {
-    setLoading(true)
-    fetch(`/api/admin/companies?page=${page}&search=${encodeURIComponent(search)}`)
-      .then(r => r.json())
-      .then(d => {
-        const data = d.data ?? d
-        setCompanies(data.companies ?? [])
-        setTotal(data.total ?? 0)
-      })
-      .finally(() => setLoading(false))
-  }, [page, search])
-
-  useEffect(() => { load() }, [load])
-
-  async function toggleBan(c: Company) {
-    setActing(c.id)
-    const action = c.isBanned ? 'unban' : 'ban'
-    const res = await fetch(`/api/admin/companies/${c.id}/ban`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
-    })
-    if (res.ok) { toast.success(action === 'ban' ? 'Compte banni' : 'Compte débanni'); load() }
-    else toast.error('Erreur')
-    setActing(null)
-  }
-
-  async function togglePartner(c: Company) {
-    setActing(c.id)
-    const action = c.isPartner ? 'demote' : 'promote'
-    const res = await fetch(`/api/admin/companies/${c.id}/partner`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
-    })
-    if (res.ok) { toast.success(action === 'promote' ? '⭐ Promu partenaire — accès illimité activé' : 'Statut partenaire retiré'); load() }
-    else toast.error('Erreur')
-    setActing(null)
-  }
-
-  const totalPages = Math.ceil(total / 25)
-
-  return (
-    <div className="space-y-4">
-      {giftTarget && <GiftDialog company={giftTarget} onClose={() => setGiftTarget(null)} onDone={load} />}
-
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <input
-            value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Rechercher une entreprise…"
-            className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-        <span className="text-sm text-zinc-500">{total} entreprise{total !== 1 ? 's' : ''}</span>
-      </div>
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-zinc-600" /></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-zinc-500 border-b border-zinc-800">
-                  <th className="text-left px-5 py-3 font-medium">Entreprise</th>
-                  <th className="text-left px-5 py-3 font-medium">Statut</th>
-                  <th className="text-left px-5 py-3 font-medium">Plan ERP</th>
-                  <th className="text-left px-5 py-3 font-medium">Apps</th>
-                  <th className="text-left px-5 py-3 font-medium">Utilisateurs</th>
-                  <th className="text-left px-5 py-3 font-medium">Inscrit</th>
-                  <th className="text-right px-5 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies.map(c => (
-                  <tr key={c.id} className={`border-b border-zinc-800/50 hover:bg-zinc-800/20 ${c.isBanned ? 'opacity-60' : ''}`}>
-                    <td className="px-5 py-3">
-                      <div className="font-semibold text-white">{c.name}</div>
-                      {c.email && <div className="text-xs text-zinc-500">{c.email}</div>}
-                    </td>
-                    <td className="px-5 py-3"><CompanyBadge c={c} /></td>
-                    <td className="px-5 py-3 text-zinc-400 text-xs">{c.yelhaSubscription?.planId ?? c.plan}</td>
-                    <td className="px-5 py-3 text-zinc-400">{c._count.appSubscriptions}</td>
-                    <td className="px-5 py-3 text-zinc-400">{c._count.users}</td>
-                    <td className="px-5 py-3 text-zinc-500 text-xs">{fmtDate(c.createdAt)}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {acting === c.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setGiftTarget(c)}
-                              title="Offrir un abonnement"
-                              className="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
-                            >
-                              <Gift className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => togglePartner(c)}
-                              title={c.isPartner ? 'Retirer statut partenaire' : 'Promouvoir en partenaire'}
-                              className={`p-1.5 rounded-lg transition-colors ${c.isPartner ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10'}`}
-                            >
-                              <Star className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => toggleBan(c)}
-                              title={c.isBanned ? 'Débannir' : 'Bannir le compte'}
-                              className={`p-1.5 rounded-lg transition-colors ${c.isBanned ? 'text-red-400 bg-red-500/10' : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'}`}
-                            >
-                              <Ban className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {companies.length === 0 && (
-                  <tr><td colSpan={7} className="py-16 text-center text-zinc-600 text-sm">Aucune entreprise trouvée</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-zinc-500">Page {page} / {totalPages}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="border-zinc-800 text-zinc-400 hover:bg-zinc-800">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="border-zinc-800 text-zinc-400 hover:bg-zinc-800">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Users tab ──────────────────────────────────────────────────
 
 function UsersTab() {
@@ -393,20 +217,42 @@ function UsersTab() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [acting, setActing] = useState<string | null>(null)
+  const [giftTarget, setGiftTarget] = useState<{ id: string; name: string } | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
     fetch(`/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`)
       .then(r => r.json())
-      .then(d => {
-        const data = d.data ?? d
-        setUsers(data.users ?? [])
-        setTotal(data.total ?? 0)
-      })
+      .then(d => { const data = d.data ?? d; setUsers(data.users ?? []); setTotal(data.total ?? 0) })
       .finally(() => setLoading(false))
   }, [page, search])
 
   useEffect(() => { load() }, [load])
+
+  async function toggleBan(u: UserRow) {
+    setActing(u.id)
+    const action = u.company.isBanned ? 'unban' : 'ban'
+    const res = await fetch(`/api/admin/companies/${u.company.id}/ban`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    if (res.ok) { toast.success(action === 'ban' ? 'Compte banni' : 'Compte débanni'); load() }
+    else toast.error('Erreur')
+    setActing(null)
+  }
+
+  async function togglePartner(u: UserRow) {
+    setActing(u.id)
+    const action = u.company.isPartner ? 'demote' : 'promote'
+    const res = await fetch(`/api/admin/companies/${u.company.id}/partner`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    if (res.ok) { toast.success(action === 'promote' ? '⭐ Promu partenaire' : 'Statut partenaire retiré'); load() }
+    else toast.error('Erreur')
+    setActing(null)
+  }
 
   const ROLE_LABELS: Record<string, string> = {
     OWNER: 'Propriétaire', ADMIN: 'Admin', ACCOUNTANT: 'Comptable', EMPLOYEE: 'Employé', READONLY: 'Lecture',
@@ -416,6 +262,8 @@ function UsersTab() {
 
   return (
     <div className="space-y-4">
+      {giftTarget && <GiftDialog target={giftTarget} onClose={() => setGiftTarget(null)} onDone={load} />}
+
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -439,14 +287,15 @@ function UsersTab() {
                   <th className="text-left px-5 py-3 font-medium">Utilisateur</th>
                   <th className="text-left px-5 py-3 font-medium">Rôle</th>
                   <th className="text-left px-5 py-3 font-medium">Entreprise</th>
-                  <th className="text-left px-5 py-3 font-medium">Abonnement ERP</th>
+                  <th className="text-left px-5 py-3 font-medium">Abonnement</th>
                   <th className="text-left px-5 py-3 font-medium">Apps actives</th>
                   <th className="text-left px-5 py-3 font-medium">Inscrit</th>
+                  <th className="text-right px-5 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
+                  <tr key={u.id} className={`border-b border-zinc-800/50 hover:bg-zinc-800/20 ${u.company.isBanned ? 'opacity-60' : ''}`}>
                     <td className="px-5 py-3">
                       <div className="font-medium text-white">{u.name}</div>
                       <div className="text-xs text-zinc-500">{u.email}</div>
@@ -457,7 +306,7 @@ function UsersTab() {
                     <td className="px-5 py-3">
                       <div className="font-medium text-zinc-300">{u.company.name}</div>
                       <div className="flex gap-1 mt-0.5">
-                        {u.company.isBanned && <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Banni</span>}
+                        {u.company.isBanned  && <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Banni</span>}
                         {u.company.isPartner && <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Partenaire</span>}
                       </div>
                     </td>
@@ -469,7 +318,9 @@ function UsersTab() {
                       <div className="flex flex-wrap gap-1">
                         {u.company.appSubscriptions.map(s => (
                           <span key={s.appId} className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                            s.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'
+                            s.status === 'ACTIVE'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : 'bg-zinc-800 text-zinc-500 border-zinc-700'
                           }`}>
                             {APP_PLANS[s.appId as keyof typeof APP_PLANS]?.appName ?? s.appId}
                           </span>
@@ -478,10 +329,41 @@ function UsersTab() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-zinc-500 text-xs">{fmtDate(u.createdAt)}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {acting === u.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setGiftTarget({ id: u.company.id, name: u.company.name })}
+                              title="Offrir un abonnement"
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                            >
+                              <Gift className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => togglePartner(u)}
+                              title={u.company.isPartner ? 'Retirer partenaire' : 'Promouvoir partenaire'}
+                              className={`p-1.5 rounded-lg transition-colors ${u.company.isPartner ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10'}`}
+                            >
+                              <Star className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => toggleBan(u)}
+                              title={u.company.isBanned ? 'Débannir' : 'Bannir'}
+                              className={`p-1.5 rounded-lg transition-colors ${u.company.isBanned ? 'text-red-400 bg-red-500/10' : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'}`}
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
-                  <tr><td colSpan={6} className="py-16 text-center text-zinc-600 text-sm">Aucun utilisateur trouvé</td></tr>
+                  <tr><td colSpan={7} className="py-16 text-center text-zinc-600 text-sm">Aucun utilisateur trouvé</td></tr>
                 )}
               </tbody>
             </table>
@@ -553,14 +435,10 @@ function PricingTab() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
               <div>
                 <h3 className="font-semibold text-white">{appConfig?.appName ?? appId}</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Modifier les prix des abonnements</p>
+                <p className="text-xs text-zinc-500 mt-0.5">Prix des abonnements en DA/mois</p>
               </div>
-              <Button
-                size="sm"
-                onClick={() => savePricing(appId)}
-                disabled={saving === appId}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
+              <Button size="sm" onClick={() => savePricing(appId)} disabled={saving === appId}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 {saving === appId ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-3.5 h-3.5 mr-1" />Sauvegarder</>}
               </Button>
             </div>
@@ -608,13 +486,12 @@ function PricingTab() {
   )
 }
 
-// ── Main admin page ────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'stats',     label: 'Vue d\'ensemble', icon: BarChart3 },
-  { id: 'companies', label: 'Entreprises',      icon: Building2 },
-  { id: 'users',     label: 'Utilisateurs',     icon: Users },
-  { id: 'pricing',   label: 'Tarification',     icon: DollarSign },
+  { id: 'stats',   label: 'Vue d\'ensemble', icon: BarChart3 },
+  { id: 'users',   label: 'Utilisateurs',    icon: Users },
+  { id: 'pricing', label: 'Tarification',    icon: DollarSign },
 ]
 
 export default function AdminPage() {
@@ -634,7 +511,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Header */}
       <div className="border-b border-zinc-800 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -654,29 +530,23 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Tabs */}
         <div className="flex items-center gap-1 mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-1 w-fit">
           {TABS.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+            <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 tab === t.id
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
                   : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
-              }`}
-            >
+              }`}>
               <t.icon className="w-4 h-4" />
               <span className="hidden sm:block">{t.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Tab content */}
-        {tab === 'stats'     && <StatsTab />}
-        {tab === 'companies' && <CompaniesTab />}
-        {tab === 'users'     && <UsersTab />}
-        {tab === 'pricing'   && <PricingTab />}
+        {tab === 'stats'   && <StatsTab />}
+        {tab === 'users'   && <UsersTab />}
+        {tab === 'pricing' && <PricingTab />}
       </div>
     </div>
   )
