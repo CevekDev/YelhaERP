@@ -22,6 +22,10 @@
     {
       "path": "/api/cron/app-billing",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-payments",
+      "schedule": "0 * * * *"
     }
   ],
   "functions": {

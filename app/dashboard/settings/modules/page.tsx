@@ -16,6 +16,12 @@ interface SubData {
   appTrialsEndsAt: Record<string, string>
 }
 
+interface AppSubRecord {
+  appId: string
+  effectiveStatus: string
+  trialEndsAt: string | null
+}
+
 type AppState = 'core' | 'active' | 'trial' | 'expired-trial' | 'available' | 'coming-soon'
 
 interface AppInfo {
@@ -185,16 +191,19 @@ function AppCard({ info, onTrial, onCancel, loadingId }: {
 
 export default function ModulesPage() {
   const [sub, setSub] = useState<SubData | null>(null)
+  const [appSubs, setAppSubs] = useState<AppSubRecord[]>([])
   const [pageLoading, setPageLoading] = useState(true)
   const [loadingId, setLoadingId] = useState<AppId | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   function loadSub() {
-    fetch('/api/billing/subscription')
-      .then(r => r.json())
-      .then(d => { if (d.subscription) setSub(d.subscription) })
-      .catch(() => {})
-      .finally(() => setPageLoading(false))
+    Promise.all([
+      fetch('/api/billing/subscription').then(r => r.json()),
+      fetch('/api/app-billing/subscriptions').then(r => r.json()).catch(() => ({})),
+    ]).then(([oldD, newD]) => {
+      if (oldD.subscription) setSub(oldD.subscription)
+      setAppSubs(newD?.data?.subscriptions ?? newD?.subscriptions ?? [])
+    }).catch(() => {}).finally(() => setPageLoading(false))
   }
 
   useEffect(() => { loadSub() }, [])
@@ -232,10 +241,25 @@ export default function ModulesPage() {
     setLoadingId(null)
   }
 
+  // New AppSubscription system takes priority
+  const newSubMap = new Map(appSubs.map(s => [s.appId, s]))
+
   const appInfos: AppInfo[] = (Object.keys(APPS) as AppId[]).map(appId => {
     const app = APPS[appId]
     if (app.core) return { appId, state: 'core' }
     if (app.comingSoon) return { appId, state: 'coming-soon' }
+
+    // Check new system first
+    const newSub = newSubMap.get(appId)
+    if (newSub) {
+      if (newSub.effectiveStatus === 'ACTIVE') return { appId, state: 'active' }
+      if (newSub.effectiveStatus === 'TRIAL') {
+        const dl = newSub.trialEndsAt ? dLeft(newSub.trialEndsAt) : 0
+        return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: newSub.trialEndsAt ?? undefined }
+      }
+    }
+
+    // Fall back to old system
     if (!sub) return { appId, state: 'available' }
     if (sub.extraApps.includes(appId)) return { appId, state: 'active' }
     if (sub.trialApps.includes(appId)) {
