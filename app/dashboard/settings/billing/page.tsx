@@ -49,6 +49,15 @@ interface AppEntry {
   daysLeft?: number
 }
 
+interface AppSubRecord {
+  appId: string
+  effectiveStatus: string
+  trialEndsAt: string | null
+  currentPeriodEnd: string
+  planId: string
+  monthlyAmount: number
+}
+
 // ── Helpers ────────────────────────────────────────────────────
 
 function fmtDate(d: string) {
@@ -187,19 +196,21 @@ function AppSubCard({
 
 export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionData | null>(null)
+  const [appSubs, setAppSubs] = useState<AppSubRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [cancelling, setCancelling] = useState<AppId | null>(null)
 
   function loadSub() {
-    fetch('/api/billing/subscription')
-      .then(r => r.json())
-      .then(d => {
-        if (d.subscription) setSub(d.subscription)
-        else setError("Impossible de charger l'abonnement.")
-      })
-      .catch(() => setError('Erreur réseau.'))
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/billing/subscription').then(r => r.json()),
+      fetch('/api/app-billing/subscriptions').then(r => r.json()).catch(() => ({ data: { subscriptions: [] } })),
+    ]).then(([oldD, newD]) => {
+      if (oldD.subscription) setSub(oldD.subscription)
+      else setError("Impossible de charger l'abonnement.")
+      const newSubs = newD?.data?.subscriptions ?? newD?.subscriptions ?? []
+      setAppSubs(newSubs)
+    }).catch(() => setError('Erreur réseau.')).finally(() => setLoading(false))
   }
 
   useEffect(() => { loadSub() }, [])
@@ -231,15 +242,14 @@ export default function BillingPage() {
     )
   }
 
-  // Build app entries
+  // Build app entries — new AppSubscription records take priority over old system
   const appTrialsEndsAt = (sub.appTrialsEndsAt as Record<string, string>) ?? {}
+  const newSubMap = new Map(appSubs.map(s => [s.appId, s]))
 
-  const entries: AppEntry[] = [
-    // Paid (extraApps)
+  const oldEntries: AppEntry[] = [
     ...sub.extraApps
       .filter(id => APPS[id as AppId] && !APPS[id as AppId].core)
       .map(id => ({ appId: id as AppId, status: 'active' as AppStatus })),
-    // Trial apps
     ...sub.trialApps
       .filter(id => APPS[id as AppId] && !sub.extraApps.includes(id))
       .map(id => {
@@ -253,6 +263,30 @@ export default function BillingPage() {
         }
       }),
   ]
+
+  // Merge: new system overrides old; add new entries not in old system
+  const seen = new Set<string>()
+  const entries: AppEntry[] = oldEntries.map(e => {
+    seen.add(e.appId)
+    const n = newSubMap.get(e.appId)
+    if (!n) return e
+    if (n.effectiveStatus === 'ACTIVE') return { appId: e.appId, status: 'active' }
+    if (n.effectiveStatus === 'TRIAL') {
+      const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
+      return { appId: e.appId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left }
+    }
+    return e
+  })
+  // Add apps only in the new system (e.g. gifted directly without old trial)
+  for (const n of appSubs) {
+    if (seen.has(n.appId) || !APPS[n.appId as AppId]) continue
+    if (n.effectiveStatus === 'ACTIVE') {
+      entries.push({ appId: n.appId as AppId, status: 'active' })
+    } else if (n.effectiveStatus === 'TRIAL') {
+      const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
+      entries.push({ appId: n.appId as AppId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left })
+    }
+  }
 
   const methodLabel: Record<string, string> = {
     CHARGILY: 'Chargily Pay', CCP: 'Virement CCP', CARD: 'Carte bancaire', CASH: 'Espèces', FREE: 'Gratuit',
