@@ -128,7 +128,6 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
           locale: 'fr',
           success_url: `${appUrl}/subscriptions/success?method=chargily&app=${appId}&plan=${planId}`,
           failure_url: `${appUrl}/subscriptions/checkout?app=${appId}`,
-          webhook_url: `${appUrl}/api/webhooks/chargily-app`,
           metadata: { appPaymentId: payment.id, appId, planId, companyId },
         }),
       })
