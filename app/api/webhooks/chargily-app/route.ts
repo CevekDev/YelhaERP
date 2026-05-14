@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
+import { sendAppPaymentConfirmation } from '@/lib/email/resend'
+import { getAppPlanConfig } from '@/lib/pricing/app-plans'
 
 interface ChargilyEvent {
   type: string
@@ -44,7 +46,11 @@ export async function POST(req: NextRequest) {
 
   const payment = await prisma.appPayment.findUnique({
     where: { id: appPaymentId },
-    include: { appSubscription: { include: { company: true } } },
+    include: {
+      appSubscription: {
+        include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+      },
+    },
   })
 
   if (!payment || payment.status === 'PAID') {
@@ -74,6 +80,21 @@ export async function POST(req: NextRequest) {
       },
     })
   })
+
+  // Email de confirmation au propriétaire de la company
+  const owner = payment.appSubscription.company.users[0]
+  if (owner) {
+    const appConfig = getAppPlanConfig(payment.appId)
+    await sendAppPaymentConfirmation({
+      to: owner.email,
+      name: owner.name,
+      appName: appConfig?.appName ?? payment.appId,
+      planName: payment.planId,
+      amount: payment.amount,
+      periodStart: now,
+      periodEnd,
+    })
+  }
 
   return NextResponse.json({ received: true }, { status: 200 })
 }

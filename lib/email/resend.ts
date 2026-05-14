@@ -269,13 +269,88 @@ export async function sendCCPInstructions({ to, name, amount, ccpRef, planName }
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Instructions de virement CCP</h1>
     <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, pour activer votre plan <strong>${planName}</strong> :</p>
     <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:12px;padding:24px;margin-bottom:24px;">
-      <p style="margin:4px 0;font-size:14px;"><strong>CCP :</strong> 00123456789 CCP Alger</p>
+      <p style="margin:4px 0;font-size:14px;"><strong>CCP :</strong> 00799999004399346548</p>
       <p style="margin:4px 0;font-size:14px;"><strong>Titulaire :</strong> Yelha Technologies</p>
       <p style="margin:4px 0;font-size:16px;color:#1D9E75;font-weight:700;"><strong>Montant :</strong> ${amount.toLocaleString('fr-DZ')} DA</p>
       <p style="margin:4px 0;font-size:14px;"><strong>Référence :</strong> ${ccpRef}</p>
     </div>
     <p style="color:#92400e;font-size:13px;">Envoyez votre reçu à <a href="mailto:cvkdev@outlook.fr">cvkdev@outlook.fr</a> avec la référence <strong>${ccpRef}</strong>. Activation sous 24–48h.</p>`
   await getResend().emails.send({ from: FROM, to, subject: 'Instructions de virement CCP — YelhaERP', html: wrap('fr', content) }).catch(() => {})
+}
+
+// ── App-specific subscription emails ──────────────────────────
+
+export async function sendAppPaymentConfirmation(params: {
+  to: string; name: string; appName: string; planName: string
+  amount: number; periodStart: Date; periodEnd: Date
+}) {
+  const { to, name, appName, planName, amount, periodStart, periodEnd } = params
+  const startStr = periodStart.toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
+  const endStr   = periodEnd.toLocaleDateString('fr-DZ',   { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Abonnement activé ✅</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, votre abonnement <strong>${appName} — ${planName}</strong> est maintenant actif.</p>
+    <div style="background:#f0fdf8;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">💰 Montant</td><td style="padding:6px 0;font-weight:700;font-size:15px;color:#166534;text-align:right;">${amount.toLocaleString('fr-DZ')} DA / mois</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📅 Début</td><td style="padding:6px 0;font-weight:600;font-size:14px;text-align:right;">${startStr}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📅 Fin</td><td style="padding:6px 0;font-weight:600;font-size:14px;text-align:right;">${endStr}</td></tr>
+      </table>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://erp.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Accéder au dashboard →</a>
+    </div>
+    <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">Merci pour votre confiance — YelhaERP</p>`
+
+  await getResend().emails.send({
+    from: FROM, to,
+    subject: `✅ Abonnement ${appName} ${planName} activé`,
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
+export async function sendAppRenewalReminder(params: {
+  to: string; name: string; appName: string; planName: string
+  amount: number; expiresAt: Date; appId: string
+}) {
+  const { to, name, appName, planName, amount, expiresAt, appId } = params
+  const expiryStr = expiresAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const checkoutUrl = `https://erp.yelha.net/subscriptions/checkout?app=${appId}`
+  const waMessage = encodeURIComponent(
+    `Bonjour,\nJe souhaite renouveler mon abonnement *${planName}* (${appName}).\n\n` +
+    `💰 Montant : ${amount.toLocaleString('fr-DZ')} DA/mois\n` +
+    `📧 Email : ${to}\n\n` +
+    `Merci de m'envoyer les instructions de paiement.`
+  )
+  const waUrl = `https://wa.me/33761179379?text=${waMessage}`
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">⏰ Votre abonnement expire dans 2 jours</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, votre abonnement <strong>${appName} — ${planName}</strong> expire le <strong>${expiryStr}</strong>.</p>
+    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:#991b1b;font-size:14px;font-weight:600;">🚨 Renouvelez maintenant pour éviter toute interruption de service.</p>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+      <tr>
+        <td style="padding:0 6px 12px 0;" width="50%">
+          <a href="${checkoutUrl}" style="display:block;background:#4f46e5;color:#fff;font-size:14px;font-weight:600;padding:14px 20px;border-radius:12px;text-decoration:none;text-align:center;">💳 Payer par Chargily</a>
+        </td>
+        <td style="padding:0 0 12px 6px;" width="50%">
+          <a href="${waUrl}" style="display:block;background:#25D366;color:#fff;font-size:14px;font-weight:600;padding:14px 20px;border-radius:12px;text-decoration:none;text-align:center;">📱 Renouveler par WhatsApp</a>
+        </td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="${checkoutUrl}" style="color:#4f46e5;font-size:13px;text-decoration:underline;">Changer de plan →</a>
+    </div>
+    <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">Montant actuel : ${amount.toLocaleString('fr-DZ')} DA/mois</p>`
+
+  await getResend().emails.send({
+    from: FROM, to,
+    subject: `⚠️ Votre abonnement ${appName} expire dans 2 jours`,
+    html: wrap('fr', content),
+  }).catch(() => {})
 }
 
 export async function sendPaymentFailed({ to, name, planName }: { to: string; name: string; planName: string }) {

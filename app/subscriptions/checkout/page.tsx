@@ -32,7 +32,7 @@ type AppPlan = {
 }
 
 const WHATSAPP_NUMBER = '33761179379'
-const CCP_NUMBER = '00123456789 CCP Alger'
+const CCP_NUMBER = '00799999004399346548'
 const CCP_HOLDER = 'Yelha Technologies'
 
 const PLAN_STYLES: Record<string, { icon: React.ReactNode; accent: string; badge: string; ring: string; glow: string }> = {
