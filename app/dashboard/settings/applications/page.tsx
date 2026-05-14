@@ -231,9 +231,9 @@ function AppPlansDialog({
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Erreur'); return }
-      setCheckoutResult(data.data)
-      if (data.data.type === 'trial') {
-        setSub(data.data.subscription)
+      setCheckoutResult(data)
+      if (data.type === 'trial') {
+        setSub(data.subscription)
         toast.success('Essai de 15 jours activé !')
       }
     } catch {
