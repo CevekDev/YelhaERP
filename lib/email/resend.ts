@@ -278,6 +278,37 @@ export async function sendCCPInstructions({ to, name, amount, ccpRef, planName }
   await getResend().emails.send({ from: FROM, to, subject: 'Instructions de virement CCP — YelhaERP', html: wrap('fr', content) }).catch(() => {})
 }
 
+export async function sendAppGiftSubscription(params: {
+  to: string; name: string; appName: string; planName: string
+  periodStart: Date; periodEnd: Date; months: number
+}) {
+  const { to, name, appName, planName, periodStart, periodEnd, months } = params
+  const startStr = periodStart.toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
+  const endStr   = periodEnd.toLocaleDateString('fr-DZ',   { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">🎁 Vous avez reçu un abonnement offert !</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, YelhaERP vous offre un abonnement <strong>${appName} — ${planName}</strong> valable <strong>${months} mois</strong>.</p>
+    <div style="background:#f0fdf8;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">🎁 Offert par</td><td style="padding:6px 0;font-weight:700;color:#166534;text-align:right;">YelhaERP</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📅 Début</td><td style="padding:6px 0;font-weight:600;font-size:14px;text-align:right;">${startStr}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📅 Fin</td><td style="padding:6px 0;font-weight:600;font-size:14px;text-align:right;">${endStr}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;">💰 Montant</td><td style="padding:6px 0;font-weight:700;color:#166534;text-align:right;">Gratuit</td></tr>
+      </table>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://erp.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Accéder au dashboard →</a>
+    </div>
+    <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">Vous recevrez un rappel avant la fin de votre abonnement. Merci de votre confiance.</p>`
+
+  await getResend().emails.send({
+    from: FROM, to,
+    subject: `🎁 Abonnement ${appName} offert — ${months} mois gratuits`,
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
 // ── App trial emails ───────────────────────────────────────────
 
 export async function sendAppTrialWelcome(params: {

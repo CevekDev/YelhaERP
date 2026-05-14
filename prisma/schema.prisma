@@ -33,6 +33,10 @@ model Company {
   aiQuotaUsed   Int          @default(0)
   aiQuotaReset DateTime     @default(now())
   trialEndsAt  DateTime?
+  isBanned     Boolean      @default(false)
+  bannedAt     DateTime?
+  isPartner    Boolean      @default(false)
+  partnerSince DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

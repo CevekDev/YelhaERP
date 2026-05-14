@@ -18,6 +18,11 @@ export async function getTenantContext(): Promise<TenantContext> {
   if (!session?.user?.id || !session?.user?.companyId) {
     throw new Error('UNAUTHORIZED')
   }
+  const company = await prisma.company.findUnique({
+    where: { id: session.user.companyId },
+    select: { isBanned: true },
+  })
+  if (company?.isBanned) throw new Error('FORBIDDEN')
   return {
     userId: session.user.id,
     companyId: session.user.companyId,

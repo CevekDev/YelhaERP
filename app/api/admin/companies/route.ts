@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
         where,
         select: {
           id: true, name: true, plan: true, trialEndsAt: true, createdAt: true,
-          email: true, wilaya: true,
-          _count: { select: { users: true, invoices: true } },
+          email: true, wilaya: true, isBanned: true, isPartner: true,
+          _count: { select: { users: true, invoices: true, appSubscriptions: true } },
           yelhaSubscription: {
             select: {
               id: true, status: true, planId: true, monthlyAmount: true,
