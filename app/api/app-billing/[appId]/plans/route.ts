@@ -4,6 +4,8 @@ import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { APP_PLANS, getAppPlanConfig } from '@/lib/pricing/app-plans'
 
+export const dynamic = 'force-dynamic'
+
 const APP_PLANS_CONFIG_PREFIX = 'app_pricing_'
 
 export async function GET(req: NextRequest, { params }: { params: { appId: string } }) {
