@@ -135,9 +135,8 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
 
       if (!chargilyRes.ok) {
         const detail = await chargilyRes.text()
-        console.error('[chargily-app] checkout error:', detail)
         await prisma.appPayment.delete({ where: { id: payment.id } })
-        return apiError('Erreur Chargily — réessayez', 500)
+        return apiError(`Chargily: ${detail}`, 400)
       }
 
       const chargilyData = await chargilyRes.json()
