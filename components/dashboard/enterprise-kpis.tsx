@@ -32,12 +32,8 @@ const buildTiles = (p: Props) => [
 export function EnterpriseKPIs(props: Props) {
   const allTiles = buildTiles(props)
 
-  // If activeApps is provided, only show tiles for active apps OR tiles with value > 0
   const tiles = props.activeApps
-    ? allTiles.filter(t => {
-        const appKey = TILE_APP_MAP[t.key]
-        return props.activeApps!.includes(appKey) || t.value > 0
-      })
+    ? allTiles.filter(t => props.activeApps!.includes(TILE_APP_MAP[t.key]))
     : allTiles
 
   if (tiles.length === 0) return null
