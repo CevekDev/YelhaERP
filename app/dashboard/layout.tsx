@@ -11,20 +11,40 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect('/login')
   if (!session.user.businessType) redirect('/onboarding')
 
-  const sub = session.user.companyId
-    ? await prisma.yelhaSubscription.findUnique({
-        where: { companyId: session.user.companyId },
-        select: { status: true, trialEndsAt: true },
-      })
-    : null
+  const [sub, company] = session.user.companyId
+    ? await Promise.all([
+        prisma.yelhaSubscription.findUnique({
+          where: { companyId: session.user.companyId },
+          select: { status: true, trialEndsAt: true },
+        }),
+        prisma.company.findUnique({
+          where: { id: session.user.companyId },
+          select: { isBanned: true },
+        }),
+      ])
+    : [null, null]
 
   const isExpired = sub?.status === 'EXPIRED' ||
     (sub?.status === 'TRIAL' && sub?.trialEndsAt && sub.trialEndsAt < new Date())
 
   return (
     <div className="min-h-screen bg-muted/30">
+      {/* Compte banni — blocking modal */}
+      {company?.isBanned && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', maxWidth: 460, textAlign: 'center', boxShadow: '0 25px 50px rgba(0,0,0,.3)' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Compte suspendu</h2>
+            <p style={{ color: '#64748b', fontSize: 15, marginBottom: 24 }}>Votre compte a été suspendu. Contactez le support pour plus d&apos;informations.</p>
+            <a href="mailto:cvkdev@outlook.fr" style={{ display: 'inline-block', background: '#ef4444', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
+              Contacter le support →
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Trial expired — blocking modal */}
-      {isExpired && (
+      {!company?.isBanned && isExpired && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', maxWidth: 460, textAlign: 'center', boxShadow: '0 25px 50px rgba(0,0,0,.25)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
@@ -37,6 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </div>
       )}
+
 
       <TopNav hasBanner={false} />
       <KeyboardShortcuts />

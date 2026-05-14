@@ -5,7 +5,7 @@ import { requireSuperAdmin } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { getAppPlan, getAppPlanConfig } from '@/lib/pricing/app-plans'
-import { sendAppPaymentConfirmation } from '@/lib/email/resend'
+import { sendAppPaymentConfirmation, sendAppGiftSubscription } from '@/lib/email/resend'
 
 const APP_PLANS_CONFIG_PREFIX = 'app_pricing_'
 
@@ -15,7 +15,7 @@ const grantSchema = z.union([
     paymentId: z.string(),
   }),
   z.object({
-    type: z.enum(['free', 'activate']),
+    type: z.enum(['free', 'activate', 'gift']),
     companyId: z.string().cuid(),
     appId: z.string(),
     planId: z.string(),
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       where: { key: `${APP_PLANS_CONFIG_PREFIX}${appId}` },
     })
     const overrides = (dbConfig?.value as Record<string, number> | null) ?? {}
-    const effectivePrice = type === 'free' ? 0 : (overrides[planId] ?? plan.price)
+    const effectivePrice = (type === 'free' || type === 'gift') ? 0 : (overrides[planId] ?? plan.price)
 
     const periodEnd = new Date(now)
     periodEnd.setDate(periodEnd.getDate() + months * 30)
@@ -123,12 +123,14 @@ export async function POST(req: NextRequest) {
           },
         })
 
+    const paymentMethod = type === 'gift' ? 'ADMIN_GIFT' : type === 'free' ? 'ADMIN_FREE' : 'ADMIN_ACTIVATE'
+
     await prisma.appPayment.create({
       data: {
         appSubscriptionId: subRecord.id,
         appId, planId,
         amount: effectivePrice,
-        method: type === 'free' ? 'ADMIN_FREE' : 'ADMIN_ACTIVATE',
+        method: paymentMethod,
         status: 'PAID',
         paidAt: now,
         periodStart: now,
@@ -136,19 +138,29 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    if (effectivePrice > 0) {
-      const company = await prisma.company.findUnique({
-        where: { id: companyId },
-        include: { users: { where: { role: 'OWNER' }, take: 1 } },
-      })
-      const owner = company?.users[0]
-      if (owner) {
-        const appConfig = getAppPlanConfig(appId)
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      include: { users: { where: { role: 'OWNER' }, take: 1 } },
+    })
+    const owner = company?.users[0]
+    if (owner) {
+      const appConfig = getAppPlanConfig(appId)
+      if (type === 'gift') {
+        await sendAppGiftSubscription({
+          to: owner.email,
+          name: owner.name,
+          appName: appConfig?.appName ?? appId,
+          planName: plan.name,
+          periodStart: now,
+          periodEnd,
+          months,
+        }).catch(() => {})
+      } else if (type === 'activate') {
         await sendAppPaymentConfirmation({
           to: owner.email,
           name: owner.name,
           appName: appConfig?.appName ?? appId,
-          planName: planId,
+          planName: plan.name,
           amount: effectivePrice,
           periodStart: now,
           periodEnd,
