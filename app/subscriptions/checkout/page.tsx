@@ -31,22 +31,24 @@ type AppPlan = {
   description: string; features: readonly string[]
 }
 
+const WHATSAPP_NUMBER = '33761179379'
+const CCP_NUMBER = '00123456789 CCP Alger'
+const CCP_HOLDER = 'Yelha Technologies'
+
 function AppCheckout({ appId }: { appId: string }) {
   const router = useRouter()
   const { data: session } = useSession()
   const config = getAppPlanConfig(appId)
 
-  // Charge les plans immédiatement depuis le config statique (pas d'appel API bloquant)
   const basePlans: AppPlan[] = config
     ? Object.values(config.plans as Record<string, AppPlan>).filter(p => p.id !== 'trial')
     : []
 
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({})
   const [selectedPlanId, setSelectedPlanId] = useState<string>('starter')
-  const [submitting, setSubmitting] = useState(false)
-  const [ccpResult, setCcpResult] = useState<{ ccpRef: string; amount: number; planId: string } | null>(null)
+  const [submitting, setSubmitting] = useState<'CCP' | 'CHARGILY' | null>(null)
+  const [ccpResult, setCcpResult] = useState<{ ccpRef: string; amount: number; planId: string; planName: string } | null>(null)
 
-  // Récupère les overrides de prix admin en arrière-plan (optionnel)
   useEffect(() => {
     fetch(`/api/app-billing/${appId}/plans`)
       .then(r => r.json())
@@ -60,7 +62,6 @@ function AppCheckout({ appId }: { appId: string }) {
       .catch(() => {})
   }, [appId])
 
-  // Applique les overrides sur les prix de base
   const plans: AppPlan[] = basePlans.map(p => ({
     ...p,
     price: priceOverrides[p.id] ?? p.price,
@@ -68,8 +69,8 @@ function AppCheckout({ appId }: { appId: string }) {
 
   const selected = plans.find(p => p.id === selectedPlanId) ?? plans[0]
 
-  async function handlePay(method: 'CCP' | 'TRIAL') {
-    setSubmitting(true)
+  async function handlePay(method: 'CCP' | 'CHARGILY') {
+    setSubmitting(method)
     try {
       const res = await fetch(`/api/app-billing/${appId}/checkout`, {
         method: 'POST',
@@ -78,20 +79,30 @@ function AppCheckout({ appId }: { appId: string }) {
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Erreur'); return }
-      if (data.data.type === 'ccp') {
-        setCcpResult({ ccpRef: data.data.ccpRef, amount: data.data.amount, planId: selectedPlanId })
-      } else {
-        toast.success('Essai activé !')
-        router.push('/dashboard')
+      if (data.data.type === 'chargily') {
+        window.location.href = data.data.url
+      } else if (data.data.type === 'ccp') {
+        const planName = selected?.name ?? selectedPlanId
+        setCcpResult({ ccpRef: data.data.ccpRef, amount: data.data.amount, planId: selectedPlanId, planName })
       }
     } catch { toast.error('Erreur réseau') }
-    finally { setSubmitting(false) }
+    finally { setSubmitting(null) }
   }
 
   if (!config) return null
 
   // ── CCP result screen ──────────────────────────────────────────────────────
   if (ccpResult) {
+    const userEmail = session?.user?.email ?? ''
+    const waMessage = encodeURIComponent(
+      `Bonjour,\nJe souhaite activer le pack *${ccpResult.planName}* (${config.appName}).\n\n` +
+      `💰 Montant : ${fmtDA(ccpResult.amount)}/mois\n` +
+      `📧 Email : ${userEmail}\n` +
+      `🔖 Référence : ${ccpResult.ccpRef}\n\n` +
+      `Ci-joint la preuve de versement CCP.`
+    )
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`
+
     return (
       <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6 pt-16">
         <div className="max-w-lg w-full">
@@ -109,11 +120,16 @@ function AppCheckout({ appId }: { appId: string }) {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Numéro CCP</span>
-                <span className="font-bold text-slate-800">00123456789 CCP Alger</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800">{CCP_NUMBER}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(CCP_NUMBER); toast.success('Copié !') }}>
+                    <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />
+                  </button>
+                </div>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Titulaire</span>
-                <span className="font-bold text-slate-800">Yelha Technologies</span>
+                <span className="font-bold text-slate-800">{CCP_HOLDER}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Montant exact</span>
@@ -131,13 +147,25 @@ function AppCheckout({ appId }: { appId: string }) {
                   </button>
                 </div>
               </div>
-              <p className="text-slate-600 text-xs pt-1">
-                Envoyez votre reçu à <a href="mailto:cvkdev@outlook.fr" className="underline text-amber-700">cvkdev@outlook.fr</a>.
-                Activation sous 24–48h ouvrables.
-              </p>
             </div>
 
-            <Button className="w-full" onClick={() => router.push('/dashboard')}>
+            <div className="rounded-xl bg-green-50 border border-green-200 p-4 space-y-2">
+              <p className="text-sm font-semibold text-green-800">📲 Envoyer la preuve par WhatsApp</p>
+              <p className="text-xs text-green-700">
+                Après le virement, envoyez votre reçu directement sur WhatsApp. Le message est pré-rempli avec vos infos.
+              </p>
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full mt-2 bg-[#25D366] hover:bg-[#20bd59] text-white font-semibold rounded-xl py-3 text-sm transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Envoyer sur WhatsApp
+              </a>
+            </div>
+
+            <Button variant="outline" className="w-full" onClick={() => router.push('/dashboard')}>
               Compris, retour au dashboard →
             </Button>
           </Card>
@@ -227,12 +255,34 @@ function AppCheckout({ appId }: { appId: string }) {
 
           {/* Payment method */}
           {selected && (
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-3">
               <h2 className="font-semibold text-slate-900">Méthode de paiement</h2>
+
+              {/* Chargily ePay */}
+              <button
+                type="button"
+                onClick={() => handlePay('CHARGILY')}
+                disabled={submitting !== null}
+                className="w-full flex items-center gap-4 rounded-xl border-2 border-blue-200 bg-blue-50 hover:border-blue-400 p-5 text-left transition-all disabled:opacity-50"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shrink-0 text-lg">
+                  💳
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-800">Chargily ePay</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Edahabia · CIB — Paiement immédiat</p>
+                </div>
+                {submitting === 'CHARGILY'
+                  ? <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                  : <span className="font-bold text-blue-700">{fmtDA(selected.price)}/mois</span>
+                }
+              </button>
+
+              {/* Virement CCP */}
               <button
                 type="button"
                 onClick={() => handlePay('CCP')}
-                disabled={submitting}
+                disabled={submitting !== null}
                 className="w-full flex items-center gap-4 rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 p-5 text-left transition-all disabled:opacity-50"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shrink-0 text-lg">
@@ -240,13 +290,13 @@ function AppCheckout({ appId }: { appId: string }) {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-slate-800">Virement CCP</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Activation sous 24–48h ouvrables</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Activation sous 24–48h · Preuve par WhatsApp</p>
                 </div>
-                {submitting ? <Loader2 className="w-5 h-5 animate-spin text-amber-600" /> : (
-                  <span className="font-bold text-amber-700">{fmtDA(selected.price)}/mois</span>
-                )}
+                {submitting === 'CCP'
+                  ? <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+                  : <span className="font-bold text-amber-700">{fmtDA(selected.price)}/mois</span>
+                }
               </button>
-
             </Card>
           )}
         </div>
