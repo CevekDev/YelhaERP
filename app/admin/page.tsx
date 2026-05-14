@@ -325,9 +325,20 @@ function UsersTab() {
                         {u.company.isPartner && <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Partenaire</span>}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-zinc-400 text-xs">
-                      {u.company.yelhaSubscription?.status ?? '—'}
-                      {u.company.yelhaSubscription?.monthlyAmount ? ` · ${fmtDA(u.company.yelhaSubscription.monthlyAmount)}` : ''}
+                    <td className="px-5 py-3 text-xs">
+                      {(() => {
+                        const activeSubs = u.company.appSubscriptions.filter(s => s.status === 'ACTIVE')
+                        const trialSubs  = u.company.appSubscriptions.filter(s => s.status === 'TRIAL')
+                        if (activeSubs.length > 0) return (
+                          <span className="text-emerald-400">ACTIVE · {activeSubs.length} app{activeSubs.length > 1 ? 's' : ''}</span>
+                        )
+                        if (trialSubs.length > 0) return (
+                          <span className="text-amber-400">TRIAL · {trialSubs.length} app{trialSubs.length > 1 ? 's' : ''}</span>
+                        )
+                        const legacy = u.company.yelhaSubscription
+                        if (legacy) return <span className="text-zinc-400">{legacy.status}{legacy.monthlyAmount ? ` · ${fmtDA(legacy.monthlyAmount)}` : ''}</span>
+                        return <span className="text-zinc-600">—</span>
+                      })()}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex flex-wrap gap-1">

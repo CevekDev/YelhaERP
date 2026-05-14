@@ -40,6 +40,16 @@ interface SubscriptionData {
   }>
 }
 
+interface PaymentRow {
+  id: string
+  createdAt: string
+  planId: string
+  appId?: string
+  amount: number
+  method: string
+  status: string
+}
+
 type AppStatus = 'trial' | 'active' | 'expired'
 
 interface AppEntry {
@@ -197,6 +207,7 @@ function AppSubCard({
 export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionData | null>(null)
   const [appSubs, setAppSubs] = useState<AppSubRecord[]>([])
+  const [appPayments, setAppPayments] = useState<PaymentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [cancelling, setCancelling] = useState<AppId | null>(null)
@@ -204,12 +215,13 @@ export default function BillingPage() {
   function loadSub() {
     Promise.all([
       fetch('/api/billing/subscription').then(r => r.json()),
-      fetch('/api/app-billing/subscriptions').then(r => r.json()).catch(() => ({ data: { subscriptions: [] } })),
-    ]).then(([oldD, newD]) => {
+      fetch('/api/app-billing/subscriptions').then(r => r.json()).catch(() => ({})),
+      fetch('/api/app-billing/payments').then(r => r.json()).catch(() => ({})),
+    ]).then(([oldD, newD, pmtD]) => {
       if (oldD.subscription) setSub(oldD.subscription)
       else setError("Impossible de charger l'abonnement.")
-      const newSubs = newD?.data?.subscriptions ?? newD?.subscriptions ?? []
-      setAppSubs(newSubs)
+      setAppSubs(newD?.data?.subscriptions ?? newD?.subscriptions ?? [])
+      setAppPayments(pmtD?.data?.payments ?? pmtD?.payments ?? [])
     }).catch(() => setError('Erreur réseau.')).finally(() => setLoading(false))
   }
 
@@ -290,7 +302,14 @@ export default function BillingPage() {
 
   const methodLabel: Record<string, string> = {
     CHARGILY: 'Chargily Pay', CCP: 'Virement CCP', CARD: 'Carte bancaire', CASH: 'Espèces', FREE: 'Gratuit',
+    ADMIN_GIFT: 'Offert', ADMIN_FREE: 'Gratuit (admin)', ADMIN_ACTIVATE: 'WhatsApp / CCP',
   }
+
+  // Merge old and new payment records, newest first
+  const allPayments: PaymentRow[] = [
+    ...(appPayments.map(p => ({ id: p.id, createdAt: p.createdAt, planId: p.planId, appId: p.appId, amount: p.amount, method: p.method, status: p.status }))),
+    ...(sub.payments ?? []).map(p => ({ id: p.id, createdAt: p.createdAt, planId: p.planId, amount: p.amount, method: p.method, status: p.status })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-4xl">
@@ -354,7 +373,7 @@ export default function BillingPage() {
       </section>
 
       {/* ── 4. Historique paiements ── */}
-      {sub.payments && sub.payments.length > 0 && (
+      {allPayments.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -372,11 +391,11 @@ export default function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                {sub.payments.map((p, i) => (
+                {allPayments.map((p, i) => (
                   <tr key={p.id} className={i > 0 ? 'border-t border-border' : ''}>
                     <td className="py-2.5 pr-4">{new Date(p.createdAt).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                    <td className="py-2.5 pr-4 font-medium">{p.planId}</td>
-                    <td className="py-2.5 pr-4 da-amount font-semibold">{formatDA(p.amount)}</td>
+                    <td className="py-2.5 pr-4 font-medium">{p.appId ? `${p.appId} — ${p.planId}` : p.planId}</td>
+                    <td className="py-2.5 pr-4 da-amount font-semibold">{p.amount === 0 ? '—' : formatDA(p.amount)}</td>
                     <td className="py-2.5 pr-4 text-muted-foreground">{methodLabel[p.method] ?? p.method}</td>
                     <td className="py-2.5">
                       {(p.status === 'PAID' || p.status === 'SUCCEEDED')
