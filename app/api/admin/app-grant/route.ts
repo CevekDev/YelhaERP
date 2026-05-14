@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
-import { getAppPlan } from '@/lib/pricing/app-plans'
+import { getAppPlan, getAppPlanConfig } from '@/lib/pricing/app-plans'
+import { sendAppPaymentConfirmation } from '@/lib/email/resend'
 
 const APP_PLANS_CONFIG_PREFIX = 'app_pricing_'
 
@@ -38,7 +39,11 @@ export async function POST(req: NextRequest) {
     if (parsed.data.type === 'confirm_payment') {
       const payment = await prisma.appPayment.findUnique({
         where: { id: parsed.data.paymentId },
-        include: { appSubscription: true },
+        include: {
+          appSubscription: {
+            include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+          },
+        },
       })
       if (!payment) return apiError('Paiement introuvable', 404)
       if (payment.status !== 'PENDING') return apiError('Ce paiement n\'est pas en attente', 409)
@@ -61,6 +66,21 @@ export async function POST(req: NextRequest) {
           },
         }),
       ])
+
+      const owner = payment.appSubscription.company.users[0]
+      if (owner) {
+        const appConfig = getAppPlanConfig(payment.appId)
+        await sendAppPaymentConfirmation({
+          to: owner.email,
+          name: owner.name,
+          appName: appConfig?.appName ?? payment.appId,
+          planName: payment.planId,
+          amount: payment.amount,
+          periodStart: payment.periodStart,
+          periodEnd: payment.periodEnd,
+        }).catch(() => {})
+      }
+
       return apiSuccess({ confirmed: true })
     }
 
@@ -115,6 +135,26 @@ export async function POST(req: NextRequest) {
         periodEnd,
       },
     })
+
+    if (effectivePrice > 0) {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        include: { users: { where: { role: 'OWNER' }, take: 1 } },
+      })
+      const owner = company?.users[0]
+      if (owner) {
+        const appConfig = getAppPlanConfig(appId)
+        await sendAppPaymentConfirmation({
+          to: owner.email,
+          name: owner.name,
+          appName: appConfig?.appName ?? appId,
+          planName: planId,
+          amount: effectivePrice,
+          periodStart: now,
+          periodEnd,
+        }).catch(() => {})
+      }
+    }
 
     return apiSuccess({ granted: true, type, appId, planId, periodEnd })
   } catch (e: unknown) {
