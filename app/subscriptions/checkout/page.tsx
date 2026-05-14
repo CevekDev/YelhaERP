@@ -78,14 +78,14 @@ function AppCheckout({ appId }: { appId: string }) {
         body: JSON.stringify({ planId: selectedPlanId, method }),
       })
       const text = await res.text()
-      let data: { data?: { type?: string; url?: string; ccpRef?: string; amount?: number }; error?: string }
+      let data: { type?: string; url?: string; ccpRef?: string; amount?: number; error?: string }
       try { data = JSON.parse(text) } catch { toast.error(`Serveur: ${text.slice(0, 120)}`); return }
       if (!res.ok) { toast.error(data.error ?? `Erreur ${res.status}`); return }
-      if (data.data?.type === 'chargily' && data.data.url) {
-        window.location.href = data.data.url
-      } else if (data.data?.type === 'ccp') {
+      if (data.type === 'chargily' && data.url) {
+        window.location.href = data.url
+      } else if (data.type === 'ccp') {
         const planName = selected?.name ?? selectedPlanId
-        setCcpResult({ ccpRef: data.data.ccpRef!, amount: data.data.amount!, planId: selectedPlanId, planName })
+        setCcpResult({ ccpRef: data.ccpRef!, amount: data.amount!, planId: selectedPlanId, planName })
       }
     } catch (e) { toast.error(`Erreur: ${e instanceof Error ? e.message : 'inconnue'}`) }
     finally { setSubmitting(null) }
