@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CheckCircle, Landmark, Check, Copy } from 'lucide-react'
+import { Loader2, CheckCircle, Landmark, Check, Copy, Zap, Rocket, Crown, Building2, Shield, Star } from 'lucide-react'
 import {
   PLANS, APPS, ANNUAL_DISCOUNT, isAppIncluded,
   type PlanId, type AppId,
@@ -34,6 +34,41 @@ type AppPlan = {
 const WHATSAPP_NUMBER = '33761179379'
 const CCP_NUMBER = '00123456789 CCP Alger'
 const CCP_HOLDER = 'Yelha Technologies'
+
+const PLAN_STYLES: Record<string, { icon: React.ReactNode; accent: string; badge: string; ring: string; glow: string }> = {
+  starter: {
+    icon: <Zap className="w-5 h-5 text-slate-600" />,
+    accent: 'from-slate-400 to-slate-500',
+    badge: 'bg-slate-100 text-slate-700',
+    ring: 'border-slate-400 bg-slate-50/60',
+    glow: 'shadow-slate-100',
+  },
+  pro: {
+    icon: <Rocket className="w-5 h-5 text-indigo-600" />,
+    accent: 'from-indigo-500 to-violet-500',
+    badge: 'bg-indigo-100 text-indigo-700',
+    ring: 'border-indigo-500 bg-indigo-50/60',
+    glow: 'shadow-indigo-100',
+  },
+  premium: {
+    icon: <Crown className="w-5 h-5 text-amber-600" />,
+    accent: 'from-amber-400 to-orange-500',
+    badge: 'bg-amber-100 text-amber-700',
+    ring: 'border-amber-500 bg-amber-50/60',
+    glow: 'shadow-amber-100',
+  },
+  agency: {
+    icon: <Building2 className="w-5 h-5 text-emerald-600" />,
+    accent: 'from-emerald-500 to-teal-500',
+    badge: 'bg-emerald-100 text-emerald-700',
+    ring: 'border-emerald-500 bg-emerald-50/60',
+    glow: 'shadow-emerald-100',
+  },
+}
+
+function getPlanStyle(id: string) {
+  return PLAN_STYLES[id] ?? PLAN_STYLES.starter
+}
 
 function AppCheckout({ appId }: { appId: string }) {
   const router = useRouter()
@@ -106,71 +141,87 @@ function AppCheckout({ appId }: { appId: string }) {
     const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`
 
     return (
-      <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6 pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-start justify-center p-6 pt-20">
         <div className="max-w-lg w-full">
-          <Card className="p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                <Landmark className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <h1 className="font-bold text-slate-900 text-lg">Instructions de virement CCP</h1>
-                <p className="text-sm text-slate-500">Votre demande a été enregistrée</p>
-              </div>
+          {/* Success header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/30 mb-4">
+              <Landmark className="w-8 h-8 text-amber-400" />
             </div>
+            <h1 className="text-2xl font-bold text-white">Instructions de virement</h1>
+            <p className="text-slate-400 mt-1 text-sm">Demande enregistrée · Pack {ccpResult.planName}</p>
+          </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Numéro CCP</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-800">{CCP_NUMBER}</span>
-                  <button onClick={() => { navigator.clipboard.writeText(CCP_NUMBER); toast.success('Copié !') }}>
-                    <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />
-                  </button>
+          <div className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm overflow-hidden">
+            {/* CCP details */}
+            <div className="p-6 space-y-4">
+              {[
+                { label: 'Numéro CCP', value: CCP_NUMBER, copy: true },
+                { label: 'Titulaire', value: CCP_HOLDER, copy: false },
+              ].map(row => (
+                <div key={row.label} className="flex items-center justify-between">
+                  <span className="text-slate-400 text-sm">{row.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-white text-sm">{row.value}</span>
+                    {row.copy && (
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(row.value); toast.success('Copié !') }}
+                        className="p-1 rounded hover:bg-white/10 transition-colors"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-white" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Titulaire</span>
-                <span className="font-bold text-slate-800">{CCP_HOLDER}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Montant exact</span>
-                <span className="font-bold text-amber-700">{fmtDA(ccpResult.amount)}</span>
-              </div>
-              <Separator />
+              ))}
+
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Référence obligatoire</span>
+                <span className="text-slate-400 text-sm">Montant exact</span>
+                <span className="font-bold text-amber-400 text-lg">{fmtDA(ccpResult.amount)}</span>
+              </div>
+
+              <div className="h-px bg-white/10" />
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-sm">Référence obligatoire</span>
                 <div className="flex items-center gap-2">
-                  <code className="font-mono font-bold text-slate-800 bg-white border border-amber-200 rounded px-2 py-0.5">
+                  <code className="font-mono font-bold text-white bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-sm">
                     {ccpResult.ccpRef}
                   </code>
-                  <button onClick={() => { navigator.clipboard.writeText(ccpResult.ccpRef); toast.success('Copié !') }}>
-                    <Copy className="w-4 h-4 text-slate-400 hover:text-slate-700" />
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(ccpResult.ccpRef); toast.success('Copié !') }}
+                    className="p-1 rounded hover:bg-white/10 transition-colors"
+                  >
+                    <Copy className="w-4 h-4 text-slate-400 hover:text-white" />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl bg-green-50 border border-green-200 p-4 space-y-2">
-              <p className="text-sm font-semibold text-green-800">📲 Envoyer la preuve par WhatsApp</p>
-              <p className="text-xs text-green-700">
-                Après le virement, envoyez votre reçu directement sur WhatsApp. Le message est pré-rempli avec vos infos.
+            {/* WhatsApp CTA */}
+            <div className="border-t border-white/10 bg-emerald-900/20 p-6 space-y-3">
+              <p className="text-sm font-semibold text-emerald-300">Envoyez la preuve par WhatsApp</p>
+              <p className="text-xs text-slate-400">
+                Après le virement, envoyez votre reçu. Le message est pré-rempli avec votre référence et email.
               </p>
               <a
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full mt-2 bg-[#25D366] hover:bg-[#20bd59] text-white font-semibold rounded-xl py-3 text-sm transition-colors"
+                className="flex items-center justify-center gap-2.5 w-full bg-[#25D366] hover:bg-[#20bd59] text-white font-semibold rounded-xl py-3.5 text-sm transition-all shadow-lg shadow-green-900/30 hover:shadow-green-900/50"
               >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 Envoyer sur WhatsApp
               </a>
             </div>
+          </div>
 
-            <Button variant="outline" className="w-full" onClick={() => router.push('/dashboard')}>
-              Compris, retour au dashboard →
-            </Button>
-          </Card>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full mt-4 text-slate-400 hover:text-slate-200 text-sm py-3 transition-colors"
+          >
+            Retour au dashboard →
+          </button>
         </div>
       </div>
     )
@@ -178,155 +229,205 @@ function AppCheckout({ appId }: { appId: string }) {
 
   // ── Main app checkout ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center gap-2">
-          <span className="font-bold text-lg text-slate-900">YelhaERP</span>
-          <span className="text-slate-300 mx-1">·</span>
-          <span className="text-slate-500 text-sm">{config.appName} — Choisir un plan</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
+      {/* Header */}
+      <header className="border-b border-white/10 px-6 py-4 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center">
+              <Star className="w-4 h-4 text-indigo-400" />
+            </div>
+            <span className="font-bold text-white">YelhaERP</span>
+            <span className="text-white/20 text-lg font-thin">·</span>
+            <span className="text-slate-400 text-sm">{config.appName}</span>
+          </div>
+          {session?.user && (
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5">
+              <div className="w-5 h-5 rounded-full bg-indigo-500/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300 font-bold text-[10px] shrink-0">
+                {session.user.name?.[0]?.toUpperCase() ?? 'U'}
+              </div>
+              <span className="text-xs text-slate-300 hidden sm:block">{session.user.email}</span>
+            </div>
+          )}
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+      {/* Hero section */}
+      <div className="max-w-5xl mx-auto px-4 pt-12 pb-8 text-center">
+        <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-400/20 rounded-full px-4 py-1.5 mb-5">
+          <Shield className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="text-indigo-300 text-xs font-medium">Sans engagement · Résiliation à tout moment</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+          Choisissez votre plan
+        </h1>
+        <p className="text-slate-400 text-base">
+          {config.appName} — Accès complet, support inclus, données sécurisées.
+        </p>
+      </div>
 
-        {/* ── LEFT: Plan selector ── */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{config.appName}</h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Choisissez le plan adapté à votre activité. Résiliable à tout moment.
-            </p>
-          </div>
+      <div className="max-w-5xl mx-auto px-4 pb-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
 
+        {/* ── LEFT: Plans ── */}
+        <div className="space-y-4">
+          {/* Plan cards */}
           <div className="space-y-3">
-              {plans.map(plan => {
-                const isSelected = selectedPlanId === plan.id
-                const isPopular = plan.id === 'pro'
-                return (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => setSelectedPlanId(plan.id)}
-                    className={`w-full relative text-left rounded-2xl border-2 p-5 transition-all hover:shadow-sm ${
-                      isSelected
-                        ? 'border-indigo-500 bg-indigo-50/40'
-                        : 'border-slate-200 bg-white hover:border-indigo-200'
-                    }`}
-                  >
-                    {isPopular && (
-                      <span className="absolute -top-3 left-5 rounded-full bg-indigo-600 px-3 py-0.5 text-[11px] font-semibold text-white">
-                        Populaire
-                      </span>
-                    )}
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'
-                        }`}>
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900">{plan.name}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{plan.description}</p>
-                          {isSelected && (
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-                              {plan.features.map(f => (
-                                <span key={f} className="flex items-center gap-1.5 text-xs text-slate-700">
-                                  <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />{f}
-                                </span>
-                              ))}
-                            </div>
+            {plans.map(plan => {
+              const isSelected = selectedPlanId === plan.id
+              const isPopular = plan.id === 'pro'
+              const style = getPlanStyle(plan.id)
+
+              return (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => setSelectedPlanId(plan.id)}
+                  className={`w-full relative text-left rounded-2xl border-2 p-5 transition-all duration-200 ${
+                    isSelected
+                      ? `${style.ring} shadow-lg ${style.glow}`
+                      : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8'
+                  }`}
+                >
+                  {isPopular && (
+                    <span className="absolute -top-3 left-5 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-0.5 text-[11px] font-semibold text-white shadow-lg shadow-indigo-900/40">
+                      ✦ Populaire
+                    </span>
+                  )}
+
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      {/* Plan icon */}
+                      <div className={`mt-0.5 w-10 h-10 rounded-xl bg-gradient-to-br ${style.accent} flex items-center justify-center shrink-0 shadow-lg`}>
+                        <div className="text-white">{style.icon}</div>
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-bold text-base ${isSelected ? 'text-slate-900' : 'text-white'}`}>{plan.name}</p>
+                          {plan.maxSubscriptions === -1 && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${style.badge}`}>Illimité</span>
                           )}
                         </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-bold text-slate-900 text-lg">{fmtDA(plan.price)}</p>
-                        <p className="text-xs text-slate-400">/ mois</p>
-                        {plan.maxSubscriptions === -1 && (
-                          <Badge className="mt-1 bg-indigo-50 text-indigo-700 border-0 text-[10px]">Illimité</Badge>
-                        )}
-                        {plan.maxSubscriptions > 0 && plan.maxSubscriptions !== -1 && (
-                          <p className="text-xs text-slate-400 mt-0.5">{plan.maxSubscriptions} abonnements</p>
-                        )}
+                        <p className={`text-xs mt-0.5 ${isSelected ? 'text-slate-600' : 'text-slate-400'}`}>{plan.description}</p>
+
+                        {/* Features - always visible */}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3">
+                          {plan.features.map(f => (
+                            <span key={f} className={`flex items-center gap-1.5 text-xs ${isSelected ? 'text-slate-700' : 'text-slate-400'}`}>
+                              <Check className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-emerald-500' : 'text-slate-500'}`} />{f}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </button>
-                )
-              })}
+
+                    <div className="text-right shrink-0">
+                      <p className={`font-bold text-xl ${isSelected ? 'text-slate-900' : 'text-white'}`}>{fmtDA(plan.price)}</p>
+                      <p className={`text-xs mt-0.5 ${isSelected ? 'text-slate-500' : 'text-slate-500'}`}>/ mois</p>
+                      {plan.maxSubscriptions > 0 && plan.maxSubscriptions !== -1 && (
+                        <p className={`text-xs mt-1 ${isSelected ? 'text-slate-500' : 'text-slate-500'}`}>{plan.maxSubscriptions} abonnements</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
 
-          {/* Payment method */}
+          {/* Payment methods */}
           {selected && (
-            <Card className="p-6 space-y-3">
-              <h2 className="font-semibold text-slate-900">Méthode de paiement</h2>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 mt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded-full bg-gradient-to-b from-indigo-400 to-violet-400" />
+                <h2 className="font-semibold text-white text-sm">Méthode de paiement</h2>
+              </div>
 
-              {/* Chargily ePay */}
-              <button
-                type="button"
-                onClick={() => handlePay('CHARGILY')}
-                disabled={submitting !== null}
-                className="w-full flex items-center gap-4 rounded-xl border-2 border-blue-200 bg-blue-50 hover:border-blue-400 p-5 text-left transition-all disabled:opacity-50"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shrink-0 text-lg">
-                  💳
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-800">Chargily ePay</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Edahabia · CIB — Paiement immédiat</p>
-                </div>
-                {submitting === 'CHARGILY'
-                  ? <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                  : <span className="font-bold text-blue-700">{fmtDA(selected.price)}/mois</span>
-                }
-              </button>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {/* Chargily ePay */}
+                <button
+                  type="button"
+                  onClick={() => handlePay('CHARGILY')}
+                  disabled={submitting !== null}
+                  className="group relative flex flex-col gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-400/50 p-4 text-left transition-all disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shrink-0 shadow shadow-blue-900/40 text-base">
+                      💳
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">Chargily ePay</p>
+                      <p className="text-xs text-blue-300/70">Edahabia · CIB</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-blue-300/70">Paiement immédiat</span>
+                    {submitting === 'CHARGILY'
+                      ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                      : <span className="font-bold text-blue-300 text-sm">{fmtDA(selected.price)}</span>
+                    }
+                  </div>
+                </button>
 
-              {/* Virement CCP */}
-              <button
-                type="button"
-                onClick={() => handlePay('CCP')}
-                disabled={submitting !== null}
-                className="w-full flex items-center gap-4 rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 p-5 text-left transition-all disabled:opacity-50"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shrink-0 text-lg">
-                  🏦
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-800">Virement CCP</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Activation sous 24–48h · Preuve par WhatsApp</p>
-                </div>
-                {submitting === 'CCP'
-                  ? <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
-                  : <span className="font-bold text-amber-700">{fmtDA(selected.price)}/mois</span>
-                }
-              </button>
-            </Card>
+                {/* Virement CCP */}
+                <button
+                  type="button"
+                  onClick={() => handlePay('CCP')}
+                  disabled={submitting !== null}
+                  className="group relative flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-400/50 p-4 text-left transition-all disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center shrink-0 shadow shadow-amber-900/40 text-base">
+                      🏦
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">Virement CCP</p>
+                      <p className="text-xs text-amber-300/70">Activation 24–48h</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-amber-300/70">Via WhatsApp</span>
+                    {submitting === 'CCP'
+                      ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                      : <span className="font-bold text-amber-300 text-sm">{fmtDA(selected.price)}</span>
+                    }
+                  </div>
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
         {/* ── RIGHT: Summary ── */}
-        <div className="lg:sticky lg:top-8 h-fit">
-          <Card className="p-6">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">
-              Récapitulatif
-            </h2>
+        <div className="lg:sticky lg:top-8 h-fit space-y-3">
+          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+            {/* Summary header */}
+            <div className="bg-gradient-to-r from-indigo-500/20 to-violet-500/20 border-b border-white/10 px-5 py-4">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Récapitulatif</p>
+            </div>
 
             {selected ? (
-              <>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">{config.appName}</span>
-                    <span className="font-medium text-slate-800">{selected.name}</span>
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getPlanStyle(selected.id).accent} flex items-center justify-center shrink-0`}>
+                    <div className="text-white scale-75">{getPlanStyle(selected.id).icon}</div>
                   </div>
+                  <div>
+                    <p className="font-semibold text-white text-sm">{selected.name}</p>
+                    <p className="text-xs text-slate-400">{config.appName}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Abonnements</span>
-                    <span className="text-slate-700">
+                    <span className="text-slate-400">Abonnements</span>
+                    <span className="text-white font-medium">
                       {selected.maxSubscriptions === -1 ? 'Illimité' : `${selected.maxSubscriptions} max`}
                     </span>
                   </div>
                   {(selected.aiRequestsPerMonth > 0 || selected.aiRequestsPerDay > 0) && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Assistance IA</span>
-                      <span className="text-slate-700">
+                      <span className="text-slate-400">Assistance IA</span>
+                      <span className="text-white font-medium">
                         {selected.aiRequestsPerDay > 0
                           ? `${selected.aiRequestsPerDay} req/jour`
                           : `${selected.aiRequestsPerMonth} req/mois`}
@@ -335,34 +436,35 @@ function AppCheckout({ appId }: { appId: string }) {
                   )}
                 </div>
 
-                <Separator className="my-4" />
+                <div className="h-px bg-white/10" />
 
-                <div className="flex justify-between items-baseline mb-4">
-                  <span className="font-bold text-slate-900">TOTAL / mois</span>
-                  <span className="font-bold text-xl text-indigo-700">{fmtDA(selected.price)}</span>
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-white text-sm">Total / mois</span>
+                  <span className="font-bold text-2xl text-indigo-300">{fmtDA(selected.price)}</span>
                 </div>
 
-                <Separator className="mb-4" />
+                <div className="h-px bg-white/10" />
 
                 <div className="space-y-2">
-                  {['✓ Sans engagement', '✓ Résiliation à tout moment', '✓ Support inclus', '✓ Données sécurisées'].map(item => (
-                    <p key={item} className="text-xs text-slate-500">{item}</p>
+                  {[
+                    { icon: '✓', text: 'Sans engagement' },
+                    { icon: '✓', text: 'Résiliation à tout moment' },
+                    { icon: '✓', text: 'Support inclus' },
+                    { icon: '✓', text: 'Données sécurisées' },
+                  ].map(item => (
+                    <p key={item.text} className="text-xs text-slate-400 flex items-center gap-2">
+                      <span className="text-emerald-400 font-bold">{item.icon}</span>
+                      {item.text}
+                    </p>
                   ))}
                 </div>
-              </>
-            ) : (
-              <p className="text-sm text-slate-400">Sélectionnez un plan</p>
-            )}
-          </Card>
-
-          {session?.user && (
-            <div className="mt-3 p-3 bg-white rounded-xl border border-slate-100 text-xs text-slate-500 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-                {session.user.name?.[0]?.toUpperCase() ?? 'U'}
               </div>
-              <span>Connecté en tant que <strong className="text-slate-700">{session.user.email}</strong></span>
-            </div>
-          )}
+            ) : (
+              <div className="p-5">
+                <p className="text-sm text-slate-500">Sélectionnez un plan</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
