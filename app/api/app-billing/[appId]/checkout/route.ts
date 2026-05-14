@@ -139,14 +139,19 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       }
 
       const chargilyData = await chargilyRes.json()
+      const checkoutUrl: string = chargilyData.checkout_url ?? chargilyData.url ?? chargilyData.payment_url ?? ''
       const ccpRef = `APP-${payment.id.slice(0, 8).toUpperCase()}`
 
       await prisma.appPayment.update({
         where: { id: payment.id },
-        data: { chargilyId: chargilyData.id, chargilyLink: chargilyData.checkout_url, ccpRef },
+        data: { chargilyId: chargilyData.id, chargilyLink: checkoutUrl || null, ccpRef },
       })
 
-      return apiSuccess({ type: 'chargily', url: chargilyData.checkout_url })
+      if (!checkoutUrl) {
+        return apiError(`URL Chargily introuvable. Clés réponse: ${Object.keys(chargilyData).join(', ')}`, 500)
+      }
+
+      return apiSuccess({ type: 'chargily', url: checkoutUrl })
     }
 
     // ── CCP ────────────────────────────────────────────────────────────────────
