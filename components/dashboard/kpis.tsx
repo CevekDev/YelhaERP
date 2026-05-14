@@ -22,59 +22,59 @@ export function DashboardKPIs({
 }: KPIsProps) {
   const allKpis = [
     {
-      key: null, // always shown
       title: 'CA du mois',
       value: formatDA(monthRevenue),
+      numericValue: monthRevenue,
       icon: TrendingUp,
       color: 'text-yelha-600',
       bg: 'bg-yelha-50',
       href: '/dashboard/invoices',
     },
     {
-      key: null, // always shown (invoices = essential)
       title: 'Impayés',
       value: formatDA(unpaidTotal),
       sub: `${unpaidCount} facture${unpaidCount > 1 ? 's' : ''}`,
+      numericValue: unpaidTotal,
       icon: CreditCard,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
       href: '/dashboard/invoices',
     },
     {
-      key: 'quotes' as const,
       title: 'Devis en attente',
       value: String(pendingQuotes),
-      sub: pendingQuotes > 0 ? 'Réponse client attendue' : 'Aucun en attente',
+      sub: 'Réponse client attendue',
+      numericValue: pendingQuotes,
       icon: FileCheck,
-      color: pendingQuotes > 0 ? 'text-blue-600' : 'text-yelha-600',
-      bg: pendingQuotes > 0 ? 'bg-blue-50' : 'bg-yelha-50',
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
       href: '/dashboard/quotes',
     },
     {
-      key: 'stock' as const,
       title: 'Stock en alerte',
       value: String(lowStockCount),
-      sub: lowStockCount > 0 ? 'Produit(s) sous le seuil' : 'Tout est OK',
+      sub: 'Produit(s) sous le seuil',
+      numericValue: lowStockCount,
       icon: Package,
-      color: lowStockCount > 0 ? 'text-red-600' : 'text-yelha-600',
-      bg: lowStockCount > 0 ? 'bg-red-50' : 'bg-yelha-50',
+      color: 'text-red-600',
+      bg: 'bg-red-50',
       href: '/dashboard/stock',
     },
     {
-      key: 'expenses' as const,
       title: 'Dépenses à valider',
       value: String(pendingExpenses),
-      sub: pendingExpenses > 0 ? 'En attente d\'approbation' : 'Aucune en attente',
+      sub: "En attente d'approbation",
+      numericValue: pendingExpenses,
       icon: Receipt,
-      color: pendingExpenses > 0 ? 'text-orange-600' : 'text-yelha-600',
-      bg: pendingExpenses > 0 ? 'bg-orange-50' : 'bg-yelha-50',
+      color: 'text-orange-600',
+      bg: 'bg-orange-50',
       href: '/dashboard/expenses',
     },
     {
-      key: null, // always shown
       title: 'Rappels fiscaux',
       value: 'G50',
       sub: 'Avant le 20 du mois',
+      numericValue: undefined,
       icon: AlertCircle,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
@@ -82,7 +82,7 @@ export function DashboardKPIs({
     },
   ]
 
-  const kpis = allKpis
+  const kpis = allKpis.filter(k => k.numericValue === undefined || k.numericValue > 0)
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
