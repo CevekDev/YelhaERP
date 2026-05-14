@@ -20,36 +20,27 @@ export async function GET(req: NextRequest) {
       totalCompanies,
       newCompaniesThisMonth,
       totalUsers,
-      // New AppSubscription system
       activeAppSubs,
       trialAppSubs,
       appSubMrr,
       recentAppPayments,
       appPaymentsThisMonth,
-      pendingAppPayments,
-      // Legacy yelhaSubscription (kept for completeness)
       legacySubByStatus,
       legacyMrr,
       recentLegacyPayments,
       legacyPaidThisMonth,
-      legacyPending,
     ] = await Promise.all([
       prisma.company.count(),
       prisma.company.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.user.count(),
 
-      // AppSubscription: companies with at least one ACTIVE sub not expired
-      prisma.appSubscription.count({
-        where: { status: 'ACTIVE', currentPeriodEnd: { gte: now } },
-      }),
-      prisma.appSubscription.count({
-        where: { status: 'TRIAL', trialEndsAt: { gte: now } },
-      }),
-      prisma.appSubscription.aggregate({
-        where: { status: 'ACTIVE', currentPeriodEnd: { gte: now } },
-        _sum: { monthlyAmount: true },
-      }),
+      prisma.appSubscription.count({ where: { status: 'ACTIVE', currentPeriodEnd: { gte: now } } }),
+      prisma.appSubscription.count({ where: { status: 'TRIAL', trialEndsAt: { gte: now } } }),
+      prisma.appSubscription.aggregate({ where: { status: 'ACTIVE', currentPeriodEnd: { gte: now } }, _sum: { monthlyAmount: true } }),
+
+      // Only PAID AppPayments
       prisma.appPayment.findMany({
+        where: { status: 'PAID' },
         take: 15,
         orderBy: { createdAt: 'desc' },
         include: { appSubscription: { include: { company: { select: { id: true, name: true } } } } },
@@ -59,12 +50,12 @@ export async function GET(req: NextRequest) {
         _sum: { amount: true },
         _count: { id: true },
       }),
-      prisma.appPayment.count({ where: { status: 'PENDING' } }),
 
-      // Legacy
+      // Legacy — only PAID
       prisma.yelhaSubscription.groupBy({ by: ['status'], _count: { id: true } }),
       prisma.yelhaSubscription.aggregate({ where: { status: 'ACTIVE' }, _sum: { monthlyAmount: true } }),
       prisma.yelhaPayment.findMany({
+        where: { status: { in: ['PAID', 'SUCCEEDED'] } },
         take: 10,
         orderBy: { createdAt: 'desc' },
         select: {
@@ -78,24 +69,27 @@ export async function GET(req: NextRequest) {
         _sum: { amount: true },
         _count: { id: true },
       }),
-      prisma.yelhaPayment.count({ where: { status: 'PENDING' } }),
     ])
 
     const legacyStatusMap: Record<string, number> = {}
     for (const s of legacySubByStatus) legacyStatusMap[s.status] = s._count.id
 
-    // Merge recent payments: app payments first, then legacy
     const normalizedAppPayments = recentAppPayments.map(p => ({
       id: p.id,
       amount: p.amount,
-      planId: p.planId,
+      planId: `${p.appId} — ${p.planId}`,
       method: p.method,
       status: p.status,
       paidAt: p.paidAt?.toISOString() ?? null,
       createdAt: p.createdAt.toISOString(),
       subscription: p.appSubscription ? { company: p.appSubscription.company } : null,
     }))
-    const normalizedLegacyPayments = recentLegacyPayments.map(p => ({ ...p, paidAt: p.paidAt ? (p.paidAt as Date).toISOString() : null, createdAt: (p.createdAt as Date).toISOString() }))
+
+    const normalizedLegacyPayments = recentLegacyPayments.map(p => ({
+      ...p,
+      paidAt: p.paidAt ? (p.paidAt as Date).toISOString() : null,
+      createdAt: (p.createdAt as Date).toISOString(),
+    }))
 
     const allRecentPayments = [...normalizedAppPayments, ...normalizedLegacyPayments]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -119,7 +113,7 @@ export async function GET(req: NextRequest) {
         mrr: (appSubMrr._sum.monthlyAmount ?? 0) + (legacyMrr._sum.monthlyAmount ?? 0),
         thisMonth: (appPaymentsThisMonth._sum.amount ?? 0) + (legacyPaidThisMonth._sum.amount ?? 0),
         paymentsThisMonth: (appPaymentsThisMonth._count.id ?? 0) + (legacyPaidThisMonth._count.id ?? 0),
-        pendingPayments: pendingAppPayments + legacyPending,
+        pendingPayments: 0,
       },
       recentPayments: allRecentPayments,
     })

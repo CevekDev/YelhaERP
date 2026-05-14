@@ -162,7 +162,7 @@ function StatsTab() {
     { label: 'Comptes',      value: stats.companies.total,                sub: `+${stats.companies.newThisMonth} ce mois`,       icon: Users,      color: 'text-blue-400' },
     { label: 'MRR',          value: fmtDA(stats.revenue.mrr),             sub: 'Abonnements actifs',                             icon: TrendingUp, color: 'text-emerald-400' },
     { label: 'Ce mois',      value: fmtDA(stats.revenue.thisMonth),       sub: `${stats.revenue.paymentsThisMonth} paiements`,   icon: DollarSign, color: 'text-indigo-400' },
-    { label: 'En attente',   value: stats.revenue.pendingPayments,        sub: 'Paiements CCP',                                  icon: Clock,      color: 'text-amber-400' },
+    { label: 'Paiements',    value: stats.revenue.paymentsThisMonth,      sub: 'Ce mois-ci',                                     icon: Clock,      color: 'text-amber-400' },
     { label: 'Utilisateurs', value: stats.users.total,                    sub: 'Comptes actifs',                                 icon: Users,      color: 'text-purple-400' },
     { label: 'Actifs',       value: stats.companies.byStatus.active ?? 0, sub: `Trial: ${stats.companies.byStatus.trial ?? 0}`,  icon: Check,      color: 'text-emerald-400' },
   ]
@@ -206,9 +206,7 @@ function StatsTab() {
                   <td className="px-5 py-3 font-semibold text-emerald-400">{fmtDA(p.amount)}</td>
                   <td className="px-5 py-3 text-zinc-400 text-xs">{p.method}</td>
                   <td className="px-5 py-3">
-                    {p.status === 'PAID' || p.status === 'SUCCEEDED'
-                      ? <span className="text-xs bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Payé</span>
-                      : <span className="text-xs bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">En attente</span>}
+                    <span className="text-xs bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Payé</span>
                   </td>
                   <td className="px-5 py-3 text-zinc-500 text-xs">{fmtDate(p.paidAt ?? p.createdAt)}</td>
                 </tr>
