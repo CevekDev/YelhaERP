@@ -14,17 +14,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const sub = session.user.companyId
     ? await prisma.yelhaSubscription.findUnique({
         where: { companyId: session.user.companyId },
-        select: { status: true, trialEndsAt: true, trialApps: true },
+        select: { status: true, trialEndsAt: true },
       })
     : null
 
-  const isTrial  = sub?.status === 'TRIAL'
   const isExpired = sub?.status === 'EXPIRED' ||
-    (isTrial && sub?.trialEndsAt && sub.trialEndsAt < new Date())
-
-  const daysLeft = sub?.trialEndsAt
-    ? Math.max(0, Math.ceil((sub.trialEndsAt.getTime() - Date.now()) / 86400000))
-    : 0
+    (sub?.status === 'TRIAL' && sub?.trialEndsAt && sub.trialEndsAt < new Date())
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -43,27 +38,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       )}
 
-      {/* Trial active — info banner */}
-      {isTrial && !isExpired && (
-        <div style={{ background: '#E1F5EE', borderBottom: '0.5px solid #1D9E75', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60 }}>
-          <span style={{ fontSize: 13, color: '#0F6E56' }}>
-            🎁 Essai gratuit — {daysLeft} jour{daysLeft !== 1 ? 's' : ''} restant{daysLeft !== 1 ? 's' : ''}
-            {sub && sub.trialApps.length > 0
-              ? ` · ${sub.trialApps.length} app${sub.trialApps.length > 1 ? 's' : ''} activée${sub.trialApps.length > 1 ? 's' : ''}`
-              : ' · '}
-            {sub && sub.trialApps.length === 0 && (
-              <Link href="/onboarding/apps" style={{ color: '#0F6E56', fontWeight: 600 }}> Choisissez vos 3 apps →</Link>
-            )}
-          </span>
-          <Link href="/pricing" style={{ fontSize: 12, fontWeight: 500, color: '#0F6E56', textDecoration: 'underline' }}>
-            Passer à un plan payant
-          </Link>
-        </div>
-      )}
-
-      <TopNav hasBanner={isTrial && !isExpired} />
+      <TopNav hasBanner={false} />
       <KeyboardShortcuts />
-      <main className={isTrial && !isExpired ? 'pt-[92px] md:pt-[132px] min-h-screen' : 'pt-14 md:pt-24 min-h-screen'}>
+      <main className="pt-14 md:pt-24 min-h-screen">
         {children}
       </main>
       <ChatWidget />
