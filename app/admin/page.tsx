@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   ShieldAlert, BarChart3, Users, DollarSign,
-  Search, Check, TrendingUp, Clock, Ban, Star, Gift,
+  Search, Check, TrendingUp, Clock, Ban, Star, Gift, Zap,
   ChevronLeft, ChevronRight, Loader2, Save,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -48,10 +48,11 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// ── Gift dialog ────────────────────────────────────────────────
+// ── Subscription dialog (gift or activate) ─────────────────────
 
-function GiftDialog({ target, onClose, onDone }: {
+function SubscriptionDialog({ target, type, onClose, onDone }: {
   target: { id: string; name: string }
+  type: 'gift' | 'activate'
   onClose: () => void
   onDone: () => void
 }) {
@@ -70,20 +71,26 @@ function GiftDialog({ target, onClose, onDone }: {
     setLoading(true)
     const res = await fetch('/api/admin/app-grant', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'gift', companyId: target.id, appId, planId, months }),
+      body: JSON.stringify({ type, companyId: target.id, appId, planId, months }),
     })
     const d = await res.json()
     setLoading(false)
-    if (res.ok) { toast.success('Abonnement offert + email envoyé ✓'); onDone(); onClose() }
-    else toast.error(d.error ?? 'Erreur')
+    if (res.ok) {
+      toast.success(type === 'gift' ? 'Abonnement offert ✓' : 'Abonnement activé ✓')
+      onDone(); onClose()
+    } else toast.error(d.error ?? 'Erreur')
   }
+
+  const isGift = type === 'gift'
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-2 mb-6">
-          <Gift className="w-5 h-5 text-amber-400" />
-          <h3 className="font-bold text-white">Offrir un abonnement</h3>
+          {isGift
+            ? <Gift className="w-5 h-5 text-amber-400" />
+            : <Zap className="w-5 h-5 text-emerald-400" />}
+          <h3 className="font-bold text-white">{isGift ? 'Offrir un abonnement' : 'Activer un abonnement'}</h3>
           <span className="text-zinc-500 text-sm ml-1">— {target.name}</span>
         </div>
         <div className="space-y-4">
@@ -112,14 +119,22 @@ function GiftDialog({ target, onClose, onDone }: {
               {[1,2,3,6,12].map(m => <option key={m} value={m}>{m} mois</option>)}
             </select>
           </div>
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-300">
-            🎁 Le client recevra un email et sera rappelé 2 jours avant la fin.
-          </div>
+          {isGift ? (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-300">
+              🎁 Gratuit — le client reçoit un email de cadeau et un rappel 2j avant la fin.
+            </div>
+          ) : (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-300">
+              ⚡ Payant — à utiliser après réception du paiement WhatsApp/CCP. Un email de confirmation sera envoyé.
+            </div>
+          )}
         </div>
         <div className="flex gap-3 mt-6">
           <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={onClose}>Annuler</Button>
-          <Button className="flex-1 bg-amber-500 hover:bg-amber-600 text-black font-semibold" onClick={submit} disabled={loading || !planId}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : '🎁 Offrir'}
+          <Button
+            className={`flex-1 font-semibold ${isGift ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
+            onClick={submit} disabled={loading || !planId}>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isGift ? '🎁 Offrir' : '⚡ Activer'}
           </Button>
         </div>
       </div>
@@ -218,7 +233,7 @@ function UsersTab() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState<string | null>(null)
-  const [giftTarget, setGiftTarget] = useState<{ id: string; name: string } | null>(null)
+  const [subDialog, setSubDialog] = useState<{ target: { id: string; name: string }; type: 'gift' | 'activate' } | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -262,7 +277,7 @@ function UsersTab() {
 
   return (
     <div className="space-y-4">
-      {giftTarget && <GiftDialog target={giftTarget} onClose={() => setGiftTarget(null)} onDone={load} />}
+      {subDialog && <SubscriptionDialog target={subDialog.target} type={subDialog.type} onClose={() => setSubDialog(null)} onDone={load} />}
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
@@ -336,11 +351,18 @@ function UsersTab() {
                         ) : (
                           <>
                             <button
-                              onClick={() => setGiftTarget({ id: u.company.id, name: u.company.name })}
-                              title="Offrir un abonnement"
+                              onClick={() => setSubDialog({ target: { id: u.company.id, name: u.company.name }, type: 'gift' })}
+                              title="Offrir (gratuit)"
                               className="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
                             >
                               <Gift className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setSubDialog({ target: { id: u.company.id, name: u.company.name }, type: 'activate' })}
+                              title="Activer (payé WhatsApp/CCP)"
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            >
+                              <Zap className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => togglePartner(u)}

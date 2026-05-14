@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         where: { id: parsed.data.paymentId },
         include: {
           appSubscription: {
-            include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+            include: { company: { include: { users: { orderBy: { createdAt: 'asc' }, take: 1 } } } },
           },
         },
       })
@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
           where: { id: existing.id },
           data: {
             planId, status: 'ACTIVE',
+            trialEndsAt: null,
             currentPeriodStart: now, currentPeriodEnd: periodEnd,
             monthlyAmount: effectivePrice,
             lastPaymentAt: now,
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
       : await prisma.appSubscription.create({
           data: {
             companyId, appId, planId, status: 'ACTIVE',
+            trialEndsAt: null,
             currentPeriodStart: now, currentPeriodEnd: periodEnd,
             monthlyAmount: effectivePrice,
             lastPaymentAt: now,
@@ -140,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     const company = await prisma.company.findUnique({
       where: { id: companyId },
-      include: { users: { where: { role: 'OWNER' }, take: 1 } },
+      include: { users: { orderBy: { createdAt: 'asc' }, take: 1 } },
     })
     const owner = company?.users[0]
     if (owner) {
