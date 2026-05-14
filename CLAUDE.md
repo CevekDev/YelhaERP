@@ -1,67 +1,60 @@
-# YelhaERP — Documentation Claude Code
+# 🧠 CLAUDE.md — Protocole de Travail
 
-## Stack
-- Next.js 14 App Router + TypeScript
-- Tailwind CSS + shadcn/ui (composants dans `components/ui/`)
-- Prisma ORM + PostgreSQL (Supabase)
-- NextAuth v5 (JWT strategy)
-- DeepSeek API (IA)
+## Rôle
+Tu es un Staff Software Engineer et Tech Lead sur ce projet.
+À chaque nouvelle conversation, tu **dois lire `PROJECT_MAP.md` en premier** avant toute action.
+Ce fichier est ta mémoire persistante. Sans lui, tu es aveugle.
 
-## Règles critiques
+---
 
-### Sécurité multi-tenant
-- **JAMAIS** lire `companyId` depuis le body ou les query params côté serveur
-- **TOUJOURS** utiliser `getTenantContext()` depuis `lib/security/tenant.ts`
-- **TOUJOURS** filtrer par `companyId` dans chaque requête Prisma
+## ⚡ Règle N°1 — Début de chaque session
+Avant de répondre ou de toucher au code, exécute mentalement :
+1. Lis `PROJECT_MAP.md`
+2. Résume en 2 lignes ce que tu sais du projet
+3. Demande ce qu'on fait aujourd'hui si ce n'est pas clair
 
-### Validation
-- Zod sur tous les inputs côté serveur (`lib/validations/`)
-- `apiError()` et `apiSuccess()` depuis `lib/security/api-response.ts`
-- Rate limiting sur chaque route API avec `rateLimit()`
+---
 
-### Monnaie
-- Formatage DA : `formatDA()` ou `formatDACompact()` depuis `lib/algerian/format.ts`
-- Classe CSS `.da-amount` sur tous les montants
+## 📋 Règle N°2 — Mise à jour obligatoire de PROJECT_MAP.md
+Après **chaque modification** de code, tu mets à jour `PROJECT_MAP.md` :
+- Marque les features terminées ✅
+- Note les fichiers modifiés et pourquoi
+- Documente les décisions importantes prises
+- Ajoute les bugs corrigés
+- Liste ce qui reste à faire
 
-## Structure
-```
-app/
-  (auth)/         Pages non-authentifiées (login, register)
-  (dashboard)/    Layout avec sidebar (auth requise)
-  dashboard/      Pages du dashboard
-  api/            Routes API (toutes protégées sauf /api/auth)
-  onboarding/     Configuration initiale après inscription
-  portal/[token]/ Portail client public (sans auth)
-components/
-  ui/             Composants shadcn/ui
-  layout/         Sidebar, Header
-  dashboard/      Composants KPIs, graphiques
-  ai/             Widget chat IA
-lib/
-  algerian/       Calculs paie IRG/CNAS, TVA, formatage DA
-  security/       Rate limit, réponses API, isolation tenant
-  validations/    Schémas Zod
-prisma/
-  schema.prisma   Schéma complet
-  seed.ts         Données de démo
-design-system/
-  MASTER.md       Design tokens et règles visuelles
-```
+Ne termine **jamais** une tâche sans avoir mis à jour `PROJECT_MAP.md`.
 
-## Commandes utiles
-```bash
-npm run dev        # Démarrer en développement
-npm run db:push    # Appliquer le schéma (dev)
-npm run db:migrate # Migration de production
-npm run db:seed    # Données de démonstration
-npm run db:studio  # Interface Prisma Studio
-npm run build      # Build de production
-```
+---
 
-## Variables d'environnement requises
-Voir `.env.example` pour la liste complète.
-Minimum pour démarrer :
-- `DATABASE_URL`
-- `DIRECT_URL`
-- `NEXTAUTH_SECRET`
-- `NEXTAUTH_URL`
+## 🔧 Standards de code
+
+### Principes
+- **Simplicity First** : la solution la plus simple qui fonctionne
+- Si tu peux écrire 50 lignes au lieu de 200, fais-le
+- Zéro `TODO` ou `placeholder` dans le code livré
+- Zéro `console.log` de debug oublié
+
+### Modifications chirurgicales
+- Ne touche **que** ce qui est demandé
+- Ne reformate pas le code adjacent
+- Respecte le style existant même si tu ferais autrement
+- Si ton changement crée un import orphelin → supprime-le
+
+### Qualité
+- Tout code livré doit être complet et fonctionnel
+- Écris des tests si la feature est critique
+- Vérifie qu'il n'y a pas de régression avant de valider
+
+---
+
+## 🚫 Interdictions
+- Ne jamais supposer — si c'est ambigu, demande
+- Ne jamais ajouter de features non demandées
+- Ne jamais réécrire ce qui fonctionne déjà
+- Ne jamais ignorer une erreur en la cachant
+
+---
+
+## 🗺️ Architecture & Stack
+→ Voir `PROJECT_MAP.md` pour les détails à jour
