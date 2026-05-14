@@ -388,7 +388,7 @@ function LanguageSwitcher() {
 }
 
 // ── Top Navbar ───────────────────────────────────────────────
-export function TopNav({ hasBanner = false }: { hasBanner?: boolean }) {
+export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [activeApps, setActiveApps] = useState<string[] | null>(null)
@@ -425,7 +425,7 @@ export function TopNav({ hasBanner = false }: { hasBanner?: boolean }) {
   return (
     <>
       {/* Main top bar */}
-      <header className={cn("fixed w-full h-14 bg-background border-b border-border z-50 flex items-center px-4 gap-3", hasBanner ? "top-9" : "top-0")}>
+      <header className={cn("fixed w-full h-14 bg-background border-b border-border z-50 flex items-center px-4 gap-3", "top-0")}>
         {/* Mobile hamburger (legacy sidebar on small screens) */}
         <div className="md:hidden">
           <MobileSidebarTrigger />
@@ -535,16 +535,16 @@ export function TopNav({ hasBanner = false }: { hasBanner?: boolean }) {
 
       {/* Contextual sub-nav */}
       {activeModule && activeModule.subNav.length > 0 && (
-        <SubNav module={activeModule} pathname={pathname} hasBanner={hasBanner} />
+        <SubNav module={activeModule} pathname={pathname} />
       )}
     </>
   )
 }
 
 // ── Sub Navigation ───────────────────────────────────────────
-function SubNav({ module, pathname, hasBanner }: { module: Module; pathname: string; hasBanner: boolean }) {
+function SubNav({ module, pathname }: { module: Module; pathname: string }) {
   return (
-    <nav className={cn("fixed w-full h-10 bg-background border-b border-border z-40 flex items-center px-4 gap-1 overflow-x-auto", hasBanner ? "top-[92px]" : "top-14")}>
+    <nav className="fixed w-full h-10 bg-background border-b border-border z-40 flex items-center px-4 gap-1 overflow-x-auto top-14">
       {module.subNav.map((item: { label: string; href: string }) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
         return (
