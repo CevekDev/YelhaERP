@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Header } from '@/components/layout/header'
 import { DashboardKPIs } from '@/components/dashboard/kpis'
 import { EnterpriseKPIs } from '@/components/dashboard/enterprise-kpis'
+import { SubscriptionsKPIs } from '@/components/dashboard/subscriptions-kpis'
 import { RecentInvoices } from '@/components/dashboard/recent-invoices'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { RevenueComparisonChart } from '@/components/dashboard/revenue-comparison-chart'
@@ -21,6 +22,15 @@ async function getDashboardData(companyId: string) {
   const startOfYear = new Date(year, 0, 1)
   const startOfLastYear = new Date(year - 1, 0, 1)
   const endOfLastYearSameDay = new Date(year - 1, now.getMonth(), now.getDate())
+
+  // Fetch active AppSubscriptions to know which modules to show
+  const activeAppSubs = await prisma.appSubscription.findMany({
+    where: { companyId, status: 'ACTIVE', currentPeriodEnd: { gte: now } },
+    select: { appId: true },
+  })
+  const activeApps = activeAppSubs.map(s => s.appId)
+
+  const hasSubscriptionsApp = activeApps.includes('subscriptions')
 
   const [
     monthRevenue,
@@ -41,6 +51,10 @@ async function getDashboardData(companyId: string) {
     leaveRequests,
     activeProjects,
     unmatchedInvoices,
+    subsActiveCount,
+    subsNewThisMonth,
+    subsCancelledThisMonth,
+    subsMrr,
   ] = await Promise.all([
     // CA du mois
     prisma.invoice.aggregate({
@@ -123,6 +137,15 @@ async function getDashboardData(companyId: string) {
     prisma.project.count({ where: { companyId, status: 'ACTIVE' } }).catch(() => 0),
     // Factures fournisseurs en attente
     prisma.supplierInvoice.count({ where: { companyId, status: 'PENDING' } }).catch(() => 0),
+    // Abonnements clients (module subscriptions)
+    hasSubscriptionsApp ? prisma.subscription.count({ where: { companyId, status: 'ACTIVE' } }).catch(() => 0) : Promise.resolve(0),
+    hasSubscriptionsApp ? prisma.subscription.count({ where: { companyId, createdAt: { gte: startOfMonth } } }).catch(() => 0) : Promise.resolve(0),
+    hasSubscriptionsApp ? prisma.subscription.count({ where: { companyId, status: 'CANCELLED', cancelledAt: { gte: startOfMonth } } }).catch(() => 0) : Promise.resolve(0),
+    hasSubscriptionsApp
+      ? prisma.subscription.findMany({ where: { companyId, status: 'ACTIVE' }, include: { plan: { select: { price: true } } } })
+          .then(subs => ({ _sum: { price: subs.reduce((a, s) => a + Number(s.plan.price), 0) } }))
+          .catch(() => ({ _sum: { price: 0 } }))
+      : Promise.resolve({ _sum: { price: 0 } }),
   ])
 
   return {
@@ -132,6 +155,9 @@ async function getDashboardData(companyId: string) {
     lastYearYTD: Number(lastYearYTD._sum.total ?? 0),
     pendingQuotes, pendingExpenses,
     crmLeads, purchaseOrders, productionOrders, leaveRequests, activeProjects, unmatchedInvoices,
+    activeApps, hasSubscriptionsApp,
+    subsActiveCount, subsNewThisMonth, subsCancelledThisMonth,
+    subsMrr: Number((subsMrr as { _sum: { price: number | null } })._sum.price ?? 0),
   }
 }
 
@@ -165,6 +191,8 @@ export default async function DashboardPage() {
       pendingExpenses: 0,
       crmLeads: 0, purchaseOrders: 0, productionOrders: 0,
       leaveRequests: 0, activeProjects: 0, unmatchedInvoices: 0,
+      activeApps: [] as string[], hasSubscriptionsApp: false,
+      subsActiveCount: 0, subsNewThisMonth: 0, subsCancelledThisMonth: 0, subsMrr: 0,
     }
   }
 
@@ -175,7 +203,17 @@ export default async function DashboardPage() {
         {/* CA Alert Banner */}
         <CAAlertBanner currentYTD={data.currentYTD} lastYearYTD={data.lastYearYTD} />
 
-        {/* Enterprise module KPIs */}
+        {/* Subscriptions app KPIs — only if user has active subscription to the app */}
+        {data.hasSubscriptionsApp && (
+          <SubscriptionsKPIs
+            activeCount={data.subsActiveCount as number}
+            newThisMonth={data.subsNewThisMonth as number}
+            cancelledThisMonth={data.subsCancelledThisMonth as number}
+            mrr={data.subsMrr as number}
+          />
+        )}
+
+        {/* Enterprise module KPIs — filtered by active apps */}
         <EnterpriseKPIs
           crmLeads={data.crmLeads as number}
           purchaseOrders={data.purchaseOrders as number}
@@ -183,6 +221,7 @@ export default async function DashboardPage() {
           leaveRequests={data.leaveRequests as number}
           activeProjects={data.activeProjects as number}
           unmatchedInvoices={data.unmatchedInvoices as number}
+          activeApps={data.activeApps as string[]}
         />
 
         {/* Financial KPIs */}

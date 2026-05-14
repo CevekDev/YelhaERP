@@ -57,6 +57,8 @@ interface AppEntry {
   status: AppStatus
   trialEndsAt?: string
   daysLeft?: number
+  monthlyAmount?: number
+  planId?: string
 }
 
 interface AppSubRecord {
@@ -66,6 +68,7 @@ interface AppSubRecord {
   currentPeriodEnd: string
   planId: string
   monthlyAmount: number
+  planName?: string
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -150,7 +153,9 @@ function AppSubCard({
           {entry.status === 'trial'
             ? `Expire le ${fmtDate(entry.trialEndsAt!)}`
             : entry.status === 'active'
-            ? `${formatDA(app.price)}/mois`
+            ? entry.monthlyAmount === 0
+              ? 'Offert'
+              : `${formatDA(entry.monthlyAmount ?? app.price)}/mois`
             : 'Essai expiré'}
         </span>
       </div>
@@ -282,10 +287,10 @@ export default function BillingPage() {
     seen.add(e.appId)
     const n = newSubMap.get(e.appId)
     if (!n) return e
-    if (n.effectiveStatus === 'ACTIVE') return { appId: e.appId, status: 'active' }
+    if (n.effectiveStatus === 'ACTIVE') return { appId: e.appId, status: 'active', monthlyAmount: n.monthlyAmount, planId: n.planId }
     if (n.effectiveStatus === 'TRIAL') {
       const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
-      return { appId: e.appId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left }
+      return { appId: e.appId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left, monthlyAmount: n.monthlyAmount, planId: n.planId }
     }
     return e
   })
@@ -293,10 +298,10 @@ export default function BillingPage() {
   for (const n of appSubs) {
     if (seen.has(n.appId) || !APPS[n.appId as AppId]) continue
     if (n.effectiveStatus === 'ACTIVE') {
-      entries.push({ appId: n.appId as AppId, status: 'active' })
+      entries.push({ appId: n.appId as AppId, status: 'active', monthlyAmount: n.monthlyAmount, planId: n.planId })
     } else if (n.effectiveStatus === 'TRIAL') {
       const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
-      entries.push({ appId: n.appId as AppId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left })
+      entries.push({ appId: n.appId as AppId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left, monthlyAmount: n.monthlyAmount, planId: n.planId })
     }
   }
 

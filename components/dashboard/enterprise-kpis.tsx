@@ -8,67 +8,39 @@ interface Props {
   leaveRequests: number
   activeProjects: number
   unmatchedInvoices: number
+  activeApps?: string[]
+}
+
+const TILE_APP_MAP: Record<string, string> = {
+  crm: 'crm',
+  purchases: 'purchases',
+  production: 'production',
+  hr: 'hr',
+  projects: 'projects',
+  accounting: 'accounting',
 }
 
 const buildTiles = (p: Props) => [
-  {
-    key: 'crm' as const,
-    label: 'Leads CRM',
-    value: p.crmLeads,
-    href: '/dashboard/crm/pipeline',
-    icon: Users,
-    color: 'text-violet-500',
-    bg: 'bg-violet-50 dark:bg-violet-950/30',
-  },
-  {
-    key: 'purchases' as const,
-    label: 'Commandes fournisseurs',
-    value: p.purchaseOrders,
-    href: '/dashboard/purchases/orders',
-    icon: ShoppingCart,
-    color: 'text-amber-500',
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-  },
-  {
-    key: 'production' as const,
-    label: 'OF en production',
-    value: p.productionOrders,
-    href: '/dashboard/production/orders',
-    icon: Factory,
-    color: 'text-blue-500',
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
-  },
-  {
-    key: 'hr' as const,
-    label: 'Congés à valider',
-    value: p.leaveRequests,
-    href: '/dashboard/hr/leaves',
-    icon: Calendar,
-    color: 'text-rose-500',
-    bg: 'bg-rose-50 dark:bg-rose-950/30',
-  },
-  {
-    key: 'projects' as const,
-    label: 'Projets actifs',
-    value: p.activeProjects,
-    href: '/dashboard/projects',
-    icon: FolderKanban,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-  },
-  {
-    key: 'accounting' as const,
-    label: 'Factures non matchées',
-    value: p.unmatchedInvoices,
-    href: '/dashboard/purchases/invoices',
-    icon: FileCheck,
-    color: 'text-orange-500',
-    bg: 'bg-orange-50 dark:bg-orange-950/30',
-  },
+  { key: 'crm',        label: 'Leads CRM',                 value: p.crmLeads,          href: '/dashboard/crm/pipeline',         icon: Users,         color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-950/30' },
+  { key: 'purchases',  label: 'Commandes fournisseurs',     value: p.purchaseOrders,    href: '/dashboard/purchases/orders',     icon: ShoppingCart,  color: 'text-amber-500',  bg: 'bg-amber-50 dark:bg-amber-950/30'  },
+  { key: 'production', label: 'OF en production',           value: p.productionOrders,  href: '/dashboard/production/orders',    icon: Factory,       color: 'text-blue-500',   bg: 'bg-blue-50 dark:bg-blue-950/30'    },
+  { key: 'hr',         label: 'Congés à valider',           value: p.leaveRequests,     href: '/dashboard/hr/leaves',            icon: Calendar,      color: 'text-rose-500',   bg: 'bg-rose-50 dark:bg-rose-950/30'    },
+  { key: 'projects',   label: 'Projets actifs',             value: p.activeProjects,    href: '/dashboard/projects',             icon: FolderKanban,  color: 'text-emerald-500',bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+  { key: 'accounting', label: 'Factures non matchées',      value: p.unmatchedInvoices, href: '/dashboard/purchases/invoices',   icon: FileCheck,     color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/30' },
 ]
 
 export function EnterpriseKPIs(props: Props) {
-  const tiles = buildTiles(props)
+  const allTiles = buildTiles(props)
+
+  // If activeApps is provided, only show tiles for active apps OR tiles with value > 0
+  const tiles = props.activeApps
+    ? allTiles.filter(t => {
+        const appKey = TILE_APP_MAP[t.key]
+        return props.activeApps!.includes(appKey) || t.value > 0
+      })
+    : allTiles
+
+  if (tiles.length === 0) return null
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
