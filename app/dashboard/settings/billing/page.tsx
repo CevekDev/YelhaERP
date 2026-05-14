@@ -305,10 +305,12 @@ export default function BillingPage() {
     ADMIN_GIFT: 'Offert', ADMIN_FREE: 'Gratuit (admin)', ADMIN_ACTIVATE: 'WhatsApp / CCP',
   }
 
-  // Merge old and new payment records, newest first
+  const isPaid = (s: string) => s === 'PAID' || s === 'SUCCEEDED'
+
+  // Merge paid payments only, newest first
   const allPayments: PaymentRow[] = [
-    ...(appPayments.map(p => ({ id: p.id, createdAt: p.createdAt, planId: p.planId, appId: p.appId, amount: p.amount, method: p.method, status: p.status }))),
-    ...(sub.payments ?? []).map(p => ({ id: p.id, createdAt: p.createdAt, planId: p.planId, amount: p.amount, method: p.method, status: p.status })),
+    ...(appPayments.filter(p => isPaid(p.status)).map(p => ({ id: p.id, createdAt: p.createdAt, planId: p.planId, appId: p.appId, amount: p.amount, method: p.method, status: p.status }))),
+    ...(sub.payments ?? []).filter(p => isPaid(p.status)).map(p => ({ id: p.id, createdAt: p.createdAt, planId: p.planId, amount: p.amount, method: p.method, status: p.status })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return (
@@ -398,12 +400,9 @@ export default function BillingPage() {
                     <td className="py-2.5 pr-4 da-amount font-semibold">{p.amount === 0 ? '—' : formatDA(p.amount)}</td>
                     <td className="py-2.5 pr-4 text-muted-foreground">{methodLabel[p.method] ?? p.method}</td>
                     <td className="py-2.5">
-                      {(p.status === 'PAID' || p.status === 'SUCCEEDED')
-                        ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full"><CheckCircle className="h-3 w-3" />Payé</span>
-                        : p.status === 'PENDING'
-                        ? <span className="text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">En attente</span>
-                        : <span className="text-xs font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded-full">Échoué</span>
-                      }
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                        <CheckCircle className="h-3 w-3" />Payé
+                      </span>
                     </td>
                   </tr>
                 ))}
