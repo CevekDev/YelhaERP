@@ -14,27 +14,62 @@ export async function GET(req: NextRequest) {
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
+    const now = new Date()
+
     const [
       totalCompanies,
       newCompaniesThisMonth,
       totalUsers,
-      subByStatus,
-      mrr,
-      recentPayments,
-      paidPaymentsThisMonth,
-      pendingPayments,
+      // New AppSubscription system
+      activeAppSubs,
+      trialAppSubs,
+      appSubMrr,
+      recentAppPayments,
+      appPaymentsThisMonth,
+      pendingAppPayments,
+      // Legacy yelhaSubscription (kept for completeness)
+      legacySubByStatus,
+      legacyMrr,
+      recentLegacyPayments,
+      legacyPaidThisMonth,
+      legacyPending,
     ] = await Promise.all([
       prisma.company.count(),
       prisma.company.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.user.count(),
+
+      // AppSubscription: companies with at least one ACTIVE sub not expired
+      prisma.appSubscription.count({
+        where: { status: 'ACTIVE', currentPeriodEnd: { gte: now } },
+      }),
+      prisma.appSubscription.count({
+        where: { status: 'TRIAL', trialEndsAt: { gte: now } },
+      }),
+      prisma.appSubscription.aggregate({
+        where: { status: 'ACTIVE', currentPeriodEnd: { gte: now } },
+        _sum: { monthlyAmount: true },
+      }),
+      prisma.appPayment.findMany({
+        take: 15,
+        orderBy: { createdAt: 'desc' },
+        include: { appSubscription: { include: { company: { select: { id: true, name: true } } } } },
+      }),
+      prisma.appPayment.aggregate({
+        where: { status: 'PAID', paidAt: { gte: startOfMonth } },
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+      prisma.appPayment.count({ where: { status: 'PENDING' } }),
+
+      // Legacy
       prisma.yelhaSubscription.groupBy({ by: ['status'], _count: { id: true } }),
       prisma.yelhaSubscription.aggregate({ where: { status: 'ACTIVE' }, _sum: { monthlyAmount: true } }),
       prisma.yelhaPayment.findMany({
-        take: 15,
+        take: 10,
         orderBy: { createdAt: 'desc' },
         select: {
           id: true, amount: true, planId: true, method: true, status: true,
-          paidAt: true, createdAt: true, ccpRef: true,
+          paidAt: true, createdAt: true,
           subscription: { select: { company: { select: { id: true, name: true } } } },
         },
       }),
@@ -46,30 +81,47 @@ export async function GET(req: NextRequest) {
       prisma.yelhaPayment.count({ where: { status: 'PENDING' } }),
     ])
 
-    const statusMap: Record<string, number> = {}
-    for (const s of subByStatus) statusMap[s.status] = s._count.id
+    const legacyStatusMap: Record<string, number> = {}
+    for (const s of legacySubByStatus) legacyStatusMap[s.status] = s._count.id
+
+    // Merge recent payments: app payments first, then legacy
+    const normalizedAppPayments = recentAppPayments.map(p => ({
+      id: p.id,
+      amount: p.amount,
+      planId: p.planId,
+      method: p.method,
+      status: p.status,
+      paidAt: p.paidAt?.toISOString() ?? null,
+      createdAt: p.createdAt.toISOString(),
+      subscription: p.appSubscription ? { company: p.appSubscription.company } : null,
+    }))
+    const normalizedLegacyPayments = recentLegacyPayments.map(p => ({ ...p, paidAt: p.paidAt ? (p.paidAt as Date).toISOString() : null, createdAt: (p.createdAt as Date).toISOString() }))
+
+    const allRecentPayments = [...normalizedAppPayments, ...normalizedLegacyPayments]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 15)
 
     return apiSuccess({
       companies: {
         total: totalCompanies,
         newThisMonth: newCompaniesThisMonth,
         byStatus: {
-          trial: statusMap['TRIAL'] ?? 0,
-          active: statusMap['ACTIVE'] ?? 0,
-          paused: statusMap['PAUSED'] ?? 0,
-          cancelled: statusMap['CANCELLED'] ?? 0,
-          expired: statusMap['EXPIRED'] ?? 0,
-          pastDue: statusMap['PAST_DUE'] ?? 0,
+          trial: trialAppSubs + (legacyStatusMap['TRIAL'] ?? 0),
+          active: activeAppSubs + (legacyStatusMap['ACTIVE'] ?? 0),
+          paused: legacyStatusMap['PAUSED'] ?? 0,
+          cancelled: legacyStatusMap['CANCELLED'] ?? 0,
+          expired: legacyStatusMap['EXPIRED'] ?? 0,
+          pastDue: legacyStatusMap['PAST_DUE'] ?? 0,
         },
       },
       users: { total: totalUsers },
       revenue: {
-        mrr: mrr._sum.monthlyAmount ?? 0,
-        thisMonth: paidPaymentsThisMonth._sum.amount ?? 0,
-        paymentsThisMonth: paidPaymentsThisMonth._count.id ?? 0,
-        pendingPayments,
+        mrr: (appSubMrr._sum.monthlyAmount ?? 0) + (legacyMrr._sum.monthlyAmount ?? 0),
+        thisMonth: (appPaymentsThisMonth._sum.amount ?? 0) + (legacyPaidThisMonth._sum.amount ?? 0),
+        paymentsThisMonth: (appPaymentsThisMonth._count.id ?? 0) + (legacyPaidThisMonth._count.id ?? 0),
+        pendingPayments: pendingAppPayments + legacyPending,
       },
-      recentPayments,
+      recentPayments: allRecentPayments,
     })
   } catch (e: unknown) {
     if (e instanceof Error) {
