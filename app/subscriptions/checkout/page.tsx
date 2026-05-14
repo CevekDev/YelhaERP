@@ -247,25 +247,6 @@ function AppCheckout({ appId }: { appId: string }) {
                 )}
               </button>
 
-              <div className="flex items-center gap-3 text-xs text-slate-400">
-                <Separator className="flex-1" />
-                <span>Paiement en ligne bientôt disponible</span>
-                <Separator className="flex-1" />
-              </div>
-
-              <button
-                disabled
-                className="w-full flex items-center gap-4 rounded-xl border-2 border-slate-100 bg-slate-50 p-5 text-left opacity-50 cursor-not-allowed"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center shrink-0 text-lg">
-                  💳
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-700">Chargily Pay</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Edahabia · CIB — Bientôt</p>
-                </div>
-                <Badge variant="secondary" className="text-[10px]">Bientôt</Badge>
-              </button>
             </Card>
           )}
         </div>
