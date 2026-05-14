@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import {
-  TrendingUp, Grid3X3, Search, Settings, LogOut, User,
+  TrendingUp, Search, Settings, LogOut, User,
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers,
   Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, RefreshCw,
@@ -294,47 +294,6 @@ function GlobalSearch() {
   )
 }
 
-// ── Apps Menu ────────────────────────────────────────────────
-function AppsMenu() {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          'p-2 rounded-lg transition-colors',
-          open ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-        )}
-      >
-        <Grid3X3 className="h-4 w-4" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-10 z-50 w-72 bg-background border border-border rounded-xl shadow-xl p-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">Applications</p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {MODULES.filter(m => m.id !== 'dashboard').map(module => (
-                <Link
-                  key={module.id}
-                  href={module.href}
-                  onClick={() => setOpen(false)}
-                  className="flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors text-center"
-                >
-                  <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', module.color)}>
-                    <module.icon className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-xs font-medium text-foreground leading-tight">{module.label}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
 
 // ── Module → App IDs mapping ─────────────────────────────────
 const MODULE_APPS: Record<string, string[]> = {
@@ -429,11 +388,6 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
         {/* Mobile hamburger (legacy sidebar on small screens) */}
         <div className="md:hidden">
           <MobileSidebarTrigger />
-        </div>
-
-        {/* Apps menu */}
-        <div className="hidden md:block">
-          <AppsMenu />
         </div>
 
         {/* Module tabs — scrollable so right icons always stay visible */}
