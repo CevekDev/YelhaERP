@@ -1,10 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, AlertCircle, Package, CreditCard, FileCheck, Receipt } from 'lucide-react'
+import { TrendingUp, CreditCard, FileCheck, Package, Receipt, CalendarDays, Calendar } from 'lucide-react'
 import { formatDA } from '@/lib/algerian/format'
 import Link from 'next/link'
 
 interface KPIsProps {
+  weekRevenue: number
   monthRevenue: number
+  yearRevenue: number
   unpaidTotal: number
   unpaidCount: number
   lowStockCount: number
@@ -13,95 +14,123 @@ interface KPIsProps {
 }
 
 export function DashboardKPIs({
+  weekRevenue,
   monthRevenue,
+  yearRevenue,
   unpaidTotal,
   unpaidCount,
   lowStockCount,
   pendingQuotes = 0,
   pendingExpenses = 0,
 }: KPIsProps) {
-  const allKpis = [
+  const caTiles = [
     {
-      title: 'CA du mois',
-      value: formatDA(monthRevenue),
-      numericValue: monthRevenue,
-      icon: TrendingUp,
+      title: 'CA cette semaine',
+      value: formatDA(weekRevenue),
+      icon: CalendarDays,
       color: 'text-yelha-600',
-      bg: 'bg-yelha-50',
+      bg: 'bg-yelha-50 dark:bg-yelha-950/30',
       href: '/dashboard/invoices',
     },
     {
-      title: 'Impayés',
-      value: formatDA(unpaidTotal),
-      sub: `${unpaidCount} facture${unpaidCount > 1 ? 's' : ''}`,
-      numericValue: unpaidTotal,
-      icon: CreditCard,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
+      title: 'CA ce mois',
+      value: formatDA(monthRevenue),
+      icon: TrendingUp,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
       href: '/dashboard/invoices',
     },
     {
-      title: 'Devis en attente',
-      value: String(pendingQuotes),
-      sub: 'Réponse client attendue',
-      numericValue: pendingQuotes,
-      icon: FileCheck,
+      title: "CA cette année",
+      value: formatDA(yearRevenue),
+      icon: Calendar,
       color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      href: '/dashboard/quotes',
-    },
-    {
-      title: 'Stock en alerte',
-      value: String(lowStockCount),
-      sub: 'Produit(s) sous le seuil',
-      numericValue: lowStockCount,
-      icon: Package,
-      color: 'text-red-600',
-      bg: 'bg-red-50',
-      href: '/dashboard/stock',
-    },
-    {
-      title: 'Dépenses à valider',
-      value: String(pendingExpenses),
-      sub: "En attente d'approbation",
-      numericValue: pendingExpenses,
-      icon: Receipt,
-      color: 'text-orange-600',
-      bg: 'bg-orange-50',
-      href: '/dashboard/expenses',
-    },
-    {
-      title: 'Rappels fiscaux',
-      value: 'G50',
-      sub: 'Avant le 20 du mois',
-      numericValue: undefined,
-      icon: AlertCircle,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      href: '/dashboard/tax',
+      bg: 'bg-blue-50 dark:bg-blue-950/30',
+      href: '/dashboard/invoices',
     },
   ]
 
-  const kpis = allKpis.filter(k => k.numericValue === undefined || k.numericValue > 0)
+  const alertTiles = [
+    {
+      show: unpaidTotal > 0,
+      title: 'Impayés',
+      value: formatDA(unpaidTotal),
+      sub: `${unpaidCount} facture${unpaidCount > 1 ? 's' : ''}`,
+      icon: CreditCard,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50 dark:bg-amber-950/30',
+      href: '/dashboard/invoices',
+    },
+    {
+      show: pendingQuotes > 0,
+      title: 'Devis en attente',
+      value: String(pendingQuotes),
+      sub: 'Réponse client attendue',
+      icon: FileCheck,
+      color: 'text-violet-600',
+      bg: 'bg-violet-50 dark:bg-violet-950/30',
+      href: '/dashboard/quotes',
+    },
+    {
+      show: lowStockCount > 0,
+      title: 'Stock en alerte',
+      value: String(lowStockCount),
+      sub: 'Produit(s) sous le seuil',
+      icon: Package,
+      color: 'text-red-600',
+      bg: 'bg-red-50 dark:bg-red-950/30',
+      href: '/dashboard/stock',
+    },
+    {
+      show: pendingExpenses > 0,
+      title: 'Dépenses à valider',
+      value: String(pendingExpenses),
+      sub: "En attente d'approbation",
+      icon: Receipt,
+      color: 'text-orange-600',
+      bg: 'bg-orange-50 dark:bg-orange-950/30',
+      href: '/dashboard/expenses',
+    },
+  ].filter(t => t.show)
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-      {kpis.map((kpi) => (
-        <Link key={kpi.title} href={kpi.href} className="block">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xs font-medium text-muted-foreground leading-tight">{kpi.title}</CardTitle>
-              <div className={`p-1.5 rounded-lg ${kpi.bg}`}>
-                <kpi.icon className={`h-3.5 w-3.5 ${kpi.color}`} />
+    <div className="space-y-4">
+      {/* CA : toujours affiché */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {caTiles.map(t => (
+          <Link key={t.title} href={t.href} className="block">
+            <div className="border rounded-xl p-4 bg-card hover:shadow-md transition-shadow flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${t.bg}`}>
+                <t.icon className={`w-5 h-5 ${t.color}`} />
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xl font-bold da-amount">{kpi.value}</p>
-              {'sub' in kpi && kpi.sub && <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{kpi.sub}</p>}
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">{t.title}</p>
+                <p className="text-xl font-bold da-amount tabular-nums truncate">{t.value}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Alertes : uniquement si valeur > 0 */}
+      {alertTiles.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {alertTiles.map(t => (
+            <Link key={t.title} href={t.href} className="block">
+              <div className="border rounded-lg p-3 bg-card hover:shadow-sm transition-shadow flex flex-col gap-2">
+                <div className={`w-8 h-8 rounded-md flex items-center justify-center ${t.bg}`}>
+                  <t.icon className={`w-4 h-4 ${t.color}`} />
+                </div>
+                <p className="text-2xl font-bold tabular-nums">{t.value}</p>
+                <div>
+                  <p className="text-xs font-medium">{t.title}</p>
+                  {'sub' in t && <p className="text-[11px] text-muted-foreground leading-tight">{t.sub}</p>}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

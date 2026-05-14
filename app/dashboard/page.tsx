@@ -10,13 +10,16 @@ import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { RevenueComparisonChart } from '@/components/dashboard/revenue-comparison-chart'
 import { TopClientsChart } from '@/components/dashboard/top-clients-chart'
 import { CAAlertBanner } from '@/components/dashboard/ca-alert-banner'
-import { TaxReminders } from '@/components/dashboard/tax-reminders'
 
 export const dynamic = 'force-dynamic'
 
 async function getDashboardData(companyId: string) {
   const now = new Date()
   const year = now.getFullYear()
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1 // Monday = 0
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - dayOfWeek)
+  startOfWeek.setHours(0, 0, 0, 0)
   const startOfMonth = new Date(year, now.getMonth(), 1)
   const startOf6months = new Date(year, now.getMonth() - 5, 1)
   const startOfYear = new Date(year, 0, 1)
@@ -33,6 +36,7 @@ async function getDashboardData(companyId: string) {
   const hasSubscriptionsApp = activeApps.includes('subscriptions')
 
   const [
+    weekRevenue,
     monthRevenue,
     unpaidInvoices,
     lowStockCount,
@@ -56,6 +60,11 @@ async function getDashboardData(companyId: string) {
     subsCancelledThisMonth,
     subsMrr,
   ] = await Promise.all([
+    // CA cette semaine
+    prisma.invoice.aggregate({
+      where: { companyId, status: 'PAID', issueDate: { gte: startOfWeek } },
+      _sum: { total: true },
+    }),
     // CA du mois
     prisma.invoice.aggregate({
       where: { companyId, status: 'PAID', issueDate: { gte: startOfMonth } },
@@ -67,7 +76,7 @@ async function getDashboardData(companyId: string) {
       _sum: { total: true },
       _count: true,
     }),
-    // Stock en alerte (stock_qty <= stock_alert)
+    // Stock en alerte
     prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*)::int as count FROM "Product"
       WHERE company_id = ${companyId} AND is_active = true AND stock_qty <= stock_alert AND stock_alert > 0
@@ -149,7 +158,9 @@ async function getDashboardData(companyId: string) {
   ])
 
   return {
-    monthRevenue, unpaidInvoices, lowStockCount, recentInvoices, monthlyRevenue,
+    weekRevenue: Number(weekRevenue._sum.total ?? 0),
+    monthRevenue: Number(monthRevenue._sum.total ?? 0),
+    unpaidInvoices, lowStockCount, recentInvoices, monthlyRevenue,
     currentYearMonthly, lastYearMonthly, topClients, year,
     currentYTD: Number(currentYTD._sum.total ?? 0),
     lastYearYTD: Number(lastYearYTD._sum.total ?? 0),
@@ -176,7 +187,8 @@ export default async function DashboardPage() {
   } catch (e) {
     console.error('Dashboard getDashboardData error:', e)
     data = {
-      monthRevenue: { _sum: { total: 0 } },
+      weekRevenue: 0,
+      monthRevenue: 0,
       unpaidInvoices: { _sum: { total: 0 }, _count: 0 },
       lowStockCount: 0,
       recentInvoices: [],
@@ -203,7 +215,19 @@ export default async function DashboardPage() {
         {/* CA Alert Banner */}
         <CAAlertBanner currentYTD={data.currentYTD} lastYearYTD={data.lastYearYTD} />
 
-        {/* Subscriptions app KPIs — only if user has active subscription to the app */}
+        {/* CA + alertes */}
+        <DashboardKPIs
+          weekRevenue={data.weekRevenue}
+          monthRevenue={data.monthRevenue}
+          yearRevenue={data.currentYTD}
+          unpaidTotal={Number(data.unpaidInvoices._sum.total ?? 0)}
+          unpaidCount={data.unpaidInvoices._count}
+          lowStockCount={data.lowStockCount as number}
+          pendingQuotes={data.pendingQuotes}
+          pendingExpenses={data.pendingExpenses}
+        />
+
+        {/* Abonnements clients — si l'app est active */}
         {data.hasSubscriptionsApp && (
           <SubscriptionsKPIs
             activeCount={data.subsActiveCount as number}
@@ -213,7 +237,7 @@ export default async function DashboardPage() {
           />
         )}
 
-        {/* Enterprise module KPIs — filtered by active apps */}
+        {/* KPIs modules enterprise — filtrés par apps actives */}
         <EnterpriseKPIs
           crmLeads={data.crmLeads as number}
           purchaseOrders={data.purchaseOrders as number}
@@ -224,27 +248,9 @@ export default async function DashboardPage() {
           activeApps={data.activeApps as string[]}
         />
 
-        {/* Financial KPIs */}
-        <DashboardKPIs
-          monthRevenue={Number(data.monthRevenue._sum.total ?? 0)}
-          unpaidTotal={Number(data.unpaidInvoices._sum.total ?? 0)}
-          unpaidCount={data.unpaidInvoices._count}
-          lowStockCount={data.lowStockCount as number}
-          pendingQuotes={data.pendingQuotes}
-          pendingExpenses={data.pendingExpenses}
-        />
+        {/* Charts */}
+        <RevenueChart data={data.monthlyRevenue} />
 
-        {/* Charts row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <RevenueChart data={data.monthlyRevenue} />
-          </div>
-          <div>
-            <TaxReminders companyId={session.user.companyId} />
-          </div>
-        </div>
-
-        {/* Charts row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RevenueComparisonChart
             currentYear={data.currentYearMonthly}
