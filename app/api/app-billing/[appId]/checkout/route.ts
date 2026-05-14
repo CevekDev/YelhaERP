@@ -8,9 +8,13 @@ import { getAppPlanConfig, getAppPlan } from '@/lib/pricing/app-plans'
 
 const APP_PLANS_CONFIG_PREFIX = 'app_pricing_'
 
+const CHARGILY_BASE = process.env.CHARGILY_MODE === 'live'
+  ? 'https://pay.chargily.net/api/v2'
+  : 'https://pay.chargily.net/test/api/v2'
+
 const checkoutSchema = z.object({
   planId: z.string(),
-  method: z.enum(['CCP', 'TRIAL']),
+  method: z.enum(['CCP', 'TRIAL', 'CHARGILY']),
 })
 
 export async function POST(req: NextRequest, { params }: { params: { appId: string } }) {
@@ -33,6 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
     if (!plan) return apiError('Plan introuvable', 404)
 
     if (method === 'TRIAL' && planId !== 'trial') return apiError('La méthode TRIAL est réservée au plan gratuit', 422)
+    if (method === 'CHARGILY' && planId === 'trial') return apiError('Chargily n\'est pas disponible pour l\'essai gratuit', 422)
 
     // Récupère le prix avec éventuelles surcharges admin
     const dbConfig = await prisma.systemConfig.findUnique({
@@ -61,6 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
     if (existing?.status === 'ACTIVE') return apiError('Vous avez déjà un abonnement actif pour cette app', 409)
     if (existing?.status === 'TRIAL' && planId === 'trial') return apiError('Essai déjà en cours', 409)
 
+    // ── TRIAL ──────────────────────────────────────────────────────────────────
     if (method === 'TRIAL') {
       const sub = existing
         ? await prisma.appSubscription.update({
@@ -73,7 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       return apiSuccess({ type: 'trial', subscription: sub })
     }
 
-    // CCP : crée une demande en attente
+    // Crée ou met à jour l'AppSubscription + AppPayment
     const existingStatus = existing?.status ?? 'TRIAL'
     const existingTrialEndsAt = existing?.trialEndsAt ?? null
     const existingPeriodStart = existing?.currentPeriodStart ?? now
@@ -101,23 +107,54 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
         appId,
         planId,
         amount: effectivePrice,
-        method: 'CCP',
+        method,
         status: 'PENDING',
         periodStart: now,
         periodEnd,
       },
     })
 
+    // ── CHARGILY ───────────────────────────────────────────────────────────────
+    if (method === 'CHARGILY') {
+      const chargilySecret = process.env.CHARGILY_SECRET_KEY
+      if (!chargilySecret) return apiError('Paiement Chargily non configuré', 500)
+
+      const appUrl = process.env.NEXTAUTH_URL ?? 'https://yelhaerp.com'
+
+      const chargilyRes = await fetch(`${CHARGILY_BASE}/checkouts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${chargilySecret}` },
+        body: JSON.stringify({
+          amount: effectivePrice,
+          currency: 'dzd',
+          success_url: `${appUrl}/subscriptions/success?method=chargily&app=${appId}&plan=${planId}`,
+          failure_url: `${appUrl}/subscriptions/checkout?app=${appId}`,
+          webhook_url: `${appUrl}/api/webhooks/chargily-app`,
+          metadata: { appPaymentId: payment.id, appId, planId, companyId },
+        }),
+      })
+
+      if (!chargilyRes.ok) {
+        await prisma.appPayment.delete({ where: { id: payment.id } })
+        return apiError('Erreur Chargily — réessayez', 502)
+      }
+
+      const chargilyData = await chargilyRes.json()
+      const ccpRef = `APP-${payment.id.slice(0, 8).toUpperCase()}`
+
+      await prisma.appPayment.update({
+        where: { id: payment.id },
+        data: { chargilyId: chargilyData.id, chargilyLink: chargilyData.checkout_url, ccpRef },
+      })
+
+      return apiSuccess({ type: 'chargily', url: chargilyData.checkout_url })
+    }
+
+    // ── CCP ────────────────────────────────────────────────────────────────────
     const ccpRef = `APP-${payment.id.slice(0, 8).toUpperCase()}`
     await prisma.appPayment.update({ where: { id: payment.id }, data: { ccpRef } })
 
-    return apiSuccess({
-      type: 'ccp',
-      ccpRef,
-      amount: effectivePrice,
-      planId,
-      paymentId: payment.id,
-    })
+    return apiSuccess({ type: 'ccp', ccpRef, amount: effectivePrice, planId, paymentId: payment.id })
   } catch (e: unknown) {
     if (e instanceof Error && e.message === 'UNAUTHORIZED') return apiError('Non authentifié', 401)
     return apiError('Erreur serveur', 500)

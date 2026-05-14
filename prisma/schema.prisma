@@ -2367,6 +2367,8 @@ model AppPayment {
   method            String          // CCP | ADMIN_FREE | ADMIN_ACTIVATE
   status            String          @default("PENDING") // PENDING | PAID
   ccpRef            String?
+  chargilyId        String?
+  chargilyLink      String?
   periodStart       DateTime
   periodEnd         DateTime
   paidAt            DateTime?

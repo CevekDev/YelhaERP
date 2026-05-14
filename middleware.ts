@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   '/api/auth',
   '/api/billing/plans',
   '/api/webhooks/chargily-yelha',
+  '/api/webhooks/chargily-app',
   '/portal',
   '/pricing',
   '/subscriptions/checkout',
