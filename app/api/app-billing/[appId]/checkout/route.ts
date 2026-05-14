@@ -8,9 +8,7 @@ import { getAppPlanConfig, getAppPlan } from '@/lib/pricing/app-plans'
 
 const APP_PLANS_CONFIG_PREFIX = 'app_pricing_'
 
-const CHARGILY_BASE = process.env.CHARGILY_MODE === 'live'
-  ? 'https://pay.chargily.net/api/v2'
-  : 'https://pay.chargily.net/test/api/v2'
+const CHARGILY_BASE = 'https://pay.chargily.net/api/v2'
 
 const checkoutSchema = z.object({
   planId: z.string(),
@@ -119,14 +117,15 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       const chargilySecret = process.env.CHARGILY_SECRET_KEY
       if (!chargilySecret) return apiError('Paiement Chargily non configuré', 500)
 
-      const appUrl = process.env.NEXTAUTH_URL ?? 'https://yelhaerp.com'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
 
       const chargilyRes = await fetch(`${CHARGILY_BASE}/checkouts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${chargilySecret}` },
         body: JSON.stringify({
-          amount: effectivePrice,
+          amount: effectivePrice * 100, // centimes
           currency: 'dzd',
+          locale: 'fr',
           success_url: `${appUrl}/subscriptions/success?method=chargily&app=${appId}&plan=${planId}`,
           failure_url: `${appUrl}/subscriptions/checkout?app=${appId}`,
           webhook_url: `${appUrl}/api/webhooks/chargily-app`,
@@ -135,8 +134,10 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       })
 
       if (!chargilyRes.ok) {
+        const detail = await chargilyRes.text()
+        console.error('[chargily-app] checkout error:', detail)
         await prisma.appPayment.delete({ where: { id: payment.id } })
-        return apiError('Erreur Chargily — réessayez', 502)
+        return apiError('Erreur Chargily — réessayez', 500)
       }
 
       const chargilyData = await chargilyRes.json()
