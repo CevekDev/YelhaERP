@@ -278,6 +278,80 @@ export async function sendCCPInstructions({ to, name, amount, ccpRef, planName }
   await getResend().emails.send({ from: FROM, to, subject: 'Instructions de virement CCP — YelhaERP', html: wrap('fr', content) }).catch(() => {})
 }
 
+// ── App trial emails ───────────────────────────────────────────
+
+export async function sendAppTrialWelcome(params: {
+  to: string; name: string; appName: string; trialEndsAt: Date; appId: string
+}) {
+  const { to, name, appName, trialEndsAt, appId } = params
+  const endStr = trialEndsAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const checkoutUrl = `https://erp.yelha.net/dashboard/settings/subscriptions`
+  const upgradeUrl  = `https://erp.yelha.net/subscriptions/checkout?app=${appId}`
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">🎁 Votre essai gratuit commence !</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, votre essai gratuit de <strong>${appName}</strong> est activé pour 15 jours.</p>
+    <div style="background:#f0fdf8;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:#166534;font-size:14px;font-weight:600;">📅 Expire le <strong>${endStr}</strong></p>
+    </div>
+    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Profitez de toutes les fonctionnalités pendant votre essai. À la fin, choisissez un plan pour continuer sans interruption.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+      <tr>
+        <td style="padding:0 6px 0 0;" width="50%">
+          <a href="${upgradeUrl}" style="display:block;background:#4f46e5;color:#fff;font-size:14px;font-weight:600;padding:13px 20px;border-radius:12px;text-decoration:none;text-align:center;">Voir les plans →</a>
+        </td>
+        <td style="padding:0 0 0 6px;" width="50%">
+          <a href="${checkoutUrl}" style="display:block;background:#f8fafc;color:#0f172a;border:1px solid #e2e8f0;font-size:14px;font-weight:600;padding:13px 20px;border-radius:12px;text-decoration:none;text-align:center;">Mon abonnement →</a>
+        </td>
+      </tr>
+    </table>`
+
+  await getResend().emails.send({
+    from: FROM, to,
+    subject: `🎁 Votre essai ${appName} de 15 jours a commencé`,
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
+export async function sendAppTrialReminder(params: {
+  to: string; name: string; appName: string; trialEndsAt: Date; appId: string
+}) {
+  const { to, name, appName, trialEndsAt, appId } = params
+  const endStr = trialEndsAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const upgradeUrl  = `https://erp.yelha.net/subscriptions/checkout?app=${appId}`
+  const manageUrl   = `https://erp.yelha.net/dashboard/settings/subscriptions`
+  const waMessage = encodeURIComponent(
+    `Bonjour,\nMon essai *${appName}* expire demain (${endStr}).\n\nJe souhaite activer un abonnement payant.\n📧 Email : ${to}\n\nMerci de me contacter.`
+  )
+  const waUrl = `https://wa.me/33761179379?text=${waMessage}`
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">⏰ Votre essai expire demain</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, votre essai gratuit de <strong>${appName}</strong> se termine le <strong>${endStr}</strong>.</p>
+    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:#991b1b;font-size:14px;font-weight:600;">🚨 Activez un abonnement maintenant pour continuer à utiliser ${appName} sans interruption.</p>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:0 6px 12px 0;" width="50%">
+          <a href="${upgradeUrl}" style="display:block;background:#4f46e5;color:#fff;font-size:14px;font-weight:600;padding:13px 16px;border-radius:12px;text-decoration:none;text-align:center;">💳 Choisir un plan</a>
+        </td>
+        <td style="padding:0 0 12px 6px;" width="50%">
+          <a href="${waUrl}" style="display:block;background:#25D366;color:#fff;font-size:14px;font-weight:600;padding:13px 16px;border-radius:12px;text-decoration:none;text-align:center;">📱 Contacter par WhatsApp</a>
+        </td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin-bottom:20px;">
+      <a href="${manageUrl}" style="color:#4f46e5;font-size:13px;text-decoration:underline;">Gérer mon abonnement →</a>
+    </div>`
+
+  await getResend().emails.send({
+    from: FROM, to,
+    subject: `⚠️ Votre essai ${appName} expire demain`,
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
 // ── App-specific subscription emails ──────────────────────────
 
 export async function sendAppPaymentConfirmation(params: {
