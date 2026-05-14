@@ -77,15 +77,17 @@ function AppCheckout({ appId }: { appId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId: selectedPlanId, method }),
       })
-      const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? 'Erreur'); return }
-      if (data.data.type === 'chargily') {
+      const text = await res.text()
+      let data: { data?: { type?: string; url?: string; ccpRef?: string; amount?: number }; error?: string }
+      try { data = JSON.parse(text) } catch { toast.error(`Serveur: ${text.slice(0, 120)}`); return }
+      if (!res.ok) { toast.error(data.error ?? `Erreur ${res.status}`); return }
+      if (data.data?.type === 'chargily' && data.data.url) {
         window.location.href = data.data.url
-      } else if (data.data.type === 'ccp') {
+      } else if (data.data?.type === 'ccp') {
         const planName = selected?.name ?? selectedPlanId
-        setCcpResult({ ccpRef: data.data.ccpRef, amount: data.data.amount, planId: selectedPlanId, planName })
+        setCcpResult({ ccpRef: data.data.ccpRef!, amount: data.data.amount!, planId: selectedPlanId, planName })
       }
-    } catch { toast.error('Erreur réseau') }
+    } catch (e) { toast.error(`Erreur: ${e instanceof Error ? e.message : 'inconnue'}`) }
     finally { setSubmitting(null) }
   }
 
