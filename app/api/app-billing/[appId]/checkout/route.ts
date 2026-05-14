@@ -123,7 +123,7 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${chargilySecret}` },
         body: JSON.stringify({
-          amount: effectivePrice * 100, // centimes
+          amount: effectivePrice,
           currency: 'dzd',
           locale: 'fr',
           success_url: `${appUrl}/subscriptions/success?method=chargily&app=${appId}&plan=${planId}`,
