@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CheckCircle, CreditCard, Landmark, Check, Copy } from 'lucide-react'
+import { Loader2, CheckCircle, Landmark, Check, Copy } from 'lucide-react'
 import {
   PLANS, APPS, ANNUAL_DISCOUNT, isAppIncluded,
   type PlanId, type AppId,
@@ -36,24 +36,35 @@ function AppCheckout({ appId }: { appId: string }) {
   const { data: session } = useSession()
   const config = getAppPlanConfig(appId)
 
-  const [plans, setPlans] = useState<AppPlan[]>([])
+  // Charge les plans immédiatement depuis le config statique (pas d'appel API bloquant)
+  const basePlans: AppPlan[] = config
+    ? Object.values(config.plans as Record<string, AppPlan>).filter(p => p.id !== 'trial')
+    : []
+
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({})
   const [selectedPlanId, setSelectedPlanId] = useState<string>('starter')
-  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [ccpResult, setCcpResult] = useState<{ ccpRef: string; amount: number; planId: string } | null>(null)
 
-  const fetchPlans = useCallback(async () => {
-    try {
-      const r = await fetch(`/api/app-billing/${appId}/plans`)
-      const d = await r.json()
-      if (d.data?.plans) {
-        setPlans(d.data.plans.filter((p: AppPlan) => p.id !== 'trial'))
-      }
-    } catch { /* silent */ }
-    setLoading(false)
+  // Récupère les overrides de prix admin en arrière-plan (optionnel)
+  useEffect(() => {
+    fetch(`/api/app-billing/${appId}/plans`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.data?.plans) {
+          const overrides: Record<string, number> = {}
+          for (const p of d.data.plans) overrides[p.id] = p.price
+          setPriceOverrides(overrides)
+        }
+      })
+      .catch(() => {})
   }, [appId])
 
-  useEffect(() => { fetchPlans() }, [fetchPlans])
+  // Applique les overrides sur les prix de base
+  const plans: AppPlan[] = basePlans.map(p => ({
+    ...p,
+    price: priceOverrides[p.id] ?? p.price,
+  }))
 
   const selected = plans.find(p => p.id === selectedPlanId) ?? plans[0]
 
@@ -157,12 +168,7 @@ function AppCheckout({ appId }: { appId: string }) {
             </p>
           </div>
 
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-            </div>
-          ) : (
-            <div className="space-y-3">
+          <div className="space-y-3">
               {plans.map(plan => {
                 const isSelected = selectedPlanId === plan.id
                 const isPopular = plan.id === 'pro'
@@ -217,8 +223,7 @@ function AppCheckout({ appId }: { appId: string }) {
                   </button>
                 )
               })}
-            </div>
-          )}
+          </div>
 
           {/* Payment method */}
           {selected && (
