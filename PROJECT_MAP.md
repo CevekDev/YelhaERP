@@ -1,6 +1,6 @@
 # 🗺️ PROJECT_MAP.md — YelhaERP
 
-> Dernière mise à jour : 2026-05-14
+> Dernière mise à jour : 2026-05-15
 > Lire ce fichier EN PREMIER à chaque session (voir CLAUDE.md).
 
 ---
@@ -432,6 +432,26 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 - ✅ Dark/Light mode
 - ✅ Tutoriels interactifs
 - ✅ Raccourcis clavier
+
+---
+
+## 🔄 Changements session 2026-05-15
+
+### Billing & Admin
+- ✅ `force-dynamic` ajouté sur `/api/app-billing/subscriptions/route.ts` (cache stale TRIAL corrigé)
+- ✅ Page `/settings/billing` : prix réel de l'abonnement (monthlyAmount depuis AppSubRecord), historique PAID seulement
+- ✅ Page `/settings/modules` : statut ACTIVE prioritaire depuis AppSubscription
+- ✅ Panel admin `/admin` : stats et colonne statut utilisent AppSubscription (plus YelhaSubscription seul)
+- ✅ Suppression des PENDING payments depuis la DB + cron daily `/api/cron/cleanup-payments` (3h AM)
+- ✅ `vercel.json` : cron cleanup-payments corrigé en `"0 3 * * *"` (Hobby plan n'accepte que daily)
+- ✅ Menu "APPLICATIONS" (grid icônes) supprimé de `components/layout/top-nav.tsx`
+
+### Dashboard
+- ✅ `components/dashboard/kpis.tsx` : CA semaine / CA mois / CA année (toujours affichés) + alertes seulement si > 0, Rappels fiscaux supprimé
+- ✅ `components/dashboard/subscriptions-kpis.tsx` : 6 stats (actifs, nouveaux, résiliés, net new, MRR, churn %)
+- ✅ `components/dashboard/enterprise-kpis.tsx` : tuiles filtrées strictement par `activeApps` (supprimé `|| t.value > 0`)
+- ✅ `app/dashboard/page.tsx` : weekRevenue ajouté, TaxReminders supprimé, layout épuré
+- ✅ `/api/app-billing/payments/route.ts` créé (GET paiements AppPayment par entreprise)
 
 ---
 
