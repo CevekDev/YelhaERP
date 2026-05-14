@@ -5,6 +5,7 @@ import { getTenantContext } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { getAppPlanConfig, getAppPlan } from '@/lib/pricing/app-plans'
+import { sendAppTrialWelcome } from '@/lib/email/resend'
 
 const APP_PLANS_CONFIG_PREFIX = 'app_pricing_'
 
@@ -74,6 +75,24 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
         : await prisma.appSubscription.create({
             data: { companyId, appId, planId: 'trial', status: 'TRIAL', trialEndsAt, currentPeriodStart: now, currentPeriodEnd: periodEnd, monthlyAmount: 0 },
           })
+
+      // Email bienvenue essai
+      prisma.company.findUnique({
+        where: { id: companyId },
+        include: { users: { where: { role: 'OWNER' }, take: 1 } },
+      }).then(company => {
+        const owner = company?.users[0]
+        if (owner && trialEndsAt) {
+          sendAppTrialWelcome({
+            to: owner.email,
+            name: owner.name,
+            appName: config.appName,
+            trialEndsAt,
+            appId,
+          })
+        }
+      }).catch(() => {})
+
       return apiSuccess({ type: 'trial', subscription: sub })
     }
 
