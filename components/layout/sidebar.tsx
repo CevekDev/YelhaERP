@@ -7,7 +7,7 @@ import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, FileText, Users, Truck, Package, BarChart3,
-  Calculator, Receipt, Bot, Settings, LogOut, TrendingUp, ShoppingBag,
+  Calculator, Receipt, Bot, Settings, LogOut, TrendingUp,
   FileCheck, Bell, Menu,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +19,7 @@ interface SidebarProps { companyName: string; plan: string; businessType: string
 
 const HIDDEN_ITEMS: Record<string, string[]> = {
   AE:   ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax'],
-  NONE: ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax', '/dashboard/suppliers', '/dashboard/integrations'],
+  NONE: ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax', '/dashboard/suppliers'],
 }
 
 const SHORTCUT_HINTS: Record<string, string> = {
@@ -44,7 +44,6 @@ const ALL_NAV_ITEMS = [
   { href: '/dashboard/payroll',       key: 'sidebar.payroll',       icon: Calculator },
   { href: '/dashboard/accounting',    key: 'sidebar.accounting',    icon: Receipt },
   { href: '/dashboard/tax',           key: 'sidebar.tax',           icon: TrendingUp },
-  { href: '/dashboard/integrations',  key: 'sidebar.integrations',  icon: ShoppingBag },
   { href: '/dashboard/notifications', key: 'sidebar.notifications', icon: Bell },
   { href: '/dashboard/ai',            key: 'sidebar.ai',            icon: Bot, badge: 'IA' },
   { href: '/dashboard/settings',      key: 'sidebar.settings',      icon: Settings },

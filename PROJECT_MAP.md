@@ -185,6 +185,7 @@ YelhaERP/
 ### Abonnements clients
 - `SubscriptionPlan`, `Subscription`
 - `SubscriptionSettings` — Paramètres centralisés par company (paiement + templates email)
+- `SubApiKey` — Clés API pour intégration externe (max 5 actives, hash SHA256)
 
 ### Facturation SaaS YelhaERP
 - `YelhaSubscription` — Abonnement ERP global (TRIAL/ACTIVE/PAST_DUE/CANCELLED/PAUSED/EXPIRED)
@@ -410,6 +411,12 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 - ✅ Boutons paiement dans l'email : virement CCP, Chargily ePay (si clé configurée), WhatsApp
 - ✅ Anti-spam (un seul rappel par 24h grâce à `lastRenewalReminderAt` / `lastTrialEndReminderAt`)
 - ✅ Email client modifiable par abonnement depuis la liste
+- ✅ **Webhook Chargily dédié** (`/api/webhooks/chargily-subscriptions`) : activation auto à J→ACTIVE + extension `nextBilling` (paiements pending JAMAIS enregistrés)
+- ✅ **API publique d'intégration** (`/api/sub-api/`) : CRUD plans/clients/abonnements + génération Chargily checkout
+- ✅ **Page Intégration** (`/dashboard/subscriptions/integration`) : gestion clés API (5 max), config webhook, doc téléchargeable .md
+- ✅ Rate limit 60 req/min par clé API
+- ✅ Sécurité : clés hashées SHA256, jamais visibles après création
+- ✅ Suppression complète : page Integrations (Shopify/WooCommerce) + model Integration
 
 ### IA
 - ✅ Chat IA contextuel (DeepSeek API)

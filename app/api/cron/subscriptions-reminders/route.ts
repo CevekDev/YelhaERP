@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
 
     let sent = 0
     let skipped = 0
-    const chargilyCache: Record<string, string | null> = {}
 
     for (const sub of expiring) {
       if (!sub.clientEmail || !sub.nextBilling) continue
@@ -56,15 +55,13 @@ export async function GET(req: NextRequest) {
       const clientName = [sub.client.firstName, sub.client.name].filter(Boolean).join(' ') || sub.client.name
 
       // Chargily checkout (uniquement si le token est configuré au niveau company)
+      // Pas de cache : chaque URL contient les metadata propres à la souscription
       let chargilyUrl: string | null = null
       if (settings?.chargilyKey) {
-        const cacheKey = `${settings.chargilyKey}::${amount}::${sub.plan.name}`
-        if (chargilyCache[cacheKey] !== undefined) {
-          chargilyUrl = chargilyCache[cacheKey]
-        } else {
-          chargilyUrl = await generateChargilyCheckout(settings.chargilyKey, amount, sub.plan.name, APP_URL)
-          chargilyCache[cacheKey] = chargilyUrl
-        }
+        chargilyUrl = await generateChargilyCheckout(settings.chargilyKey, amount, sub.plan.name, APP_URL, {
+          subscriptionId: sub.id,
+          companyId: sub.company.id,
+        })
       }
 
       const { subject, html } = renderEmail({

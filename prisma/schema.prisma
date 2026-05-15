@@ -51,7 +51,7 @@ model Company {
   employees          Employee[]
   taxDeclarations    TaxDeclaration[]
   aiConversations    AiConversation[]
-  integrations       Integration[]
+  subApiKeys         SubApiKey[]
   purchaseOrders     PurchaseOrder[]
   quotes             Quote[]
   notifications      Notification[]
@@ -820,25 +820,22 @@ model AiConversation {
 }
 
 // ============================================================
-// INTÉGRATIONS (Shopify, WooCommerce)
+// CLÉS API ABONNEMENTS (sub-api)
 // ============================================================
-model Integration {
-  id        String          @id @default(cuid())
-  companyId String
-  type      IntegrationType
-  config    Json
-  isActive  Boolean         @default(true)
-  lastSync  DateTime?
+model SubApiKey {
+  id         String    @id @default(cuid())
+  companyId  String
+  name       String?
+  keyHash    String    @unique
+  keyPrefix  String
+  lastUsedAt DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@unique([companyId, type])
   @@index([companyId])
-}
-
-enum IntegrationType {
-  SHOPIFY
-  WOOCOMMERCE
+  @@index([keyPrefix])
 }
 
 // ============================================================

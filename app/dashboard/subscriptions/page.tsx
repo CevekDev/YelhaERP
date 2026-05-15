@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
-import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX } from 'lucide-react'
+import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
@@ -205,6 +205,12 @@ export default function SubscriptionsPage() {
               ))}
             </div>
             <div className="flex-1" />
+            <Link href="/dashboard/subscriptions/integration">
+              <Button variant="outline" className="gap-2">
+                <Zap className="h-4 w-4" />
+                Intégration
+              </Button>
+            </Link>
             <Link href="/dashboard/subscriptions/settings">
               <Button variant="outline" className="gap-2">
                 <SettingsIcon className="h-4 w-4" />

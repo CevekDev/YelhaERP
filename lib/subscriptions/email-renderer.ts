@@ -184,6 +184,7 @@ export async function generateChargilyCheckout(
   amountDA: number,
   planName: string,
   successUrl = 'https://erp.yelha.net',
+  metadata?: { subscriptionId: string; companyId: string },
 ): Promise<string | null> {
   try {
     const res = await fetch('https://pay.chargily.net/api/v2/checkouts', {
@@ -195,6 +196,7 @@ export async function generateChargilyCheckout(
         success_url: successUrl,
         failure_url: successUrl,
         description: `${planName}`,
+        ...(metadata ? { metadata: { type: 'sub_renewal', ...metadata } } : {}),
       }),
     })
     if (!res.ok) return null
