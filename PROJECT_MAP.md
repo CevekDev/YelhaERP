@@ -403,6 +403,9 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 - ✅ Suivi abonnements clients
 - ✅ Paiements récurrents
 - ✅ Relances
+- ✅ Email rappel J-1 multilingue (FR/EN/AR) avec CCP + Chargily ePay
+- ✅ Champs par abonnement : email client, WhatsApp, CCP, clé Chargily, langue, message perso
+- ✅ Dialog édition paramètres email depuis la liste des abonnements
 
 ### IA
 - ✅ Chat IA contextuel (DeepSeek API)
@@ -435,7 +438,17 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ---
 
-## 🔄 Changements session 2026-05-15
+## 🔄 Changements session 2026-05-15 (suite)
+
+### Abonnements Clients — Rappels de renouvellement
+- ✅ `prisma/schema.prisma` : 6 nouveaux champs sur `Subscription` (clientEmail, whatsapp, ccpNumber, chargilyKey, emailLanguage, emailMessage)
+- ✅ `app/api/subscriptions/route.ts` : createSchema étendu avec les 6 nouveaux champs
+- ✅ `app/api/subscriptions/[id]/route.ts` : patchSchema étendu pour édition post-création
+- ✅ `app/dashboard/subscriptions/new/page.tsx` : nouvelle section "Paiement & Notifications" dans le formulaire (email, WhatsApp, CCP, Chargily, langue, message perso) avec auto-fill email depuis client
+- ✅ `app/dashboard/subscriptions/page.tsx` : bouton Mail par ligne + Dialog pour éditer les paramètres email après création
+- ✅ `app/api/cron/subscriptions-reminders/route.ts` : refonte complète — rappel J-1 (36h), email multilingue FR/EN/AR, génération lien Chargily checkout via API, section CCP, section WhatsApp, message personnalisé
+
+## 🔄 Changements session 2026-05-15 (original)
 
 ### Billing & Admin
 - ✅ `force-dynamic` ajouté sur `/api/app-billing/subscriptions/route.ts` (cache stale TRIAL corrigé)
@@ -457,6 +470,7 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ## 🚧 En cours / À faire
 
+- ⏳ `prisma db push` requis pour les 6 nouveaux champs sur `Subscription`
 - ⏳ Activation réelle de l'accès à l'app Abonnements via AppSubscription (vérification dans check-app-access.ts)
 - ⏳ Plans indépendants pour CRM, RH, Comptabilité, Paie (architecture prête, contenu en pause)
 - ⏳ Chargily Pay pour les paiements d'apps (actuellement CCP uniquement)

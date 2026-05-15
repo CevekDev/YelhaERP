@@ -6,10 +6,11 @@ import { Header } from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatDA } from '@/lib/algerian/format'
-import { Loader2, ArrowLeft, UserPlus, Search } from 'lucide-react'
+import { Loader2, ArrowLeft, UserPlus, Search, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -40,6 +41,14 @@ export default function NewSubscriptionPage() {
     name: '', firstName: '', phone: '', email: '', wilaya: '', address: '', clientType: 'INDIVIDUAL',
   })
 
+  // Notification fields
+  const [clientEmail, setClientEmail] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
+  const [ccpNumber, setCcpNumber] = useState('')
+  const [chargilyKey, setChargilyKey] = useState('')
+  const [emailLanguage, setEmailLanguage] = useState('fr')
+  const [emailMessage, setEmailMessage] = useState('')
+
   useEffect(() => {
     fetch('/api/subscriptions/plans').then(r => r.json()).then(d => {
       if (Array.isArray(d)) setPlans(d.filter((p: Plan & { isActive: boolean }) => p.isActive))
@@ -59,6 +68,21 @@ export default function NewSubscriptionPage() {
     return () => clearTimeout(timer)
   }, [clientSearch, clientMode])
 
+  // Auto-fill email from selected client
+  useEffect(() => {
+    if (clientMode === 'existing' && selectedClientId) {
+      const c = clients.find(cl => cl.id === selectedClientId)
+      if (c?.email && !clientEmail) setClientEmail(c.email)
+    }
+  }, [selectedClientId, clients, clientMode, clientEmail])
+
+  // Auto-fill email from new client form
+  useEffect(() => {
+    if (clientMode === 'new' && newClient.email && !clientEmail) {
+      setClientEmail(newClient.email)
+    }
+  }, [newClient.email, clientMode, clientEmail])
+
   const selectedPlan = plans.find(p => p.id === planId)
   const filteredClients = clients.filter(c =>
     [c.name, c.firstName, c.phone, c.email].join(' ').toLowerCase().includes(clientSearch.toLowerCase())
@@ -68,12 +92,21 @@ export default function NewSubscriptionPage() {
     if (!planId) { toast.error('Sélectionnez un plan'); return }
     if (clientMode === 'existing' && !selectedClientId) { toast.error('Sélectionnez un client'); return }
     if (clientMode === 'new' && !newClient.name) { toast.error('Nom du client requis'); return }
+    if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
+      toast.error('Email invalide'); return
+    }
 
     setSaving(true)
     const payload: Record<string, unknown> = {
       planId, status,
       startDate: new Date(startDate).toISOString(),
       notes: notes || undefined,
+      clientEmail: clientEmail || undefined,
+      whatsapp: whatsapp || undefined,
+      ccpNumber: ccpNumber || undefined,
+      chargilyKey: chargilyKey || undefined,
+      emailLanguage,
+      emailMessage: emailMessage || undefined,
     }
     if (clientMode === 'existing') payload.clientId = selectedClientId
     else payload.newClient = { ...newClient, firstName: newClient.firstName || undefined }
@@ -187,6 +220,7 @@ export default function NewSubscriptionPage() {
                       >
                         <span className="font-medium">{[c.firstName, c.name].filter(Boolean).join(' ')}</span>
                         {c.phone && <span className="text-muted-foreground ml-2 text-xs">{c.phone}</span>}
+                        {c.email && <span className="text-muted-foreground ml-2 text-xs">{c.email}</span>}
                       </button>
                     ))}
                     {filteredClients.length === 0 && (
@@ -244,6 +278,87 @@ export default function NewSubscriptionPage() {
             </CardContent>
           </Card>
 
+          {/* Payment & Notifications */}
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold">Paiement & Notifications</h2>
+              </div>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Votre client recevra un email de rappel 1 jour avant l&apos;expiration avec les options de paiement.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                  <Label>Email du client <span className="text-xs text-muted-foreground">(pour le rappel)</span></Label>
+                  <Input
+                    type="email"
+                    value={clientEmail}
+                    onChange={e => setClientEmail(e.target.value)}
+                    placeholder="client@exemple.com"
+                  />
+                </div>
+                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                  <Label>Votre WhatsApp <span className="text-xs text-muted-foreground">(affiché au client)</span></Label>
+                  <Input
+                    value={whatsapp}
+                    onChange={e => setWhatsapp(e.target.value)}
+                    placeholder="+213 5XX XX XX XX"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Votre numéro CCP</Label>
+                  <Input
+                    value={ccpNumber}
+                    onChange={e => setCcpNumber(e.target.value)}
+                    placeholder="123456789 / Clé 12"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Votre clé Chargily ePay</Label>
+                  <Input
+                    type="password"
+                    value={chargilyKey}
+                    onChange={e => setChargilyKey(e.target.value)}
+                    placeholder="test_sk_..."
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Langue de l&apos;email</Label>
+                <Select value={emailLanguage} onValueChange={setEmailLanguage}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="ar">🇩🇿 العربية</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Message personnalisé <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
+                <Textarea
+                  value={emailMessage}
+                  onChange={e => setEmailMessage(e.target.value)}
+                  placeholder="Ajoutez un message personnalisé dans l'email de rappel..."
+                  rows={3}
+                  maxLength={2000}
+                />
+                {emailMessage && (
+                  <p className="text-xs text-muted-foreground text-right">{emailMessage.length}/2000</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Options */}
           <Card>
             <CardContent className="p-5 space-y-4">
@@ -266,7 +381,7 @@ export default function NewSubscriptionPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Notes</Label>
+                <Label>Notes internes</Label>
                 <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes internes..." />
               </div>
             </CardContent>
@@ -284,6 +399,9 @@ export default function NewSubscriptionPage() {
               {clientMode === 'new' && newClient.name && (
                 <p>Client : <strong>{[newClient.firstName, newClient.name].filter(Boolean).join(' ')}</strong> (nouveau)</p>
               )}
+              {clientEmail && <p>Email rappel : <strong>{clientEmail}</strong></p>}
+              {ccpNumber && <p>CCP : <strong>{ccpNumber}</strong></p>}
+              {chargilyKey && <p>Chargily : <strong>configuré</strong></p>}
             </div>
           )}
 

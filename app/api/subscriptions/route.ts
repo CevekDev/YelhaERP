@@ -22,6 +22,13 @@ const createSchema = z.object({
   endDate:     z.string().datetime().optional().nullable(),
   nextBilling: z.string().datetime().optional().nullable(),
   notes:       z.string().max(1000).optional(),
+  // Notifications de renouvellement
+  clientEmail:   z.string().email().optional(),
+  whatsapp:      z.string().max(30).optional(),
+  ccpNumber:     z.string().max(50).optional(),
+  chargilyKey:   z.string().max(200).optional(),
+  emailLanguage: z.enum(['fr', 'en', 'ar']).default('fr'),
+  emailMessage:  z.string().max(2000).optional(),
 })
 
 export async function GET(req: NextRequest) {
@@ -63,7 +70,8 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) return apiError('Données invalides', 400)
 
-  const { planId, clientId, newClient, status, startDate, endDate, nextBilling, notes } = parsed.data
+  const { planId, clientId, newClient, status, startDate, endDate, nextBilling, notes,
+          clientEmail, whatsapp, ccpNumber, chargilyKey, emailLanguage, emailMessage } = parsed.data
 
   // Validate plan
   const plan = await prisma.subscriptionPlan.findFirst({
@@ -103,14 +111,20 @@ export async function POST(req: NextRequest) {
 
   const subscription = await prisma.subscription.create({
     data: {
-      companyId:   ctx.companyId,
-      clientId:    resolvedClientId,
+      companyId:    ctx.companyId,
+      clientId:     resolvedClientId,
       planId,
       status,
-      startDate:   startDate ? new Date(startDate) : new Date(),
-      endDate:     endDate ? new Date(endDate) : null,
-      nextBilling: computedNextBilling,
+      startDate:    startDate ? new Date(startDate) : new Date(),
+      endDate:      endDate ? new Date(endDate) : null,
+      nextBilling:  computedNextBilling,
       notes,
+      clientEmail:  clientEmail || undefined,
+      whatsapp:     whatsapp || undefined,
+      ccpNumber:    ccpNumber || undefined,
+      chargilyKey:  chargilyKey || undefined,
+      emailLanguage,
+      emailMessage: emailMessage || undefined,
     },
     include: {
       client: { select: { id: true, name: true, firstName: true, phone: true } },
