@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getTenantContext } from '@/lib/security/tenant'
 import { apiSuccess, apiError } from '@/lib/security/api-response'
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const updated = await prisma.subscriptionSettings.update({
     where: { companyId: ctx.companyId },
-    data: { emailTemplates: templates },
+    data: { emailTemplates: templates as Prisma.InputJsonValue },
   })
 
   return apiSuccess(updated)
