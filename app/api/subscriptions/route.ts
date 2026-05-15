@@ -124,9 +124,10 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Fire-and-forget welcome email
+  // Email de bienvenue — on attend l'envoi (sur Vercel serverless, le fire-and-forget
+  // est tué avant la fin de la requête). sendWelcomeEmail catche déjà ses erreurs en interne.
   if (subscription.clientEmail) {
-    sendWelcomeEmail(subscription.id).catch(() => { /* erreurs déjà loguées */ })
+    await sendWelcomeEmail(subscription.id)
   }
 
   return apiSuccess(subscription, 201)

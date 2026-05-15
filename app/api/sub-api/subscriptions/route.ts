@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       },
     })
     if (sub.clientEmail) {
-      sendWelcomeEmail(sub.id).catch(() => { /* erreurs déjà loguées */ })
+      await sendWelcomeEmail(sub.id)
     }
 
     return ok({ data: sub }, 201)
