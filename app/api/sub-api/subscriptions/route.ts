@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { withSubApi, ok, apiError } from '@/lib/sub-api/auth'
+import { sendWelcomeEmail } from '@/lib/subscriptions/send-welcome'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,6 +127,10 @@ export async function POST(req: NextRequest) {
         plan:   { select: { id: true, name: true, price: true, interval: true } },
       },
     })
+    if (sub.clientEmail) {
+      sendWelcomeEmail(sub.id).catch(() => { /* erreurs déjà loguées */ })
+    }
+
     return ok({ data: sub }, 201)
   })
 }

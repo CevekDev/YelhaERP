@@ -30,6 +30,7 @@ interface Settings {
 }
 
 const TYPE_LABELS: Record<EmailType, { label: string; icon: string; description: string }> = {
+  welcome:  { label: 'Bienvenue',          icon: '🎉', description: 'Envoyé au client dès la création de son abonnement' },
   renewal:  { label: 'Renouvellement',     icon: '⚠️', description: 'Envoyé 1 jour avant l\'expiration d\'un abonnement actif' },
   trialEnd: { label: 'Fin d\'essai gratuit', icon: '🎁', description: 'Envoyé 1 jour avant la fin d\'une période d\'essai' },
 }
@@ -348,7 +349,7 @@ export default function SubscriptionSettingsPage() {
             <Card>
               <CardContent className="p-6 space-y-5">
                 {/* Type selector */}
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid sm:grid-cols-3 gap-3">
                   {(Object.keys(TYPE_LABELS) as EmailType[]).map(t => (
                     <button
                       key={t}

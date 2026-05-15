@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { getTenantContext } from '@/lib/security/tenant'
 import { apiSuccess, apiError } from '@/lib/security/api-response'
+import { sendWelcomeEmail } from '@/lib/subscriptions/send-welcome'
 
 const createSchema = z.object({
   planId:      z.string(),
@@ -122,6 +123,11 @@ export async function POST(req: NextRequest) {
       plan:   { select: { id: true, name: true, price: true, currency: true, interval: true, intervalCount: true, trialDays: true } },
     },
   })
+
+  // Fire-and-forget welcome email
+  if (subscription.clientEmail) {
+    sendWelcomeEmail(subscription.id).catch(() => { /* erreurs déjà loguées */ })
+  }
 
   return apiSuccess(subscription, 201)
 }

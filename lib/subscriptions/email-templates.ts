@@ -1,5 +1,5 @@
 export type EmailLang = 'fr' | 'en' | 'ar'
-export type EmailType = 'renewal' | 'trialEnd'
+export type EmailType = 'renewal' | 'trialEnd' | 'welcome'
 
 export interface EmailTemplate {
   subject: string
@@ -77,6 +77,32 @@ Use one of the payment methods below to activate your subscription.`,
 للاستمرار في الاستفادة من خدماتنا، اشترك الآن بـ **{{amount}}** فقط.
 
 استخدم إحدى وسائل الدفع أدناه لتفعيل اشتراكك.`,
+    },
+  },
+  welcome: {
+    fr: {
+      subject: '🎉 Bienvenue chez {{companyName}}',
+      body: `Bonjour {{clientName}},
+
+Nous sommes ravis de vous compter parmi nos abonnés ! Votre abonnement au plan **{{planName}}** est désormais actif.
+
+Nous restons à votre disposition pour toute question. Bienvenue à bord ! 🚀`,
+    },
+    en: {
+      subject: '🎉 Welcome to {{companyName}}',
+      body: `Hello {{clientName}},
+
+We're thrilled to have you on board! Your subscription to the **{{planName}}** plan is now active.
+
+We're here to help with any questions you may have. Welcome aboard! 🚀`,
+    },
+    ar: {
+      subject: '🎉 مرحباً بك في {{companyName}}',
+      body: `مرحباً {{clientName}}،
+
+يسعدنا انضمامك إلينا! اشتراكك في خطة **{{planName}}** مفعّل الآن.
+
+نحن في خدمتك لأي استفسار. أهلاً بك! 🚀`,
     },
   },
 }
