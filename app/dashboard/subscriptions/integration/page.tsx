@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Loader2, ArrowLeft, Key, Plus, Copy, Trash2, Check, BookOpen, Download,
-  AlertTriangle, Webhook, Zap, RefreshCw, Eye, EyeOff,
+  AlertTriangle, Zap, Eye, EyeOff,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -111,10 +110,6 @@ export default function IntegrationPage() {
               <Key className="h-4 w-4" />
               Clés API
             </TabsTrigger>
-            <TabsTrigger value="webhook" className="gap-2">
-              <Webhook className="h-4 w-4" />
-              Webhook Chargily
-            </TabsTrigger>
             <TabsTrigger value="docs" className="gap-2">
               <BookOpen className="h-4 w-4" />
               Documentation
@@ -180,67 +175,6 @@ export default function IntegrationPage() {
                   <div className="text-amber-900 dark:text-amber-200">
                     Une clé n&apos;est affichée <strong>qu&apos;une seule fois</strong> à sa création. Conservez-la dans un endroit sûr.
                     En cas de perte ou compromission, révoquez-la et générez-en une nouvelle.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* WEBHOOK TAB */}
-          <TabsContent value="webhook" className="space-y-5">
-            <Card>
-              <CardContent className="p-6 space-y-5">
-                <div>
-                  <h2 className="font-semibold text-lg flex items-center gap-2">
-                    <Webhook className="h-4 w-4 text-primary" />
-                    Webhook Chargily — paiement automatique
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Configurez ce webhook dans votre compte Chargily pour activer automatiquement les abonnements à chaque paiement réussi.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>URL du webhook</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      readOnly
-                      value="https://erp.yelha.net/api/webhooks/chargily-subscriptions"
-                      className="font-mono text-xs"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => copyToClipboard('https://erp.yelha.net/api/webhooks/chargily-subscriptions', 'URL copiée')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-sm">
-                  <div className="flex gap-3">
-                    <Badge className="rounded-full w-6 h-6 p-0 flex items-center justify-center shrink-0">1</Badge>
-                    <p>Connectez-vous sur <a href="https://pay.chargily.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">pay.chargily.net</a> → <strong>Développeurs</strong> → <strong>Webhooks</strong></p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Badge className="rounded-full w-6 h-6 p-0 flex items-center justify-center shrink-0">2</Badge>
-                    <p>Créez un webhook avec l&apos;URL ci-dessus et cochez l&apos;événement <code className="px-1.5 py-0.5 bg-muted rounded text-xs">checkout.paid</code></p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Badge className="rounded-full w-6 h-6 p-0 flex items-center justify-center shrink-0">3</Badge>
-                    <p>Le <strong>secret du webhook</strong> doit être identique à votre clé secrète Chargily (configurée dans <strong>Paramètres → Paiement</strong>).</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Badge className="rounded-full w-6 h-6 p-0 flex items-center justify-center shrink-0">4</Badge>
-                    <p>Quand un paiement est validé, l&apos;abonnement passe automatiquement à <strong>ACTIVE</strong> et la prochaine échéance est étendue.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 items-start p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-sm">
-                  <Zap className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                  <div className="text-blue-900 dark:text-blue-200">
-                    Les paiements <strong>en attente</strong> ou <strong>échoués</strong> ne sont jamais stockés en base. Seuls les paiements confirmés impactent vos abonnements.
                   </div>
                 </div>
               </CardContent>

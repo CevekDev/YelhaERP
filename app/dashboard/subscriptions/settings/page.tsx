@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, ArrowLeft, Save, RotateCcw, CreditCard, Mail, MessageCircle, Eye, Wand2, AlertTriangle } from 'lucide-react'
+import { Loader2, ArrowLeft, Save, RotateCcw, CreditCard, Mail, MessageCircle, Eye, Wand2, AlertTriangle, Webhook, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   DEFAULT_TEMPLATES,
@@ -229,6 +229,10 @@ export default function SubscriptionSettingsPage() {
             <TabsTrigger value="email" className="gap-2">
               <Mail className="h-4 w-4" />
               Emails
+            </TabsTrigger>
+            <TabsTrigger value="webhook" className="gap-2">
+              <Webhook className="h-4 w-4" />
+              Webhook
             </TabsTrigger>
           </TabsList>
 
@@ -458,6 +462,63 @@ export default function SubscriptionSettingsPage() {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* WEBHOOK TAB */}
+          <TabsContent value="webhook" className="space-y-5">
+            <Card>
+              <CardContent className="p-6 space-y-5">
+                <div>
+                  <h2 className="font-semibold text-lg flex items-center gap-2">
+                    <Webhook className="h-4 w-4 text-primary" />
+                    Activation automatique des paiements Chargily
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Quand un client paye via Chargily, son abonnement passe automatiquement en <strong>Actif</strong>.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Copiez cette URL :</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value="https://erp.yelha.net/api/webhooks/chargily-subscriptions"
+                      className="font-mono text-xs"
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://erp.yelha.net/api/webhooks/chargily-subscriptions')
+                          .then(() => toast.success('URL copiée'))
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2 text-sm">
+                  <p className="font-semibold text-primary">Comment l&apos;ajouter dans Chargily :</p>
+                  <ol className="list-decimal list-inside space-y-1 text-foreground/90">
+                    <li>Allez sur <a href="https://pay.chargily.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">pay.chargily.net</a> → onglet <strong>Webhooks</strong></li>
+                    <li>Cliquez sur <strong>« Ajouter un webhook »</strong> et collez l&apos;URL ci-dessus</li>
+                    <li>Sauvegardez. C&apos;est tout ✅</li>
+                  </ol>
+                </div>
+
+                {!settings.chargilyKey && (
+                  <div className="flex gap-3 items-start p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="text-amber-900 dark:text-amber-200">
+                      Renseignez d&apos;abord votre <strong>clé Chargily</strong> dans l&apos;onglet <strong>Paiement</strong>. Sans elle, le webhook ne peut pas vérifier les paiements.
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
