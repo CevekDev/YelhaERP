@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
-import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap } from 'lucide-react'
+import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap, Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
@@ -52,6 +52,10 @@ export default function SubscriptionsPage() {
   const [emailValue, setEmailValue] = useState('')
   const [savingEmail, setSavingEmail] = useState(false)
 
+  // Delete confirmation dialog
+  const [deleteSub, setDeleteSub] = useState<Sub | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   const fetchSubs = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
@@ -80,6 +84,21 @@ export default function SubscriptionsPage() {
   function openEmailDialog(sub: Sub) {
     setEmailValue(sub.clientEmail ?? '')
     setEmailDialogSub(sub)
+  }
+
+  async function confirmDelete() {
+    if (!deleteSub) return
+    setDeleting(true)
+    const res = await fetch(`/api/subscriptions/${deleteSub.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      toast.success('Abonnement supprimé')
+      setDeleteSub(null)
+      fetchSubs()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.error(d.error ?? 'Erreur de suppression')
+    }
+    setDeleting(false)
   }
 
   async function saveEmail() {
@@ -173,6 +192,9 @@ export default function SubscriptionsPage() {
               <XCircle className="h-4 w-4 text-destructive" />
             </Button>
           )}
+          <Button variant="ghost" size="icon" title="Supprimer définitivement" onClick={() => setDeleteSub(row)}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
         </div>
       ),
     },
@@ -272,6 +294,41 @@ export default function SubscriptionsPage() {
                 <Button onClick={saveEmail} disabled={savingEmail}>
                   {savingEmail ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
                   Enregistrer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteSub} onOpenChange={open => { if (!open) setDeleteSub(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Supprimer l&apos;abonnement
+            </DialogTitle>
+          </DialogHeader>
+          {deleteSub && (
+            <div className="space-y-4 mt-2">
+              <p className="text-sm">
+                Voulez-vous vraiment supprimer définitivement l&apos;abonnement de{' '}
+                <strong>{[deleteSub.client.firstName, deleteSub.client.name].filter(Boolean).join(' ')}</strong>
+                {' '}({deleteSub.plan.name}) ?
+              </p>
+              <div className="flex gap-3 items-start p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <div className="text-destructive">
+                  Cette action est <strong>irréversible</strong>. L&apos;abonnement disparaîtra complètement.
+                  Pour le conserver dans l&apos;historique, utilisez plutôt <strong>Annuler</strong> (croix rouge).
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setDeleteSub(null)}>Annuler</Button>
+                <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+                  {deleting ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  Supprimer définitivement
                 </Button>
               </div>
             </div>

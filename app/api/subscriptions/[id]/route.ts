@@ -64,3 +64,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   })
   return apiSuccess(updated)
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const ctx = await getTenantContext()
+  if (!ctx) return apiError('Non autorisé', 401)
+
+  const sub = await prisma.subscription.findFirst({
+    where: { id: params.id, companyId: ctx.companyId },
+  })
+  if (!sub) return apiError('Abonnement introuvable', 404)
+
+  await prisma.subscription.delete({ where: { id: params.id } })
+  return apiSuccess({ deleted: true })
+}

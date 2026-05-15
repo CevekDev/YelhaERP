@@ -108,8 +108,9 @@ We're here to help with any questions you may have. Welcome aboard! 🚀`,
 }
 
 export interface TemplatesByLang {
-  renewal?: Partial<Record<EmailLang, Partial<EmailTemplate>>>
+  renewal?:  Partial<Record<EmailLang, Partial<EmailTemplate>>>
   trialEnd?: Partial<Record<EmailLang, Partial<EmailTemplate>>>
+  welcome?:  Partial<Record<EmailLang, Partial<EmailTemplate>>>
 }
 
 export function getTemplate(

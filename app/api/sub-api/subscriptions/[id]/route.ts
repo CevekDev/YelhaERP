@@ -66,11 +66,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const sub = await prisma.subscription.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
     if (!sub) return apiError('Abonnement introuvable', 404, 'NOT_FOUND')
 
-    const cancelled = await prisma.subscription.update({
-      where: { id: params.id },
-      data: { status: 'CANCELLED', cancelledAt: new Date() },
-      include: SUB_INCLUDE,
-    })
-    return ok({ data: cancelled })
+    await prisma.subscription.delete({ where: { id: params.id } })
+    return ok({ data: { deleted: true } })
   })
 }

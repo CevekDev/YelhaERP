@@ -265,13 +265,19 @@ Content-Type: application/json
 - Réactiver : \`{ "status": "ACTIVE" }\`
 - Étendre une période : \`{ "nextBilling": "..." }\`
 
-## Annuler un abonnement
+## Supprimer un abonnement
 
 \`\`\`http
 DELETE /api/sub-api/subscriptions/{id}
 \`\`\`
 
-→ Statut passe à \`CANCELLED\`, \`cancelledAt\` est défini.
+→ Suppression **définitive** de la base. L'abonnement disparaît complètement.
+
+> 💡 Pour simplement **annuler** sans supprimer (garder dans l'historique), utilisez plutôt :
+> \`\`\`http
+> PATCH /api/sub-api/subscriptions/{id}
+> { "status": "CANCELLED" }
+> \`\`\`
 
 ## Générer un lien de paiement Chargily
 
