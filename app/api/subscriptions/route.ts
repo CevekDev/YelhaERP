@@ -7,7 +7,6 @@ import { apiSuccess, apiError } from '@/lib/security/api-response'
 const createSchema = z.object({
   planId:      z.string(),
   clientId:    z.string().optional(),
-  // If no clientId → create client inline
   newClient: z.object({
     name:      z.string().min(1).max(200),
     firstName: z.string().max(100).optional(),
@@ -22,13 +21,7 @@ const createSchema = z.object({
   endDate:     z.string().datetime().optional().nullable(),
   nextBilling: z.string().datetime().optional().nullable(),
   notes:       z.string().max(1000).optional(),
-  // Notifications de renouvellement
-  clientEmail:   z.string().email().optional(),
-  whatsapp:      z.string().max(30).optional(),
-  ccpNumber:     z.string().max(50).optional(),
-  chargilyKey:   z.string().max(200).optional(),
-  emailLanguage: z.enum(['fr', 'en', 'ar']).default('fr'),
-  emailMessage:  z.string().max(2000).optional(),
+  clientEmail: z.string().email().optional(),
 })
 
 export async function GET(req: NextRequest) {
@@ -52,7 +45,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         client: { select: { id: true, name: true, firstName: true, phone: true, email: true } },
-        plan:   { select: { id: true, name: true, price: true, currency: true, interval: true, intervalCount: true } },
+        plan:   { select: { id: true, name: true, price: true, currency: true, interval: true, intervalCount: true, trialDays: true } },
       },
     }),
     prisma.subscription.count({ where }),
@@ -70,16 +63,13 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) return apiError('Données invalides', 400)
 
-  const { planId, clientId, newClient, status, startDate, endDate, nextBilling, notes,
-          clientEmail, whatsapp, ccpNumber, chargilyKey, emailLanguage, emailMessage } = parsed.data
+  const { planId, clientId, newClient, status, startDate, endDate, nextBilling, notes, clientEmail } = parsed.data
 
-  // Validate plan
   const plan = await prisma.subscriptionPlan.findFirst({
     where: { id: planId, companyId: ctx.companyId, isActive: true },
   })
   if (!plan) return apiError('Plan introuvable ou inactif', 422)
 
-  // Resolve client
   let resolvedClientId: string
   if (clientId) {
     const cl = await prisma.client.findFirst({ where: { id: clientId, companyId: ctx.companyId } })
@@ -94,41 +84,42 @@ export async function POST(req: NextRequest) {
     return apiError('Veuillez sélectionner ou créer un client', 422)
   }
 
-  // Compute nextBilling if not provided
+  // Compute nextBilling
   let computedNextBilling = nextBilling ? new Date(nextBilling) : null
-  if (!computedNextBilling && status === 'ACTIVE') {
+  if (!computedNextBilling) {
     const start = startDate ? new Date(startDate) : new Date()
-    computedNextBilling = new Date(start)
-    const count = plan.intervalCount
-    switch (plan.interval) {
-      case 'DAILY':     computedNextBilling.setDate(start.getDate() + count); break
-      case 'WEEKLY':    computedNextBilling.setDate(start.getDate() + count * 7); break
-      case 'MONTHLY':   computedNextBilling.setMonth(start.getMonth() + count); break
-      case 'QUARTERLY': computedNextBilling.setMonth(start.getMonth() + count * 3); break
-      case 'YEARLY':    computedNextBilling.setFullYear(start.getFullYear() + count); break
+    if (status === 'TRIAL' && plan.trialDays && plan.trialDays > 0) {
+      // Trial ends after trialDays
+      computedNextBilling = new Date(start)
+      computedNextBilling.setDate(start.getDate() + plan.trialDays)
+    } else if (status === 'ACTIVE') {
+      computedNextBilling = new Date(start)
+      const count = plan.intervalCount
+      switch (plan.interval) {
+        case 'DAILY':     computedNextBilling.setDate(start.getDate() + count); break
+        case 'WEEKLY':    computedNextBilling.setDate(start.getDate() + count * 7); break
+        case 'MONTHLY':   computedNextBilling.setMonth(start.getMonth() + count); break
+        case 'QUARTERLY': computedNextBilling.setMonth(start.getMonth() + count * 3); break
+        case 'YEARLY':    computedNextBilling.setFullYear(start.getFullYear() + count); break
+      }
     }
   }
 
   const subscription = await prisma.subscription.create({
     data: {
-      companyId:    ctx.companyId,
-      clientId:     resolvedClientId,
+      companyId:   ctx.companyId,
+      clientId:    resolvedClientId,
       planId,
       status,
-      startDate:    startDate ? new Date(startDate) : new Date(),
-      endDate:      endDate ? new Date(endDate) : null,
-      nextBilling:  computedNextBilling,
+      startDate:   startDate ? new Date(startDate) : new Date(),
+      endDate:     endDate ? new Date(endDate) : null,
+      nextBilling: computedNextBilling,
       notes,
-      clientEmail:  clientEmail || undefined,
-      whatsapp:     whatsapp || undefined,
-      ccpNumber:    ccpNumber || undefined,
-      chargilyKey:  chargilyKey || undefined,
-      emailLanguage,
-      emailMessage: emailMessage || undefined,
+      clientEmail: clientEmail || undefined,
     },
     include: {
-      client: { select: { id: true, name: true, firstName: true, phone: true } },
-      plan:   { select: { id: true, name: true, price: true, currency: true, interval: true } },
+      client: { select: { id: true, name: true, firstName: true, phone: true, email: true } },
+      plan:   { select: { id: true, name: true, price: true, currency: true, interval: true, intervalCount: true, trialDays: true } },
     },
   })
 

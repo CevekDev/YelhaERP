@@ -91,8 +91,9 @@ model Company {
   deliveryDrivers    DeliveryDriver[]
   ecomOrders         EcomOrder[]
   // Abonnements
-  subscriptionPlans  SubscriptionPlan[]
-  subscriptions      Subscription[]
+  subscriptionPlans     SubscriptionPlan[]
+  subscriptions         Subscription[]
+  subscriptionSettings  SubscriptionSettings?
   // Restaurant
   restaurantConfig   RestaurantConfig?
   restaurantRooms    RestaurantRoom[]
@@ -1829,13 +1830,11 @@ model Subscription {
   nextBilling    DateTime?
   cancelledAt    DateTime?
   notes          String?    @db.Text
-  // Notifications de renouvellement
+  // Email du client (pour rappels)
   clientEmail    String?
-  whatsapp       String?
-  ccpNumber      String?
-  chargilyKey    String?
-  emailLanguage  String     @default("fr")
-  emailMessage   String?    @db.Text
+  // Anti-spam : derniers emails envoyés (date)
+  lastRenewalReminderAt DateTime?
+  lastTrialEndReminderAt DateTime?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
@@ -1846,6 +1845,22 @@ model Subscription {
   @@index([companyId])
   @@index([companyId, status])
   @@index([clientId])
+}
+
+model SubscriptionSettings {
+  id             String   @id @default(cuid())
+  companyId      String   @unique
+  // Paiement (affichés dans les emails de rappel)
+  whatsapp       String?
+  ccpNumber      String?
+  chargilyKey    String?
+  // Email
+  emailLanguage  String   @default("fr") // fr | en | ar
+  emailTemplates Json     @default("{}") // { renewal: { fr: {subject, body}, ... }, trialEnd: { ... } }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 enum SubInterval {

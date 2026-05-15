@@ -5,18 +5,12 @@ import { getTenantContext } from '@/lib/security/tenant'
 import { apiSuccess, apiError } from '@/lib/security/api-response'
 
 const patchSchema = z.object({
-  status:        z.enum(['TRIAL', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']).optional(),
-  planId:        z.string().optional(),
-  endDate:       z.string().datetime().optional().nullable(),
-  nextBilling:   z.string().datetime().optional().nullable(),
-  notes:         z.string().max(1000).optional(),
-  // Notifications de renouvellement
-  clientEmail:   z.string().email().optional().nullable(),
-  whatsapp:      z.string().max(30).optional().nullable(),
-  ccpNumber:     z.string().max(50).optional().nullable(),
-  chargilyKey:   z.string().max(200).optional().nullable(),
-  emailLanguage: z.enum(['fr', 'en', 'ar']).optional(),
-  emailMessage:  z.string().max(2000).optional().nullable(),
+  status:      z.enum(['TRIAL', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']).optional(),
+  planId:      z.string().optional(),
+  endDate:     z.string().datetime().optional().nullable(),
+  nextBilling: z.string().datetime().optional().nullable(),
+  notes:       z.string().max(1000).optional(),
+  clientEmail: z.string().email().optional().nullable(),
 })
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -64,8 +58,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     where: { id: params.id },
     data: updateData,
     include: {
-      client: { select: { id: true, name: true, firstName: true, phone: true } },
-      plan:   { select: { id: true, name: true, price: true, currency: true, interval: true } },
+      client: { select: { id: true, name: true, firstName: true, phone: true, email: true } },
+      plan:   { select: { id: true, name: true, price: true, currency: true, interval: true, intervalCount: true } },
     },
   })
   return apiSuccess(updated)

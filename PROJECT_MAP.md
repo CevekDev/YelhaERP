@@ -184,6 +184,7 @@ YelhaERP/
 
 ### Abonnements clients
 - `SubscriptionPlan`, `Subscription`
+- `SubscriptionSettings` — Paramètres centralisés par company (paiement + templates email)
 
 ### Facturation SaaS YelhaERP
 - `YelhaSubscription` — Abonnement ERP global (TRIAL/ACTIVE/PAST_DUE/CANCELLED/PAUSED/EXPIRED)
@@ -402,10 +403,13 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 - ✅ Plans d'abonnement personnalisables
 - ✅ Suivi abonnements clients
 - ✅ Paiements récurrents
-- ✅ Relances
-- ✅ Email rappel J-1 multilingue (FR/EN/AR) avec CCP + Chargily ePay
-- ✅ Champs par abonnement : email client, WhatsApp, CCP, clé Chargily, langue, message perso
-- ✅ Dialog édition paramètres email depuis la liste des abonnements
+- ✅ Relances automatiques
+- ✅ **Paramètres centralisés** (`/dashboard/subscriptions/settings`) — WhatsApp, CCP, clé Chargily (un seul endroit pour toute la company)
+- ✅ **Email templates personnalisables** par type (renouvellement + fin d'essai) × 3 langues (FR/EN/AR) avec aperçu live et réinitialisation
+- ✅ **Email rappel J-1** automatique pour abonnements ACTIVE (renouvellement) et TRIAL (fin d'essai)
+- ✅ Boutons paiement dans l'email : virement CCP, Chargily ePay (si clé configurée), WhatsApp
+- ✅ Anti-spam (un seul rappel par 24h grâce à `lastRenewalReminderAt` / `lastTrialEndReminderAt`)
+- ✅ Email client modifiable par abonnement depuis la liste
 
 ### IA
 - ✅ Chat IA contextuel (DeepSeek API)

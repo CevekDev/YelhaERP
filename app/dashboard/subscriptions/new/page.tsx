@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatDA } from '@/lib/algerian/format'
-import { Loader2, ArrowLeft, UserPlus, Search, Mail } from 'lucide-react'
+import { Loader2, ArrowLeft, UserPlus, Search, Settings as SettingsIcon, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -35,24 +35,25 @@ export default function NewSubscriptionPage() {
   const [status, setStatus] = useState('ACTIVE')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
+
+  // Settings status (to show warning if not configured)
+  const [settingsConfigured, setSettingsConfigured] = useState<boolean | null>(null)
 
   // New client fields
   const [newClient, setNewClient] = useState({
     name: '', firstName: '', phone: '', email: '', wilaya: '', address: '', clientType: 'INDIVIDUAL',
   })
 
-  // Notification fields
-  const [clientEmail, setClientEmail] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
-  const [ccpNumber, setCcpNumber] = useState('')
-  const [chargilyKey, setChargilyKey] = useState('')
-  const [emailLanguage, setEmailLanguage] = useState('fr')
-  const [emailMessage, setEmailMessage] = useState('')
-
   useEffect(() => {
     fetch('/api/subscriptions/plans').then(r => r.json()).then(d => {
       if (Array.isArray(d)) setPlans(d.filter((p: Plan & { isActive: boolean }) => p.isActive))
       setLoadingPlans(false)
+    })
+    fetch('/api/subscriptions/settings').then(r => r.json()).then(d => {
+      if (d && !d.error) {
+        setSettingsConfigured(!!(d.ccpNumber || d.chargilyKey || d.whatsapp))
+      }
     })
   }, [])
 
@@ -102,11 +103,6 @@ export default function NewSubscriptionPage() {
       startDate: new Date(startDate).toISOString(),
       notes: notes || undefined,
       clientEmail: clientEmail || undefined,
-      whatsapp: whatsapp || undefined,
-      ccpNumber: ccpNumber || undefined,
-      chargilyKey: chargilyKey || undefined,
-      emailLanguage,
-      emailMessage: emailMessage || undefined,
     }
     if (clientMode === 'existing') payload.clientId = selectedClientId
     else payload.newClient = { ...newClient, firstName: newClient.firstName || undefined }
@@ -137,6 +133,22 @@ export default function NewSubscriptionPage() {
             <p className="text-muted-foreground text-sm">Assignez un plan à un client.</p>
           </div>
         </div>
+
+        {settingsConfigured === false && (
+          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm text-amber-900 dark:text-amber-200">
+              <p className="font-semibold mb-1">Paramètres de paiement non configurés</p>
+              <p>Vos coordonnées (CCP, WhatsApp, Chargily) ne sont pas renseignées. Les emails de rappel envoyés aux clients ne contiendront aucune option de paiement.</p>
+            </div>
+            <Link href="/dashboard/subscriptions/settings">
+              <Button size="sm" variant="outline" className="gap-1.5">
+                <SettingsIcon className="h-3.5 w-3.5" />
+                Configurer
+              </Button>
+            </Link>
+          </div>
+        )}
 
         <div className="space-y-5">
           {/* Plan selection */}
@@ -278,82 +290,30 @@ export default function NewSubscriptionPage() {
             </CardContent>
           </Card>
 
-          {/* Payment & Notifications */}
+          {/* Reminder email */}
           <Card>
             <CardContent className="p-5 space-y-4">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                <h2 className="font-semibold">Paiement & Notifications</h2>
+              <div>
+                <h2 className="font-semibold">Email de rappel</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Adresse à laquelle le client recevra son rappel 1 jour avant l&apos;expiration (ou la fin d&apos;essai).
+                  <Link href="/dashboard/subscriptions/settings" className="text-primary underline ml-1">
+                    Configurer le contenu et la langue
+                  </Link>
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground -mt-1">
-                Votre client recevra un email de rappel 1 jour avant l&apos;expiration avec les options de paiement.
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                  <Label>Email du client <span className="text-xs text-muted-foreground">(pour le rappel)</span></Label>
-                  <Input
-                    type="email"
-                    value={clientEmail}
-                    onChange={e => setClientEmail(e.target.value)}
-                    placeholder="client@exemple.com"
-                  />
-                </div>
-                <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                  <Label>Votre WhatsApp <span className="text-xs text-muted-foreground">(affiché au client)</span></Label>
-                  <Input
-                    value={whatsapp}
-                    onChange={e => setWhatsapp(e.target.value)}
-                    placeholder="+213 5XX XX XX XX"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Votre numéro CCP</Label>
-                  <Input
-                    value={ccpNumber}
-                    onChange={e => setCcpNumber(e.target.value)}
-                    placeholder="123456789 / Clé 12"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Votre clé Chargily ePay</Label>
-                  <Input
-                    type="password"
-                    value={chargilyKey}
-                    onChange={e => setChargilyKey(e.target.value)}
-                    placeholder="test_sk_..."
-                  />
-                </div>
-              </div>
-
               <div className="space-y-1.5">
-                <Label>Langue de l&apos;email</Label>
-                <Select value={emailLanguage} onValueChange={setEmailLanguage}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fr">🇫🇷 Français</SelectItem>
-                    <SelectItem value="en">🇬🇧 English</SelectItem>
-                    <SelectItem value="ar">🇩🇿 العربية</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Message personnalisé <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
-                <Textarea
-                  value={emailMessage}
-                  onChange={e => setEmailMessage(e.target.value)}
-                  placeholder="Ajoutez un message personnalisé dans l'email de rappel..."
-                  rows={3}
-                  maxLength={2000}
+                <Label>Email du client</Label>
+                <Input
+                  type="email"
+                  value={clientEmail}
+                  onChange={e => setClientEmail(e.target.value)}
+                  placeholder="client@exemple.com"
                 />
-                {emailMessage && (
-                  <p className="text-xs text-muted-foreground text-right">{emailMessage.length}/2000</p>
+                {!clientEmail && (
+                  <p className="text-xs text-muted-foreground">
+                    Sans email, aucun rappel automatique ne sera envoyé pour cet abonnement.
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -370,7 +330,7 @@ export default function NewSubscriptionPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ACTIVE">Actif</SelectItem>
-                      <SelectItem value="TRIAL">Essai</SelectItem>
+                      <SelectItem value="TRIAL">Essai gratuit</SelectItem>
                       <SelectItem value="PAUSED">Pausé</SelectItem>
                     </SelectContent>
                   </Select>
@@ -380,6 +340,11 @@ export default function NewSubscriptionPage() {
                   <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                 </div>
               </div>
+              {status === 'TRIAL' && selectedPlan && !selectedPlan.trialDays && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Ce plan n&apos;a pas de durée d&apos;essai définie. La date de fin d&apos;essai utilisera l&apos;intervalle du plan.
+                </p>
+              )}
               <div className="space-y-1.5">
                 <Label>Notes internes</Label>
                 <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes internes..." />
@@ -400,8 +365,9 @@ export default function NewSubscriptionPage() {
                 <p>Client : <strong>{[newClient.firstName, newClient.name].filter(Boolean).join(' ')}</strong> (nouveau)</p>
               )}
               {clientEmail && <p>Email rappel : <strong>{clientEmail}</strong></p>}
-              {ccpNumber && <p>CCP : <strong>{ccpNumber}</strong></p>}
-              {chargilyKey && <p>Chargily : <strong>configuré</strong></p>}
+              {status === 'TRIAL' && selectedPlan.trialDays && (
+                <p>Essai gratuit : <strong>{selectedPlan.trialDays} jours</strong></p>
+              )}
             </div>
           )}
 
