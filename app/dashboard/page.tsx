@@ -33,7 +33,12 @@ async function getDashboardData(companyId: string) {
   })
   const activeApps = activeAppSubs.map(s => s.appId)
 
-  const hasSubscriptionsApp = activeApps.includes('subscriptions')
+  // Affiche les KPIs abonnements si l'app est active OU s'il y a déjà au moins un abonnement créé
+  const hasAppSubscriptions = activeApps.includes('subscriptions')
+  const hasAnySubscription = await prisma.subscription.count({ where: { companyId } }).catch(() => 0)
+  const hasSubscriptionsApp = hasAppSubscriptions || hasAnySubscription > 0
+
+  const in30days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
   const [
     weekRevenue,
@@ -56,9 +61,8 @@ async function getDashboardData(companyId: string) {
     activeProjects,
     unmatchedInvoices,
     subsActiveCount,
-    subsNewThisMonth,
-    subsCancelledThisMonth,
-    subsMrr,
+    subsActiveForRevenue,
+    subsUpcoming30d,
   ] = await Promise.all([
     // CA cette semaine
     prisma.invoice.aggregate({
@@ -148,14 +152,45 @@ async function getDashboardData(companyId: string) {
     prisma.supplierInvoice.count({ where: { companyId, status: 'PENDING' } }).catch(() => 0),
     // Abonnements clients (module subscriptions)
     hasSubscriptionsApp ? prisma.subscription.count({ where: { companyId, status: 'ACTIVE' } }).catch(() => 0) : Promise.resolve(0),
-    hasSubscriptionsApp ? prisma.subscription.count({ where: { companyId, createdAt: { gte: startOfMonth } } }).catch(() => 0) : Promise.resolve(0),
-    hasSubscriptionsApp ? prisma.subscription.count({ where: { companyId, status: 'CANCELLED', cancelledAt: { gte: startOfMonth } } }).catch(() => 0) : Promise.resolve(0),
+    // Pour le CA actuel (MRR normalisé mensuel) : on récupère les abonnements actifs + plans
     hasSubscriptionsApp
-      ? prisma.subscription.findMany({ where: { companyId, status: 'ACTIVE' }, include: { plan: { select: { price: true } } } })
-          .then(subs => ({ _sum: { price: subs.reduce((a, s) => a + Number(s.plan.price), 0) } }))
-          .catch(() => ({ _sum: { price: 0 } }))
-      : Promise.resolve({ _sum: { price: 0 } }),
+      ? prisma.subscription.findMany({
+          where: { companyId, status: 'ACTIVE' },
+          include: { plan: { select: { price: true, interval: true, intervalCount: true } } },
+        }).catch(() => [])
+      : Promise.resolve([]),
+    // Pour le CA à venir (30 prochains jours) : abonnements actifs dont nextBilling tombe dans les 30j
+    hasSubscriptionsApp
+      ? prisma.subscription.findMany({
+          where: {
+            companyId,
+            status: { in: ['ACTIVE', 'TRIAL'] },
+            nextBilling: { gte: now, lte: in30days },
+          },
+          include: { plan: { select: { price: true } } },
+        }).catch(() => [])
+      : Promise.resolve([]),
   ])
+
+  // Calcul MRR normalisé mensuel
+  const subsCurrentRevenue = (subsActiveForRevenue as Array<{ plan: { price: number | string; interval: string; intervalCount: number } }>)
+    .reduce((sum, sub) => {
+      const price = Number(sub.plan.price)
+      const count = sub.plan.intervalCount || 1
+      // Normalisation : ramène tout en mensuel
+      switch (sub.plan.interval) {
+        case 'DAILY':     return sum + (price * 30) / count
+        case 'WEEKLY':    return sum + (price * 30 / 7) / count
+        case 'MONTHLY':   return sum + price / count
+        case 'QUARTERLY': return sum + price / (3 * count)
+        case 'YEARLY':    return sum + price / (12 * count)
+        default:          return sum + price
+      }
+    }, 0)
+
+  // Somme des paiements attendus dans les 30 prochains jours
+  const subsUpcomingRevenue = (subsUpcoming30d as Array<{ plan: { price: number | string } }>)
+    .reduce((sum, sub) => sum + Number(sub.plan.price), 0)
 
   return {
     weekRevenue: Number(weekRevenue._sum.total ?? 0),
@@ -167,8 +202,9 @@ async function getDashboardData(companyId: string) {
     pendingQuotes, pendingExpenses,
     crmLeads, purchaseOrders, productionOrders, leaveRequests, activeProjects, unmatchedInvoices,
     activeApps, hasSubscriptionsApp,
-    subsActiveCount, subsNewThisMonth, subsCancelledThisMonth,
-    subsMrr: Number((subsMrr as { _sum: { price: number | null } })._sum.price ?? 0),
+    subsActiveCount: subsActiveCount as number,
+    subsCurrentRevenue: Math.round(subsCurrentRevenue),
+    subsUpcomingRevenue: Math.round(subsUpcomingRevenue),
   }
 }
 
@@ -204,7 +240,7 @@ export default async function DashboardPage() {
       crmLeads: 0, purchaseOrders: 0, productionOrders: 0,
       leaveRequests: 0, activeProjects: 0, unmatchedInvoices: 0,
       activeApps: [] as string[], hasSubscriptionsApp: false,
-      subsActiveCount: 0, subsNewThisMonth: 0, subsCancelledThisMonth: 0, subsMrr: 0,
+      subsActiveCount: 0, subsCurrentRevenue: 0, subsUpcomingRevenue: 0,
     }
   }
 
@@ -227,13 +263,12 @@ export default async function DashboardPage() {
           pendingExpenses={data.pendingExpenses}
         />
 
-        {/* Abonnements clients — si l'app est active */}
+        {/* Abonnements clients — si l'app est active ou s'il y a des abonnements */}
         {data.hasSubscriptionsApp && (
           <SubscriptionsKPIs
-            activeCount={data.subsActiveCount as number}
-            newThisMonth={data.subsNewThisMonth as number}
-            cancelledThisMonth={data.subsCancelledThisMonth as number}
-            mrr={data.subsMrr as number}
+            activeCount={data.subsActiveCount}
+            currentRevenue={data.subsCurrentRevenue}
+            upcomingRevenue={data.subsUpcomingRevenue}
           />
         )}
 
