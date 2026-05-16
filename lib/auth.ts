@@ -20,7 +20,7 @@ function createCustomAdapter(): Adapter {
     ...base,
     async createUser(user: Omit<AdapterUser, 'id'>) {
       const trialEndsAt = new Date()
-      trialEndsAt.setDate(trialEndsAt.getDate() + 10)
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30)
 
       const company = await prisma.company.create({
         data: {
@@ -40,6 +40,16 @@ function createCustomAdapter(): Adapter {
           companyId:     company.id,
         },
       })
+
+      // Create YelhaSubscription (essai 30j) — identique au flow email/password
+      await prisma.yelhaSubscription.create({
+        data: {
+          companyId:  company.id,
+          planId:     'trial',
+          status:     'TRIAL',
+          trialEndsAt,
+        },
+      }).catch(() => {})
 
       // Send welcome email (non-blocking)
       import('@/lib/email/resend').then(({ sendWelcomeEmail }) =>

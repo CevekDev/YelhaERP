@@ -36,7 +36,7 @@ export async function rateLimit(
     } catch { /* fallback silencieux */ }
   }
 
-  const key = getIdentifier(req)
+  const key = `ip:${getIdentifier(req)}`
   const now = Date.now()
   const entry = memoryStore.get(key)
 
@@ -72,9 +72,10 @@ export async function rateLimitByKey(
   }
 
   const now = Date.now()
-  const entry = memoryStore.get(keyId)
+  const storeKey = `key:${keyId}`
+  const entry = memoryStore.get(storeKey)
   if (!entry || now > entry.resetAt) {
-    memoryStore.set(keyId, { count: 1, resetAt: now + config.windowMs })
+    memoryStore.set(storeKey, { count: 1, resetAt: now + config.windowMs })
     return { success: true, remaining: config.limit - 1, reset: now + config.windowMs }
   }
   if (entry.count >= config.limit) return { success: false, remaining: 0, reset: entry.resetAt }

@@ -449,6 +449,30 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ---
 
+## 🔄 Changements session 2026-05-17 — Audit sécurité & corrections
+
+### Sécurité critique corrigée
+- ✅ `middleware.ts` : ajout `/api/webhooks/chargily-subscriptions` et `/api/webhooks/chargily` dans PUBLIC_PATHS + fix `isPublicPath()` (condition trop laxiste supprimée)
+- ✅ `lib/billing/check-app-access.ts` : CORE_APPS toujours accessibles en premier ; ajout vérification `AppSubscription` avant `YelhaSubscription` — `canAccessApp()` fonctionne maintenant correctement
+- ✅ `app/api/webhooks/chargily-yelha/route.ts` : fix crash `timingSafeEqual` (vérification longueur avant comparaison)
+- ✅ `app/api/webhooks/chargily-app/route.ts` : idem
+- ✅ `app/api/webhooks/chargily/route.ts` : idem + suppression de la mise à jour `Company.plan` (système legacy qui ne mettait pas à jour `YelhaSubscription`)
+- ✅ `app/api/webhooks/chargily-subscriptions/route.ts` : idempotence Redis (clé `webhook_sub:{chargilyId}`, TTL 7j)
+- ✅ `lib/auth.ts` : trial OAuth Google 10j → 30j + création `YelhaSubscription` sur signup Google (cohérence avec le flow email/password)
+
+### Sécurité haute corrigée
+- ✅ `app/api/subscriptions/route.ts` : `rateLimit` + `hasRole(ADMIN)` sur POST + try/catch complet
+- ✅ `app/api/subscriptions/[id]/route.ts` : `rateLimit` + `hasRole(ADMIN)` sur PATCH/DELETE + recalcul `nextBilling` si `planId` change
+- ✅ `app/api/subscriptions/settings/route.ts` : `rateLimit` + `chargilyKey` masquée (`••••key`) dans GET + champ `hasChargilyKey` booléen
+- ✅ `app/api/subscriptions/api-key/route.ts` : `rateLimit` + `hasRole(ADMIN)` sur GET et POST (création clés réservée OWNER/ADMIN)
+- ✅ `app/api/app-billing/[appId]/checkout/route.ts` : blocage essai si abonnement existant (même EXPIRED) ; doublon ACTIVE+même plan bloqué ; renouvellement/upgrade autorisés
+- ✅ `app/api/cron/subscriptions-reminders/route.ts` : expiration auto des abonnements TRIAL dont `nextBilling < now`
+- ✅ `lib/security/ratelimit.ts` : préfixe `ip:` pour les clés IP et `key:` pour les clés API (plus de collision `memoryStore`)
+- ✅ `app/api/sub-api/subscriptions/route.ts` : vérification `canAccessApp(companyId, 'subscriptions')` avant GET et POST
+- ✅ `app/dashboard/subscriptions/layout.tsx` : créé — bloque l'accès à tout le module Abonnements si pas d'AppSubscription active
+
+---
+
 ## 🔄 Changements session 2026-05-15 (suite)
 
 ### Abonnements Clients — Rappels de renouvellement
@@ -482,10 +506,10 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 ## 🚧 En cours / À faire
 
 - ⏳ `prisma db push` requis pour les 6 nouveaux champs sur `Subscription`
-- ⏳ Activation réelle de l'accès à l'app Abonnements via AppSubscription (vérification dans check-app-access.ts)
 - ⏳ Plans indépendants pour CRM, RH, Comptabilité, Paie (architecture prête, contenu en pause)
 - ⏳ Chargily Pay pour les paiements d'apps (actuellement CCP uniquement)
 - ⏳ Webhooks entrants Chargily pour apps
+- ⏳ Ajouter layout.tsx d'access gate pour les autres modules extra (CRM, RH, Comptabilité, Paie, etc.) — pattern identique à `/dashboard/subscriptions/layout.tsx`
 
 ---
 

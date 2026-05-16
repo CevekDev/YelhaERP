@@ -24,8 +24,12 @@ export async function POST(req: NextRequest) {
 
   const secret = process.env.CHARGILY_WEBHOOK_SECRET ?? ''
   const computed = crypto.createHmac('sha256', secret).update(payload).digest('hex')
+  const computedBuf = Buffer.from(computed)
+  const signatureBuf = Buffer.from(signature)
+  const signatureValid = computedBuf.length === signatureBuf.length &&
+    crypto.timingSafeEqual(computedBuf, signatureBuf)
 
-  if (!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signature))) {
+  if (!signatureValid) {
     return NextResponse.json({ error: 'Signature invalide' }, { status: 403 })
   }
 

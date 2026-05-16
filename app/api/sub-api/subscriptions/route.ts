@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { withSubApi, ok, apiError } from '@/lib/sub-api/auth'
 import { sendWelcomeEmail } from '@/lib/subscriptions/send-welcome'
+import { canAccessApp } from '@/lib/billing/check-app-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,9 @@ const SUB_SELECT = {
 
 export async function GET(req: NextRequest) {
   return withSubApi(req, async (ctx) => {
+    if (!await canAccessApp(ctx.companyId, 'subscriptions')) {
+      return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
+    }
     const { searchParams } = new URL(req.url)
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'))
     const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '50'))
@@ -66,6 +70,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return withSubApi(req, async (ctx) => {
+    if (!await canAccessApp(ctx.companyId, 'subscriptions')) {
+      return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
+    }
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400, 'BAD_BODY') }
     const parsed = createSchema.safeParse(body)

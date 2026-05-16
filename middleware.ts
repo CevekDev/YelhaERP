@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   '/api/billing/plans',
   '/api/webhooks/chargily-yelha',
   '/api/webhooks/chargily-app',
+  '/api/webhooks/chargily-subscriptions',
+  '/api/webhooks/chargily',
   '/portal',
   '/pricing',
   '/subscriptions/checkout',
@@ -25,7 +27,7 @@ const PUBLIC_PATHS = [
 const AUTH_PAGES = ['/login', '/register', '/']
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/') || (p !== '/' && pathname.startsWith(p)))
+  return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 }
 
 function hasSession(req: NextRequest): boolean {

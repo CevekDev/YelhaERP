@@ -95,12 +95,22 @@ export async function GET(req: NextRequest) {
 
     // Marquer EXPIRED les abonnements ACTIVE en retard de plus de 7j
     const overdueLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const expired = await prisma.subscription.updateMany({
+    const expiredActive = await prisma.subscription.updateMany({
       where: { status: 'ACTIVE', nextBilling: { lt: overdueLimit } },
       data: { status: 'EXPIRED' },
     })
 
-    return apiSuccess({ remindersSent: sent, skipped, markedExpired: expired.count })
+    // Marquer EXPIRED les abonnements TRIAL dont la période d'essai est terminée
+    const expiredTrial = await prisma.subscription.updateMany({
+      where: { status: 'TRIAL', nextBilling: { lt: now } },
+      data: { status: 'EXPIRED' },
+    })
+
+    return apiSuccess({
+      remindersSent: sent,
+      skipped,
+      markedExpired: expiredActive.count + expiredTrial.count,
+    })
   } catch (e) {
     console.error('subscriptions-reminders cron error:', e)
     return apiError('Erreur serveur', 500)

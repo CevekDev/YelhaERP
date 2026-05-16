@@ -18,6 +18,24 @@ interface ChargilyPayload {
   }
 }
 
+async function isAlreadyProcessed(chargilyId: string): Promise<boolean> {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return false
+  try {
+    const { Redis } = await import('@upstash/redis')
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+    const key = `webhook_sub:${chargilyId}`
+    const existing = await redis.get(key)
+    if (existing) return true
+    await redis.set(key, '1', { ex: 7 * 24 * 3600 })
+    return false
+  } catch {
+    return false
+  }
+}
+
 function verifySignature(body: string, signature: string | null, secret: string): boolean {
   if (!signature) return false
   try {
@@ -86,6 +104,12 @@ export async function POST(req: NextRequest) {
   if (!isPaid) {
     // On n'enregistre PAS les paiements en pending — on ignore juste
     return NextResponse.json({ ignored: true, reason: 'not_paid' }, { status: 200 })
+  }
+
+  // Idempotence : ignorer si ce paiement a déjà été traité
+  const chargilyEventId = payload.data?.id
+  if (chargilyEventId && await isAlreadyProcessed(chargilyEventId)) {
+    return NextResponse.json({ ignored: true, reason: 'already_processed' }, { status: 200 })
   }
 
   // Activer + étendre nextBilling
