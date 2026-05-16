@@ -41,14 +41,6 @@ async function getDashboardData(companyId: string) {
   ])
   const hasSubscriptionsApp = hasAppSubscriptions || hasAnySubscription > 0 || hasAnyPlan > 0
 
-  console.log('[dashboard] subs widget:', {
-    companyId,
-    hasAppSubscriptions,
-    hasAnySubscription,
-    hasAnyPlan,
-    hasSubscriptionsApp,
-  })
-
   const in30days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
   const [
@@ -94,7 +86,7 @@ async function getDashboardData(companyId: string) {
     // Stock en alerte
     prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*)::int as count FROM "Product"
-      WHERE company_id = ${companyId} AND is_active = true AND stock_qty <= stock_alert AND stock_alert > 0
+      WHERE "companyId" = ${companyId} AND "isActive" = true AND "stockQty" <= "stockAlert" AND "stockAlert" > 0
     `.then(r => Number(r[0]?.count ?? 0)).catch(() => 0),
     // 5 dernières factures
     prisma.invoice.findMany({
@@ -105,36 +97,36 @@ async function getDashboardData(companyId: string) {
     }),
     // CA 6 derniers mois
     prisma.$queryRaw<{ month: string; total: number }[]>`
-      SELECT TO_CHAR(issue_date, 'YYYY-MM') as month, SUM(total)::float as total
+      SELECT TO_CHAR("issueDate", 'YYYY-MM') as month, SUM(total)::float as total
       FROM "Invoice"
-      WHERE company_id = ${companyId} AND status = 'PAID' AND issue_date >= ${startOf6months}
+      WHERE "companyId" = ${companyId} AND status = 'PAID' AND "issueDate" >= ${startOf6months}
       GROUP BY month ORDER BY month
-    `,
+    `.catch(() => [] as { month: string; total: number }[]),
     // CA mois par mois année courante
     prisma.$queryRaw<{ month: string; total: number }[]>`
-      SELECT TO_CHAR(issue_date, 'YYYY-MM') as month, SUM(total)::float as total
+      SELECT TO_CHAR("issueDate", 'YYYY-MM') as month, SUM(total)::float as total
       FROM "Invoice"
-      WHERE company_id = ${companyId} AND status = 'PAID' AND issue_date >= ${startOfYear}
+      WHERE "companyId" = ${companyId} AND status = 'PAID' AND "issueDate" >= ${startOfYear}
       GROUP BY month ORDER BY month
-    `,
+    `.catch(() => [] as { month: string; total: number }[]),
     // CA mois par mois année précédente
     prisma.$queryRaw<{ month: string; total: number }[]>`
-      SELECT TO_CHAR(issue_date, 'YYYY-MM') as month, SUM(total)::float as total
+      SELECT TO_CHAR("issueDate", 'YYYY-MM') as month, SUM(total)::float as total
       FROM "Invoice"
-      WHERE company_id = ${companyId} AND status = 'PAID' AND issue_date >= ${startOfLastYear} AND issue_date < ${startOfYear}
+      WHERE "companyId" = ${companyId} AND status = 'PAID' AND "issueDate" >= ${startOfLastYear} AND "issueDate" < ${startOfYear}
       GROUP BY month ORDER BY month
-    `,
+    `.catch(() => [] as { month: string; total: number }[]),
     // Top 5 clients
     prisma.$queryRaw<{ clientName: string; total: number }[]>`
       SELECT c.name as "clientName", SUM(i.total)::float as total
       FROM "Invoice" i
-      JOIN "Client" c ON i.client_id = c.id
-      WHERE i.company_id = ${companyId} AND i.status = 'PAID'
-        AND i.issue_date >= ${startOfYear}
+      JOIN "Client" c ON i."clientId" = c.id
+      WHERE i."companyId" = ${companyId} AND i.status = 'PAID'
+        AND i."issueDate" >= ${startOfYear}
       GROUP BY c.id, c.name
       ORDER BY total DESC
       LIMIT 5
-    `,
+    `.catch(() => [] as { clientName: string; total: number }[]),
     // CA YTD (year-to-date)
     prisma.invoice.aggregate({
       where: { companyId, status: 'PAID', issueDate: { gte: startOfYear } },
