@@ -183,29 +183,6 @@ function Hero() {
   )
 }
 
-function StatsBar() {
-  const { t } = useT()
-  const stats = [
-    { value: t('stats.invoices_val'), label: t('stats.invoices_label') },
-    { value: t('stats.companies_val'), label: t('stats.companies_label') },
-    { value: t('stats.wilayas_val'), label: t('stats.wilayas_label') },
-    { value: t('stats.uptime_val'), label: t('stats.uptime_label') },
-  ]
-  return (
-    <div className="bg-yelha-500 py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
-          {stats.map(s => (
-            <div key={s.label} className="text-center">
-              <div className="text-3xl lg:text-4xl font-extrabold text-white mb-1">{s.value}</div>
-              <div className="text-yelha-100 text-sm">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function Features() {
   const { t } = useT()
@@ -504,7 +481,6 @@ export default function LandingPage() {
     <div className="min-h-screen">
       <Navbar />
       <Hero />
-      <StatsBar />
       <Features />
       <AlgeriaSection />
       <Pricing />
