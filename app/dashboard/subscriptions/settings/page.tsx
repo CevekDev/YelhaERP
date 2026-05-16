@@ -261,6 +261,9 @@ export default function SubscriptionSettingsPage() {
                       value={settings.whatsapp ?? ''}
                       onChange={e => setSettings(s => ({ ...s, whatsapp: e.target.value }))}
                       placeholder="+213 5XX XX XX XX"
+                      name="sub-whatsapp-xxx"
+                      autoComplete="off"
+                      data-form-type="other"
                     />
                     <p className="text-xs text-muted-foreground">
                       Affiché aux clients pour vous contacter et payer via virement.
@@ -272,9 +275,14 @@ export default function SubscriptionSettingsPage() {
                       💳 Votre numéro CCP
                     </Label>
                     <Input
+                      inputMode="numeric"
                       value={settings.ccpNumber ?? ''}
                       onChange={e => setSettings(s => ({ ...s, ccpNumber: e.target.value }))}
                       placeholder="123456789 / Clé 12"
+                      name="sub-ccp-xxx"
+                      autoComplete="off"
+                      data-form-type="other"
+                      data-lpignore="true"
                     />
                     <p className="text-xs text-muted-foreground">
                       Compte CCP sur lequel vos clients effectueront le virement.
@@ -292,6 +300,10 @@ export default function SubscriptionSettingsPage() {
                     value={settings.chargilyKey ?? ''}
                     onChange={e => setSettings(s => ({ ...s, chargilyKey: e.target.value }))}
                     placeholder="test_sk_..."
+                    name="sub-chargily-xxx"
+                    autoComplete="new-password"
+                    data-form-type="other"
+                    data-lpignore="true"
                   />
                   <p className="text-xs text-muted-foreground">
                     Si renseignée, vos clients pourront payer en ligne via Chargily Pay (Edahabia / CIB) directement depuis l&apos;email.

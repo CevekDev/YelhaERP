@@ -30,6 +30,12 @@ interface RevenueData {
   previousCount: number
   chart: { label: string; total: number }[]
   granularity: 'hour' | 'day' | 'week' | 'month'
+  breakdown: {
+    invoiceCurrent: number
+    invoicePrevious: number
+    subsRevenue: number
+    activeSubsCount: number
+  }
 }
 
 function formatLabel(label: string, granularity: RevenueData['granularity']): string {
@@ -111,16 +117,22 @@ export function RevenuePanel() {
               <div className="border rounded-xl p-4 bg-card">
                 <p className="text-xs text-muted-foreground">{data.label}</p>
                 <p className="text-2xl font-bold da-amount tabular-nums mt-1">{formatDA(data.current)}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {data.currentCount} facture{data.currentCount > 1 ? 's' : ''} payée{data.currentCount > 1 ? 's' : ''}
-                </p>
+                <div className="text-[11px] text-muted-foreground mt-1 space-y-0.5">
+                  <p>📄 Factures : <span className="da-amount">{formatDA(data.breakdown.invoiceCurrent)}</span> ({data.currentCount})</p>
+                  {data.breakdown.activeSubsCount > 0 && (
+                    <p>🔁 Abonnements : <span className="da-amount">{formatDA(data.breakdown.subsRevenue)}</span> ({data.breakdown.activeSubsCount} actif{data.breakdown.activeSubsCount > 1 ? 's' : ''})</p>
+                  )}
+                </div>
               </div>
               <div className="border rounded-xl p-4 bg-card">
                 <p className="text-xs text-muted-foreground">{data.previousLabel}</p>
                 <p className="text-2xl font-bold da-amount tabular-nums mt-1 opacity-75">{formatDA(data.previous)}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {data.previousCount} facture{data.previousCount > 1 ? 's' : ''} payée{data.previousCount > 1 ? 's' : ''}
-                </p>
+                <div className="text-[11px] text-muted-foreground mt-1 space-y-0.5">
+                  <p>📄 Factures : <span className="da-amount">{formatDA(data.breakdown.invoicePrevious)}</span> ({data.previousCount})</p>
+                  {data.breakdown.activeSubsCount > 0 && (
+                    <p>🔁 Abonnements : <span className="da-amount">{formatDA(data.breakdown.subsRevenue)}</span> (estimé)</p>
+                  )}
+                </div>
               </div>
               <div className={`border rounded-xl p-4 ${deltaBg}`}>
                 <p className="text-xs text-muted-foreground">Évolution</p>

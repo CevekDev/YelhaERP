@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     const fmt = dateFormat(config.granularity)
     const trunc = dateTrunc(config.granularity)
 
-    const [currentAgg, previousAgg, chartRows] = await Promise.all([
+    const [currentAgg, previousAgg, chartRows, activeSubs] = await Promise.all([
       prisma.invoice.aggregate({
         where: {
           companyId: ctx.companyId,
@@ -89,10 +89,38 @@ export async function GET(req: NextRequest) {
          ORDER BY label`,
         ctx.companyId, currentStart, now,
       ).catch(() => [] as { label: string; total: number }[]),
+
+      // Abonnements actifs pour estimer le CA recurrent
+      prisma.subscription.findMany({
+        where: { companyId: ctx.companyId, status: 'ACTIVE' },
+        include: { plan: { select: { price: true, interval: true, intervalCount: true } } },
+      }).catch(() => []),
     ])
 
-    const current = Number(currentAgg._sum.total ?? 0)
-    const previous = Number(previousAgg._sum.total ?? 0)
+    // MRR normalisé mensuel (somme des plans actifs ramenés en équivalent mois)
+    const mrr = activeSubs.reduce((sum, sub) => {
+      const price = Number(sub.plan.price)
+      const count = sub.plan.intervalCount || 1
+      switch (sub.plan.interval) {
+        case 'DAILY':     return sum + (price * 30) / count
+        case 'WEEKLY':    return sum + (price * 30 / 7) / count
+        case 'MONTHLY':   return sum + price / count
+        case 'QUARTERLY': return sum + price / (3 * count)
+        case 'YEARLY':    return sum + price / (12 * count)
+        default:          return sum + price
+      }
+    }, 0)
+
+    // CA abonnements estimé sur la période = MRR × (jours / 30)
+    const periodMonths = config.days / 30
+    const subsRevenue = mrr * periodMonths
+
+    const invoiceCurrent  = Number(currentAgg._sum.total ?? 0)
+    const invoicePrevious = Number(previousAgg._sum.total ?? 0)
+
+    // Pour la période précédente on suppose le même MRR (on n'a pas l'historique des statuts)
+    const current  = invoiceCurrent  + subsRevenue
+    const previous = invoicePrevious + subsRevenue
     const delta = previous > 0 ? ((current - previous) / previous) * 100 : (current > 0 ? 100 : 0)
 
     return apiSuccess({
@@ -106,6 +134,12 @@ export async function GET(req: NextRequest) {
       previousCount: previousAgg._count,
       chart: chartRows,
       granularity: config.granularity,
+      breakdown: {
+        invoiceCurrent,
+        invoicePrevious,
+        subsRevenue: Math.round(subsRevenue),
+        activeSubsCount: activeSubs.length,
+      },
     })
   } catch (e) {
     console.error('Dashboard revenue API error:', e)
