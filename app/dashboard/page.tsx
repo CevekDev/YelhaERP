@@ -6,7 +6,7 @@ import { DashboardKPIs } from '@/components/dashboard/kpis'
 import { EnterpriseKPIs } from '@/components/dashboard/enterprise-kpis'
 import { SubscriptionsKPIs } from '@/components/dashboard/subscriptions-kpis'
 import { RecentInvoices } from '@/components/dashboard/recent-invoices'
-import { RevenueChart } from '@/components/dashboard/revenue-chart'
+import { RevenuePanel } from '@/components/dashboard/revenue-panel'
 import { RevenueComparisonChart } from '@/components/dashboard/revenue-comparison-chart'
 import { TopClientsChart } from '@/components/dashboard/top-clients-chart'
 import { CAAlertBanner } from '@/components/dashboard/ca-alert-banner'
@@ -254,11 +254,11 @@ export default async function DashboardPage() {
         {/* CA Alert Banner */}
         <CAAlertBanner currentYTD={data.currentYTD} lastYearYTD={data.lastYearYTD} />
 
-        {/* CA + alertes */}
+        {/* Panel CA flexible : période + comparaison + graphique */}
+        <RevenuePanel />
+
+        {/* Alertes : impayés, devis, stock, dépenses */}
         <DashboardKPIs
-          weekRevenue={data.weekRevenue}
-          monthRevenue={data.monthRevenue}
-          yearRevenue={data.currentYTD}
           unpaidTotal={Number(data.unpaidInvoices._sum.total ?? 0)}
           unpaidCount={data.unpaidInvoices._count}
           lowStockCount={data.lowStockCount as number}
@@ -286,9 +286,7 @@ export default async function DashboardPage() {
           activeApps={data.activeApps as string[]}
         />
 
-        {/* Charts */}
-        <RevenueChart data={data.monthlyRevenue} />
-
+        {/* Comparaison année courante vs année précédente + Top clients */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RevenueComparisonChart
             currentYear={data.currentYearMonthly}
