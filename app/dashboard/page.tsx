@@ -41,6 +41,14 @@ async function getDashboardData(companyId: string) {
   ])
   const hasSubscriptionsApp = hasAppSubscriptions || hasAnySubscription > 0 || hasAnyPlan > 0
 
+  console.log('[dashboard] subs widget:', {
+    companyId,
+    hasAppSubscriptions,
+    hasAnySubscription,
+    hasAnyPlan,
+    hasSubscriptionsApp,
+  })
+
   const in30days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
   const [
