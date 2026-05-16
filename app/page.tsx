@@ -293,53 +293,132 @@ function AlgeriaSection() {
 }
 
 function Pricing() {
-  const { t } = useT()
-  const plans = [
-    { name: t('pricing.trial_name'), price: t('pricing.trial_price'), period: t('pricing.trial_period'), desc: t('pricing.trial_desc'), features: [t('pricing.trial_f1'),t('pricing.trial_f2'),t('pricing.trial_f3'),t('pricing.trial_f4')], cta: t('pricing.trial_cta'), popular: false },
-    { name: t('pricing.starter_name'), price: t('pricing.starter_price'), period: t('pricing.per_month'), desc: t('pricing.starter_desc'), features: [t('pricing.starter_f1'),t('pricing.starter_f2'),t('pricing.starter_f3'),t('pricing.starter_f4'),t('pricing.starter_f5')], cta: t('pricing.starter_cta'), popular: false },
-    { name: t('pricing.pro_name'), price: t('pricing.pro_price'), period: t('pricing.per_month'), desc: t('pricing.pro_desc'), features: [t('pricing.pro_f1'),t('pricing.pro_f2'),t('pricing.pro_f3'),t('pricing.pro_f4'),t('pricing.pro_f5'),t('pricing.pro_f6')], cta: t('pricing.pro_cta'), popular: true },
-    { name: t('pricing.agency_name'), price: t('pricing.agency_price'), period: t('pricing.per_month'), desc: t('pricing.agency_desc'), features: [t('pricing.agency_f1'),t('pricing.agency_f2'),t('pricing.agency_f3'),t('pricing.agency_f4'),t('pricing.agency_f5'),t('pricing.agency_f6')], cta: t('pricing.agency_cta'), popular: false },
+  const coreFeatures = [
+    { icon: FileText, label: 'Facturation & devis conformes TVA' },
+    { icon: Package,  label: 'Gestion des stocks en temps réel' },
+    { icon: Truck,    label: 'Achats & bons de commande fournisseurs' },
+    { icon: Users,    label: 'Clients & fournisseurs illimités' },
+    { icon: BarChart3, label: 'Tableau de bord & rapports financiers' },
+  ]
+  const comingSoon = [
+    { icon: Users,        label: 'Paie & RH',         color: 'text-purple-400' },
+    { icon: Calculator,   label: 'Comptabilité SCF',   color: 'text-blue-400'   },
+    { icon: Globe,        label: 'CRM Client',         color: 'text-cyan-400'   },
+    { icon: Brain,        label: 'Assistant IA',       color: 'text-pink-400'   },
+    { icon: ShoppingCart, label: 'Point de Vente',     color: 'text-orange-400' },
+    { icon: Code2,        label: 'API Avancée',        color: 'text-slate-400'  },
   ]
   return (
     <section id="pricing" className="py-20 lg:py-28 bg-slate-950 relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-yelha-500/10 rounded-full blur-[100px]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-yelha-500/10 rounded-full blur-[120px]" />
+
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="inline-block bg-yelha-500/10 border border-yelha-500/20 text-yelha-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">{t('pricing.badge')}</span>
+          <span className="inline-block bg-yelha-500/10 border border-yelha-500/20 text-yelha-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">Tarifs</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-4">
-            {t('pricing.title1')}{' '}
-            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">{t('pricing.title2')}</span>
+            Simple,{' '}
+            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">transparent</span>
           </h2>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">{t('pricing.subtitle')}</p>
+          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            Le Core ERP est <strong className="text-white">gratuit à vie</strong>. Les modules additionnels se paient séparément — aucun abonnement global imposé.
+          </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {plans.map(plan => (
-            <div key={plan.name} className={`relative rounded-2xl p-6 border transition-all ${plan.popular ? 'bg-yelha-500 border-yelha-400 shadow-2xl shadow-yelha-500/30 scale-105' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}>
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-yelha-700 text-[10px] font-extrabold px-3 py-1 rounded-full tracking-wide flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-current" /> {t('pricing.popular')}
+
+        {/* Core + Module principale */}
+        <div className="grid lg:grid-cols-2 gap-5 mb-5">
+
+          {/* Core ERP — Gratuit */}
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-7 lg:p-8 hover:border-slate-600 transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full mb-3 border border-emerald-500/20">
+                  <CheckCircle className="w-3.5 h-3.5" /> GRATUIT À VIE
                 </div>
-              )}
-              <div className="mb-5">
-                <span className={`text-xs font-bold tracking-widest uppercase ${plan.popular ? 'text-yelha-100' : 'text-slate-500'}`}>{plan.name}</span>
-                <div className="mt-2 flex items-end gap-1">
-                  <span className="text-3xl font-extrabold text-white">{plan.price}</span>
-                  <span className={`text-sm mb-1 ${plan.popular ? 'text-yelha-100' : 'text-slate-400'}`}>/{plan.period}</span>
-                </div>
-                <p className={`text-xs mt-2 ${plan.popular ? 'text-yelha-100' : 'text-slate-400'}`}>{plan.desc}</p>
+                <h3 className="text-xl font-extrabold text-white">Core ERP</h3>
+                <p className="text-slate-400 text-sm mt-1 max-w-xs">Factures, achats, stock — les essentiels sans limite de temps ni de volume.</p>
               </div>
-              <ul className="space-y-2.5 mb-6">
-                {plan.features.map(f => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <CheckCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${plan.popular ? 'text-yelha-100' : 'text-yelha-500'}`} />
-                    <span className={plan.popular ? 'text-yelha-50' : 'text-slate-300'}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/register" className={`block text-center text-sm font-semibold py-2.5 rounded-xl transition-all ${plan.popular ? 'bg-white text-yelha-700 hover:bg-yelha-50' : 'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700'}`}>{plan.cta}</Link>
+              <div className="sm:text-right flex-shrink-0">
+                <div className="text-4xl font-extrabold text-white">0 DA</div>
+                <div className="text-slate-500 text-xs mt-1">pour toujours</div>
+              </div>
             </div>
-          ))}
+            <ul className="space-y-3 mb-7">
+              {coreFeatures.map(f => {
+                const Icon = f.icon
+                return (
+                  <li key={f.label} className="flex items-center gap-3">
+                    <div className="w-7 h-7 bg-yelha-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-3.5 h-3.5 text-yelha-400" />
+                    </div>
+                    <span className="text-slate-300 text-sm">{f.label}</span>
+                  </li>
+                )
+              })}
+            </ul>
+            <Link href="/register" className="block text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-semibold py-3 rounded-xl text-sm transition-all">
+              Commencer gratuitement →
+            </Link>
+          </div>
+
+          {/* Module Abonnements — disponible */}
+          <div className="relative bg-yelha-500 rounded-2xl border border-yelha-400 p-7 lg:p-8 shadow-2xl shadow-yelha-500/25">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-white text-yelha-700 text-[10px] font-extrabold px-4 py-1.5 rounded-full tracking-wide flex items-center gap-1.5 shadow-lg whitespace-nowrap">
+              <Star className="w-3 h-3 fill-current" /> DISPONIBLE MAINTENANT
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-3 border border-white/20">
+                  MODULE ADDITIONNEL
+                </div>
+                <h3 className="text-xl font-extrabold text-white">Abonnements clients</h3>
+                <p className="text-yelha-100 text-sm mt-1 max-w-xs">Créez et gérez des abonnements récurrents pour vos clients avec paiement en ligne.</p>
+              </div>
+              <div className="sm:text-right flex-shrink-0">
+                <div className="text-4xl font-extrabold text-white">1 500 DA</div>
+                <div className="text-yelha-100 text-xs mt-1">/ mois</div>
+              </div>
+            </div>
+            <ul className="space-y-3 mb-7">
+              {[
+                'Plans d\'abonnement personnalisés',
+                'Paiements Chargily (Edahabia / CIB)',
+                'API publique pour vos applications',
+                'Portail client en marque blanche',
+                'Emails & rappels automatiques',
+                '15 jours d\'essai gratuit inclus',
+              ].map(f => (
+                <li key={f} className="flex items-center gap-3">
+                  <CheckCircle className="w-4 h-4 text-yelha-100 flex-shrink-0" />
+                  <span className="text-yelha-50 text-sm">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/register" className="block text-center bg-white text-yelha-700 hover:bg-yelha-50 font-bold py-3 rounded-xl text-sm transition-all shadow-lg">
+              Essayer 15 jours gratuitement →
+            </Link>
+          </div>
+        </div>
+
+        {/* Modules à venir */}
+        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 lg:p-8">
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <Clock className="w-4 h-4 text-slate-500" />
+            <h3 className="text-slate-300 font-semibold text-sm">Modules à venir — bientôt disponibles</h3>
+            <span className="ml-auto bg-slate-800 text-slate-400 text-xs px-2.5 py-1 rounded-full border border-slate-700">En développement</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {comingSoon.map(m => {
+              const Icon = m.icon
+              return (
+                <div key={m.label} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 opacity-60 cursor-default">
+                  <Icon className={`w-5 h-5 ${m.color}`} />
+                  <span className="text-xs text-slate-400 text-center leading-tight">{m.label}</span>
+                  <span className="text-[9px] text-slate-500 bg-slate-700 px-2 py-0.5 rounded-full">Bientôt</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>
@@ -395,9 +474,9 @@ function Footer() {
           <div>
             <h4 className="text-white text-sm font-semibold mb-3">{t('footer.legal')}</h4>
             <ul className="space-y-2 text-xs">
-              {[t('footer.terms'),t('footer.privacy'),t('footer.mentions')].map(l => (
-                <li key={l}><a href="#" className="hover:text-yelha-400 transition-colors">{l}</a></li>
-              ))}
+              <li><Link href="/conditions" className="hover:text-yelha-400 transition-colors">{t('footer.terms')}</Link></li>
+              <li><Link href="/confidentialite" className="hover:text-yelha-400 transition-colors">{t('footer.privacy')}</Link></li>
+              <li><Link href="/mentions-legales" className="hover:text-yelha-400 transition-colors">{t('footer.mentions')}</Link></li>
             </ul>
           </div>
           <div>

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Loader2, TrendingUp, ArrowLeft, Users } from 'lucide-react'
+import { Loader2, TrendingUp, ArrowLeft, Users, CheckCircle, FileText, Package, BarChart3, Truck, Zap, Shield } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 
@@ -155,40 +155,81 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel - branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-yelha-800 via-yelha-700 to-yelha-500 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-black/10 rounded-full blur-3xl" />
+      <div className="hidden lg:flex lg:w-[52%] xl:w-1/2 bg-slate-950 flex-col justify-between p-10 xl:p-14 relative overflow-hidden">
+        {/* Background glows */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-yelha-500/15 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-yelha-600/10 rounded-full blur-[100px]" />
+          <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
         </div>
+
+        {/* Logo */}
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/30">
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 bg-yelha-500 rounded-xl flex items-center justify-center shadow-lg shadow-yelha-500/40">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold text-white">YelhaERP</span>
           </div>
-          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Gérez votre<br />entreprise avec<br /><span className="text-yelha-200">confiance</span>
+
+          {/* Heading */}
+          <h1 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-3">
+            Gérez votre entreprise<br />
+            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">avec confiance</span>
           </h1>
-          <p className="text-white/70 text-lg leading-relaxed">
-            Solution complète de gestion adaptée à la réglementation algérienne.
+          <p className="text-slate-400 text-base leading-relaxed mb-8">
+            Solution complète adaptée à la réglementation algérienne. Facturation, stock, abonnements clients — tout en un.
           </p>
-        </div>
-        <div className="relative z-10 space-y-4">
-          {[
-            { label: 'Facturation & TVA algérienne' },
-            { label: 'Paie IRG/CNAS automatique' },
-            { label: 'Comptabilité SCF intégrée' },
-          ].map(f => (
-            <div key={f.label} className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-yelha-400 flex items-center justify-center">
-                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+
+          {/* Mini stat row */}
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            {[
+              { value: '500+', label: 'Entreprises' },
+              { value: '10k+', label: 'Factures' },
+              { value: '99.9%', label: 'Disponibilité' },
+            ].map(s => (
+              <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+                <div className="text-xl font-extrabold text-white">{s.value}</div>
+                <div className="text-slate-500 text-xs mt-0.5">{s.label}</div>
               </div>
-              <span className="text-white/80 text-sm">{f.label}</span>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Feature list */}
+          <div className="space-y-3">
+            {[
+              { icon: FileText, label: 'Facturation & devis conformes TVA algérienne', color: 'text-blue-400 bg-blue-500/10' },
+              { icon: Package,  label: 'Stocks, achats & fournisseurs en temps réel',  color: 'text-orange-400 bg-orange-500/10' },
+              { icon: Users,    label: 'Gestion des abonnements clients avec paiement', color: 'text-yelha-400 bg-yelha-500/10' },
+              { icon: BarChart3, label: 'Tableau de bord & rapports financiers',        color: 'text-purple-400 bg-purple-500/10' },
+            ].map(f => {
+              const Icon = f.icon
+              return (
+                <div key={f.label} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${f.color}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-slate-300 text-sm">{f.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Bottom trust badges */}
+        <div className="relative z-10 flex flex-wrap gap-3 mt-10">
+          <div className="flex items-center gap-2 bg-yelha-500/10 border border-yelha-500/20 text-yelha-400 text-xs font-semibold px-3 py-2 rounded-lg">
+            <Zap className="w-3.5 h-3.5" />
+            IRG & TVA auto
+          </div>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
+            <Shield className="w-3.5 h-3.5 text-yelha-400" />
+            Conforme droit algérien
+          </div>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+            Core ERP gratuit à vie
+          </div>
         </div>
       </div>
 

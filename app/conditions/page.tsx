@@ -1,105 +1,214 @@
 import Link from 'next/link'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, ArrowLeft } from 'lucide-react'
 
-export const metadata = { title: "Conditions d'utilisation" }
+export const metadata = {
+  title: "Conditions d'utilisation — YelhaERP",
+  description: "Conditions générales d'utilisation de la plateforme YelhaERP.",
+}
 
 export default function ConditionsPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shadow-sm">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-yelha-700">YelhaERP</span>
+            <span className="font-bold text-slate-900">YelhaERP</span>
           </Link>
-          <nav className="flex gap-4 text-sm text-slate-500">
-            <Link href="/confidentialite" className="hover:text-yelha-600">Confidentialité</Link>
-            <Link href="/mentions-legales" className="hover:text-yelha-600">Mentions légales</Link>
+          <nav className="hidden sm:flex items-center gap-4 text-xs text-slate-500">
+            <Link href="/conditions" className="text-yelha-600 font-semibold">Conditions</Link>
+            <Link href="/confidentialite" className="hover:text-yelha-600 transition-colors">Confidentialité</Link>
+            <Link href="/mentions-legales" className="hover:text-yelha-600 transition-colors">Mentions légales</Link>
           </nav>
+          <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-yelha-600 transition-colors flex-shrink-0">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Accueil</span>
+          </Link>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Conditions d'utilisation</h1>
-        <p className="text-slate-400 text-sm mb-10">Dernière mise à jour : 28 avril 2026</p>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Page header */}
+          <div className="bg-gradient-to-br from-yelha-600 to-yelha-500 px-8 sm:px-10 py-10">
+            <span className="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4 border border-white/20">Légal</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">Conditions d&apos;utilisation</h1>
+            <p className="text-yelha-100 text-sm">Dernière mise à jour : 17 mai 2026</p>
+          </div>
 
-        <div className="prose prose-slate max-w-none space-y-8">
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">1. Acceptation des conditions</h2>
-            <p className="text-slate-600 leading-relaxed">
-              En accédant et en utilisant la plateforme YelhaERP accessible à l'adresse <strong>erp.yelha.net</strong>, vous acceptez d'être lié par les présentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre service.
-            </p>
-          </section>
+          {/* Content */}
+          <div className="px-8 sm:px-10 py-10 space-y-8 text-slate-700 leading-relaxed">
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">2. Description du service</h2>
-            <p className="text-slate-600 leading-relaxed">
-              YelhaERP est un logiciel de gestion d'entreprise (ERP) en mode SaaS destiné aux entreprises algériennes. Il comprend des modules de facturation, comptabilité, gestion des stocks, paie, gestion des fournisseurs et clients, ainsi qu'un assistant IA.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">1</span>
+                Objet
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Les présentes conditions générales d&apos;utilisation (CGU) régissent l&apos;accès et l&apos;utilisation de la plateforme
+                <strong className="text-slate-800"> YelhaERP</strong>, éditée par YelhaERP, dont le siège social est situé à Alger, Algérie.
+                En accédant à la plateforme, vous acceptez sans réserve les présentes CGU.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">3. Compte utilisateur</h2>
-            <p className="text-slate-600 leading-relaxed">
-              Pour accéder au service, vous devez créer un compte avec des informations exactes et complètes. Vous êtes responsable de la confidentialité de vos identifiants de connexion. Vous devez avoir au moins 18 ans pour utiliser ce service.
-            </p>
-          </section>
+            <div className="border-t border-slate-100" />
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">4. Période d'essai et abonnement</h2>
-            <p className="text-slate-600 leading-relaxed">
-              YelhaERP offre une période d'essai gratuite de 10 jours. À l'expiration de cette période, un abonnement payant est requis pour continuer à utiliser le service. Les tarifs sont disponibles sur la page d'accueil.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">2</span>
+                Description du service
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed mb-3">
+                YelhaERP est une solution de gestion d&apos;entreprise en mode SaaS destinée aux entreprises algériennes. Elle comprend :
+              </p>
+              <ul className="space-y-2">
+                {[
+                  'Core ERP gratuit à vie : facturation, devis, achats, stocks, clients et fournisseurs.',
+                  'Module Abonnements clients (payant) : gestion des abonnements récurrents avec paiement Chargily.',
+                  'Modules additionnels à venir : CRM, RH, Comptabilité SCF, Point de vente, Assistant IA.',
+                  'API publique permettant d\'intégrer YelhaERP à des applications tierces.',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="w-1.5 h-1.5 bg-yelha-500 rounded-full mt-1.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">5. Utilisation acceptable</h2>
-            <p className="text-slate-600 leading-relaxed">Il est interdit d'utiliser YelhaERP pour :</p>
-            <ul className="list-disc list-inside text-slate-600 space-y-1 mt-2">
-              <li>Toute activité illégale ou contraire à la législation algérienne</li>
-              <li>La fraude fiscale ou la falsification de documents comptables</li>
-              <li>L'accès non autorisé aux données d'autres entreprises</li>
-              <li>La transmission de contenu malveillant</li>
-            </ul>
-          </section>
+            <div className="border-t border-slate-100" />
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">6. Propriété intellectuelle</h2>
-            <p className="text-slate-600 leading-relaxed">
-              YelhaERP et tous ses composants (code, design, contenu) sont la propriété exclusive de Yelha. Toute reproduction ou utilisation non autorisée est strictement interdite.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">3</span>
+                Accès et inscription
+              </h2>
+              <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
+                <p>
+                  L&apos;accès au Core ERP est gratuit et illimité dans le temps. L&apos;accès aux modules additionnels nécessite
+                  la souscription d&apos;un abonnement payant, précédée d&apos;un essai gratuit de 15 jours.
+                </p>
+                <p>
+                  L&apos;inscription est réservée aux personnes physiques ou morales capables juridiquement, exerçant une activité
+                  professionnelle légale. Vous êtes responsable de la confidentialité de vos identifiants.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">7. Limitation de responsabilité</h2>
-            <p className="text-slate-600 leading-relaxed">
-              YelhaERP est fourni "tel quel". Nous ne garantissons pas que le service sera ininterrompu ou exempt d'erreurs. Notre responsabilité est limitée au montant payé pour le service au cours des 12 derniers mois.
-            </p>
-          </section>
+            <div className="border-t border-slate-100" />
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">8. Droit applicable</h2>
-            <p className="text-slate-600 leading-relaxed">
-              Ces conditions sont régies par le droit algérien. Tout litige sera soumis à la juridiction compétente d'Alger.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">4</span>
+                Tarifs et facturation
+              </h2>
+              <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
+                <p>
+                  Les tarifs des modules additionnels sont libellés en dinars algériens (DA) et peuvent être modifiés
+                  avec un préavis de 30 jours. Les abonnements sont mensuels et renouvelés automatiquement sauf résiliation.
+                </p>
+                <p>
+                  Le paiement est traité via Chargily (Edahabia, CIB). Toute période commencée est due en intégralité.
+                  Aucun remboursement proratisé n&apos;est accordé en cas de résiliation en cours de période.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-slate-800 mb-3">9. Contact</h2>
-            <p className="text-slate-600 leading-relaxed">
-              Pour toute question relative aux présentes conditions, contactez-nous à : <a href="mailto:cvkdev@outlook.fr" className="text-yelha-600 hover:underline">cvkdev@outlook.fr</a>
-            </p>
-          </section>
+            <div className="border-t border-slate-100" />
+
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">5</span>
+                Obligations de l&apos;utilisateur
+              </h2>
+              <ul className="space-y-2">
+                {[
+                  'Fournir des informations exactes et à jour lors de l\'inscription.',
+                  'Utiliser la plateforme conformément à la législation algérienne en vigueur.',
+                  'Ne pas tenter de contourner les mesures de sécurité ou d\'accéder aux données d\'autres utilisateurs.',
+                  'Ne pas utiliser la plateforme à des fins illicites, frauduleuses ou contraires à l\'ordre public.',
+                  'Respecter les droits de propriété intellectuelle de YelhaERP et de ses partenaires.',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="w-1.5 h-1.5 bg-yelha-500 rounded-full mt-1.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <div className="border-t border-slate-100" />
+
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">6</span>
+                Propriété intellectuelle
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                L&apos;ensemble des éléments de la plateforme YelhaERP (code source, interfaces, marques, logos, algorithmes)
+                est la propriété exclusive de YelhaERP et protégé par les lois algériennes et internationales.
+                L&apos;utilisateur bénéficie d&apos;un droit d&apos;utilisation personnel, non exclusif et non transférable.
+              </p>
+            </section>
+
+            <div className="border-t border-slate-100" />
+
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">7</span>
+                Données et confidentialité
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Le traitement de vos données est régi par notre{' '}
+                <Link href="/confidentialite" className="text-yelha-600 hover:underline font-medium">
+                  Politique de confidentialité
+                </Link>
+                . Vos données métier vous appartiennent et ne sont jamais partagées ni revendues à des tiers.
+              </p>
+            </section>
+
+            <div className="border-t border-slate-100" />
+
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">8</span>
+                Limitation de responsabilité
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                YelhaERP ne pourra être tenu responsable des dommages indirects, pertes de données ou manques à gagner.
+                La responsabilité totale est limitée aux sommes versées au titre de l&apos;abonnement au cours des 3 derniers mois.
+              </p>
+            </section>
+
+            <div className="border-t border-slate-100" />
+
+            <section>
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 bg-yelha-100 text-yelha-700 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0">9</span>
+                Droit applicable et contact
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Les présentes CGU sont régies par le droit algérien. Tout litige sera soumis aux tribunaux d&apos;Alger.
+                Pour toute question :{' '}
+                <a href="mailto:cvkdev@outlook.fr" className="text-yelha-600 hover:underline font-medium">
+                  cvkdev@outlook.fr
+                </a>
+              </p>
+            </section>
+          </div>
         </div>
       </main>
 
-      <footer className="border-t mt-16">
-        <div className="max-w-4xl mx-auto px-6 py-6 flex gap-4 text-sm text-slate-400">
-          <Link href="/conditions" className="hover:text-yelha-600">Conditions</Link>
-          <Link href="/confidentialite" className="hover:text-yelha-600">Confidentialité</Link>
-          <Link href="/mentions-legales" className="hover:text-yelha-600">Mentions légales</Link>
+      <footer className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+          <p>© {new Date().getFullYear()} YelhaERP — Alger, Algérie</p>
+          <div className="flex items-center gap-4">
+            <Link href="/conditions" className="text-yelha-600 font-medium">Conditions</Link>
+            <Link href="/confidentialite" className="hover:text-yelha-600 transition-colors">Confidentialité</Link>
+            <Link href="/mentions-legales" className="hover:text-yelha-600 transition-colors">Mentions légales</Link>
+          </div>
         </div>
       </footer>
     </div>
