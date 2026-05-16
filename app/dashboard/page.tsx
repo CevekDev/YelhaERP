@@ -66,6 +66,7 @@ async function getDashboardData(companyId: string) {
     subsActiveCount,
     subsActiveForRevenue,
     subsUpcoming30d,
+    subsForChart,
   ] = await Promise.all([
     // CA cette semaine
     prisma.invoice.aggregate({
@@ -173,7 +174,63 @@ async function getDashboardData(companyId: string) {
           include: { plan: { select: { price: true } } },
         }).catch(() => [])
       : Promise.resolve([]),
+    // Tous les abonnements (hors CANCELLED) pour calculer la contribution mensuelle CA des 2 dernières années
+    hasSubscriptionsApp
+      ? prisma.subscription.findMany({
+          where: { companyId },
+          select: {
+            startDate: true, cancelledAt: true, status: true,
+            plan: { select: { price: true, interval: true, intervalCount: true } },
+          },
+        }).catch(() => [])
+      : Promise.resolve([]),
   ])
+
+  // Helper : contribution mensuelle (DA) d'un abonnement à un mois donné
+  type SubForChart = {
+    startDate: Date
+    cancelledAt: Date | null
+    status: string
+    plan: { price: number | string; interval: string; intervalCount: number }
+  }
+  function monthlyContribution(sub: SubForChart, mStart: Date, mEnd: Date): number {
+    if (sub.startDate > mEnd) return 0
+    if (sub.cancelledAt && sub.cancelledAt < mStart) return 0
+    const price = Number(sub.plan.price)
+    const count = sub.plan.intervalCount || 1
+    switch (sub.plan.interval) {
+      case 'DAILY':     return (price * 30) / count
+      case 'WEEKLY':    return (price * 30 / 7) / count
+      case 'MONTHLY':   return price / count
+      case 'QUARTERLY': return price / (3 * count)
+      case 'YEARLY':    return price / (12 * count)
+      default:          return price
+    }
+  }
+
+  // Pour chaque mois courant et précédent, ajoute la contribution abonnements aux montants factures
+  function monthlySubsTotal(yearOffset: number, monthIndex: number): number {
+    const mStart = new Date(year + yearOffset, monthIndex, 1)
+    const mEnd = new Date(year + yearOffset, monthIndex + 1, 0, 23, 59, 59)
+    return (subsForChart as SubForChart[]).reduce((s, sub) => s + monthlyContribution(sub, mStart, mEnd), 0)
+  }
+
+  // Enrichit currentYearMonthly et lastYearMonthly avec le CA abonnements
+  const mergeMonthly = (rows: { month: string; total: number }[], yearOffset: number) => {
+    const merged = new Map<string, number>()
+    for (const r of rows) merged.set(r.month, Number(r.total))
+    for (let i = 0; i < 12; i++) {
+      const monthKey = `${year + yearOffset}-${String(i + 1).padStart(2, '0')}`
+      const subs = monthlySubsTotal(yearOffset, i)
+      if (subs > 0) merged.set(monthKey, (merged.get(monthKey) ?? 0) + subs)
+    }
+    return Array.from(merged.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, total]) => ({ month, total: Math.round(total) }))
+  }
+
+  const enrichedCurrentYearMonthly = mergeMonthly(currentYearMonthly as { month: string; total: number }[], 0)
+  const enrichedLastYearMonthly = mergeMonthly(lastYearMonthly as { month: string; total: number }[], -1)
 
   // Calcul MRR normalisé mensuel
   const subsCurrentRevenue = (subsActiveForRevenue as Array<{ plan: { price: number | string; interval: string; intervalCount: number } }>)
@@ -199,7 +256,9 @@ async function getDashboardData(companyId: string) {
     weekRevenue: Number(weekRevenue._sum.total ?? 0),
     monthRevenue: Number(monthRevenue._sum.total ?? 0),
     unpaidInvoices, lowStockCount, recentInvoices, monthlyRevenue,
-    currentYearMonthly, lastYearMonthly, topClients, year,
+    currentYearMonthly: enrichedCurrentYearMonthly,
+    lastYearMonthly: enrichedLastYearMonthly,
+    topClients, year,
     currentYTD: Number(currentYTD._sum.total ?? 0),
     lastYearYTD: Number(lastYearYTD._sum.total ?? 0),
     pendingQuotes, pendingExpenses,
