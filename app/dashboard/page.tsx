@@ -33,10 +33,13 @@ async function getDashboardData(companyId: string) {
   })
   const activeApps = activeAppSubs.map(s => s.appId)
 
-  // Affiche les KPIs abonnements si l'app est active OU s'il y a déjà au moins un abonnement créé
+  // Affiche les KPIs abonnements si l'app est active, ou s'il y a au moins un abonnement OU un plan
   const hasAppSubscriptions = activeApps.includes('subscriptions')
-  const hasAnySubscription = await prisma.subscription.count({ where: { companyId } }).catch(() => 0)
-  const hasSubscriptionsApp = hasAppSubscriptions || hasAnySubscription > 0
+  const [hasAnySubscription, hasAnyPlan] = await Promise.all([
+    prisma.subscription.count({ where: { companyId } }).catch(() => 0),
+    prisma.subscriptionPlan.count({ where: { companyId } }).catch(() => 0),
+  ])
+  const hasSubscriptionsApp = hasAppSubscriptions || hasAnySubscription > 0 || hasAnyPlan > 0
 
   const in30days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
