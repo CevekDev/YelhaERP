@@ -44,10 +44,12 @@ function createCustomAdapter(): Adapter {
       // Create YelhaSubscription (essai 30j) — identique au flow email/password
       await prisma.yelhaSubscription.create({
         data: {
-          companyId:  company.id,
-          planId:     'trial',
-          status:     'TRIAL',
+          companyId:        company.id,
+          planId:           'trial',
+          status:           'TRIAL',
           trialEndsAt,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd:   trialEndsAt,
         },
       }).catch(() => {})
 
