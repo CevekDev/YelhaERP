@@ -233,7 +233,7 @@ export async function generateChargilyCheckout(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        amount: Math.round(amountDA * 100),
+        amount: Math.round(amountDA),
         currency: 'dzd',
         success_url: successUrl,
         failure_url: successUrl,
