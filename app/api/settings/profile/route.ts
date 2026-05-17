@@ -19,10 +19,11 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true, password: true },
     })
     if (!user) return apiError('Utilisateur introuvable', 404)
-    return apiSuccess(user)
+    const { password, ...rest } = user
+    return apiSuccess({ ...rest, hasPassword: !!password })
   } catch (e: unknown) {
     if (e instanceof Error && e.message === 'UNAUTHORIZED') return apiError('Non autorisé', 401)
     return apiError('Erreur serveur', 500)

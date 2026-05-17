@@ -20,6 +20,7 @@ interface UserProfile {
   phone: string | null
   role: string
   createdAt: string
+  hasPassword: boolean
 }
 
 const LANGS: { code: Locale; label: string; flag: string }[] = [
@@ -29,7 +30,7 @@ const LANGS: { code: Locale; label: string; flag: string }[] = [
 ]
 
 export default function ProfilePage() {
-  const { locale, setLocale } = useT()
+  const { t, locale, setLocale } = useT()
   const { data: session } = useSession()
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -56,9 +57,9 @@ export default function ProfilePage() {
           setPhone(d.phone ?? '')
         }
       })
-      .catch(() => toast.error('Erreur de chargement'))
+      .catch(() => toast.error(t('profile.loading_error')))
       .finally(() => setLoading(false))
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSaveProfile() {
     setSaving(true)
@@ -69,20 +70,20 @@ export default function ProfilePage() {
         body: JSON.stringify({ name: name.trim() || undefined, phone: phone.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? 'Erreur'); return }
+      if (!res.ok) { toast.error(data.error ?? t('common.error')); return }
       setProfile(prev => prev ? { ...prev, ...data } : prev)
-      toast.success('Profil mis à jour')
+      toast.success(t('profile.saved'))
     } catch {
-      toast.error('Erreur réseau')
+      toast.error(t('profile.network_error'))
     } finally {
       setSaving(false)
     }
   }
 
   async function handleChangePassword() {
-    if (!newPassword) { toast.error('Nouveau mot de passe requis'); return }
-    if (newPassword.length < 8) { toast.error('Le mot de passe doit faire au moins 8 caractères'); return }
-    if (newPassword !== confirmPassword) { toast.error('Les mots de passe ne correspondent pas'); return }
+    if (!newPassword) { toast.error(t('profile.pwd_required')); return }
+    if (newPassword.length < 8) { toast.error(t('profile.pwd_too_short')); return }
+    if (newPassword !== confirmPassword) { toast.error(t('profile.pwd_mismatch')); return }
     setSavingPassword(true)
     try {
       const res = await fetch('/api/auth/change-password', {
@@ -91,13 +92,13 @@ export default function ProfilePage() {
         body: JSON.stringify({ currentPassword, newPassword }),
       })
       const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? 'Erreur'); return }
-      toast.success('Mot de passe modifié')
+      if (!res.ok) { toast.error(data.error ?? t('common.error')); return }
+      toast.success(t('profile.pwd_changed'))
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch {
-      toast.error('Erreur réseau')
+      toast.error(t('profile.network_error'))
     } finally {
       setSavingPassword(false)
     }
@@ -117,17 +118,17 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <Header title="Mon profil" />
+      <Header title={t('profile.title')} />
       <div className="p-4 md:p-6 max-w-2xl space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Mon profil</h1>
-          <p className="text-muted-foreground text-sm mt-1">Gérez vos informations personnelles et préférences.</p>
+          <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t('profile.desc')}</p>
         </div>
 
         {/* Avatar + identity */}
         <Card>
-          <CardContent className="p-6 space-y-5">
-            <div className="flex items-center gap-4">
+          <CardContent className="p-4 sm:p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className={`w-16 h-16 rounded-full ${avatarColor} flex items-center justify-center text-white text-xl font-bold shrink-0`}>
                 {initials}
               </div>
@@ -139,32 +140,32 @@ export default function ProfilePage() {
 
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label>Nom complet</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Votre nom" />
+                <Label>{t('profile.full_name')}</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder={t('profile.name_placeholder')} />
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t('profile.email_label')}</Label>
                 <Input value={profile?.email ?? ''} disabled className="bg-muted" />
-                <p className="text-xs text-muted-foreground">Pour modifier votre adresse email, contactez le support.</p>
+                <p className="text-xs text-muted-foreground">{t('profile.email_hint')}</p>
               </div>
               <div className="space-y-2">
-                <Label>Téléphone</Label>
+                <Label>{t('profile.phone_label')}</Label>
                 <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="05XXXXXXXX" />
               </div>
             </div>
 
             <Button onClick={handleSaveProfile} disabled={saving} className="w-full sm:w-auto">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Enregistrer les modifications
+              {t('profile.save_btn')}
             </Button>
           </CardContent>
         </Card>
 
         {/* Language preference */}
         <Card>
-          <CardContent className="p-6">
-            <h2 className="font-semibold mb-1">Langue d&apos;interface</h2>
-            <p className="text-xs text-muted-foreground mb-4">Choisissez la langue d&apos;affichage de l&apos;application.</p>
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="font-semibold mb-1">{t('profile.lang_title')}</h2>
+            <p className="text-xs text-muted-foreground mb-4">{t('profile.lang_desc')}</p>
             <div className="flex gap-2 flex-wrap">
               {LANGS.map(l => (
                 <button
@@ -186,11 +187,11 @@ export default function ProfilePage() {
 
         {/* Theme preference */}
         <Card>
-          <CardContent className="p-6">
-            <h2 className="font-semibold mb-1">Apparence</h2>
-            <p className="text-xs text-muted-foreground mb-4">Choisissez le thème clair ou sombre.</p>
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="font-semibold mb-1">{t('profile.theme_title')}</h2>
+            <p className="text-xs text-muted-foreground mb-4">{t('profile.theme_desc')}</p>
             {mounted && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setTheme('light')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
@@ -200,7 +201,7 @@ export default function ProfilePage() {
                   }`}
                 >
                   <Sun className="h-4 w-4" />
-                  Clair
+                  {t('profile.theme_light')}
                 </button>
                 <button
                   onClick={() => setTheme('dark')}
@@ -211,64 +212,73 @@ export default function ProfilePage() {
                   }`}
                 >
                   <Moon className="h-4 w-4" />
-                  Sombre
+                  {t('profile.theme_dark')}
                 </button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Change password */}
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <h2 className="font-semibold">Changer le mot de passe</h2>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Mot de passe actuel</Label>
-                <Input
-                  type="password"
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
+        {/* Change password — only for non-OAuth users */}
+        {profile?.hasPassword ? (
+          <Card>
+            <CardContent className="p-4 sm:p-6 space-y-4">
+              <h2 className="font-semibold">{t('profile.pwd_title')}</h2>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>{t('profile.pwd_current')}</Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('profile.pwd_new')}</Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder={t('profile.pwd_new_placeholder')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('profile.pwd_confirm')}</Label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Nouveau mot de passe</Label>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder="Min. 8 caractères"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Confirmer le nouveau mot de passe</Label>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-            <Button onClick={handleChangePassword} disabled={savingPassword} variant="outline">
-              {savingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Modifier le mot de passe
-            </Button>
-          </CardContent>
-        </Card>
+              <Button onClick={handleChangePassword} disabled={savingPassword} variant="outline">
+                {savingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {t('profile.pwd_save_btn')}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : profile && !profile.hasPassword ? (
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <h2 className="font-semibold mb-2">{t('profile.pwd_title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('profile.pwd_google_note')}</p>
+            </CardContent>
+          </Card>
+        ) : null}
 
-        {/* Danger zone */}
+        {/* Sign out */}
         <Card className="border-red-200">
-          <CardContent className="p-6">
-            <h2 className="font-semibold text-red-600 mb-3">Zone de déconnexion</h2>
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="font-semibold text-red-600 mb-3">{t('profile.logout_title')}</h2>
             <Button
               variant="destructive"
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="gap-2"
             >
               <LogOut className="h-4 w-4" />
-              Se déconnecter
+              {t('profile.logout_btn')}
             </Button>
           </CardContent>
         </Card>

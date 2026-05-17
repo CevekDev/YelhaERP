@@ -17,12 +17,14 @@ import { toast } from 'sonner'
 import { Eye, Building2, User, Users } from 'lucide-react'
 import Link from 'next/link'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
+import { useT } from '@/lib/i18n'
 
 interface Client { id: string; name: string; firstName?: string; clientType: string; email?: string; phone?: string; nif?: string; wilaya?: string }
 
 const EMPTY_FORM = { clientType: 'COMPANY', name: '', firstName: '', email: '', phone: '', nif: '', nis: '', rc: '', address: '', wilaya: '', description: '' }
 
 export default function ClientsPage() {
+  const { t } = useT()
   const [clients, setClients] = useState<Client[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -57,7 +59,7 @@ export default function ClientsPage() {
   }
 
   const columns = [
-    { key: 'name', header: 'Nom / Société', render: (r: Client) => (
+    { key: 'name', header: t('pages.clients_col_name'), render: (r: Client) => (
       <div className="flex items-center gap-2">
         <div className={`w-6 h-6 rounded-full flex items-center justify-center ${r.clientType === 'COMPANY' ? 'bg-blue-100' : 'bg-yelha-100'}`}>
           {r.clientType === 'COMPANY' ? <Building2 className="h-3 w-3 text-blue-600" /> : <User className="h-3 w-3 text-yelha-600" />}
@@ -66,9 +68,9 @@ export default function ClientsPage() {
       </div>
     )},
     { key: 'nif', header: 'NIF', render: (r: Client) => r.nif ?? <span className="text-muted-foreground">—</span> },
-    { key: 'phone', header: 'Téléphone', render: (r: Client) => r.phone ?? <span className="text-muted-foreground">—</span> },
-    { key: 'email', header: 'Email', render: (r: Client) => r.email ?? <span className="text-muted-foreground">—</span> },
-    { key: 'wilaya', header: 'Wilaya', render: (r: Client) => r.wilaya ?? <span className="text-muted-foreground">—</span> },
+    { key: 'phone', header: t('pages.clients_col_phone'), render: (r: Client) => r.phone ?? <span className="text-muted-foreground">—</span> },
+    { key: 'email', header: t('common.email'), render: (r: Client) => r.email ?? <span className="text-muted-foreground">—</span> },
+    { key: 'wilaya', header: t('pages.clients_col_wilaya'), render: (r: Client) => r.wilaya ?? <span className="text-muted-foreground">—</span> },
     { key: 'actions', header: '', render: (r: Client) => (
       <Link href={`/dashboard/clients/${r.id}`}><Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button></Link>
     )},
@@ -76,14 +78,14 @@ export default function ClientsPage() {
 
   return (
     <div>
-      <Header title="Clients" />
+      <Header title={t('pages.clients_title')} />
       <div className="p-4 md:p-6">
-        <PageHeader title="Clients" description={`${total} client${total > 1 ? 's' : ''}`} actionLabel="Nouveau client" onAction={() => setOpen(true)} actionDataTutorial="new-client" />
+        <PageHeader title={t('pages.clients_title')} description={`${total} ${t('pages.clients_title').toLowerCase()}`} actionLabel={t('pages.clients_new')} onAction={() => setOpen(true)} actionDataTutorial="new-client" />
         <Card>
-          <div className="p-4 border-b"><SearchInput placeholder="Rechercher par nom, NIF..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
+          <div className="p-4 border-b"><SearchInput placeholder={t('common.search')} onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
             <DataTable data={clients as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading}
-              emptyIcon={Users} emptyText="Aucun client" emptyDescription="Ajoutez vos premiers clients pour pouvoir leur facturer." emptyAction={{ label: 'Ajouter un client', onClick: () => setOpen(true) }} />
+              emptyIcon={Users} emptyText={t('pages.clients_title')} emptyDescription={t('pages.clients_desc')} emptyAction={{ label: t('pages.clients_new'), onClick: () => setOpen(true) }} />
           </CardContent>
         </Card>
       </div>
@@ -91,7 +93,7 @@ export default function ClientsPage() {
       <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) setForm(EMPTY_FORM) }}>
         <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader className="shrink-0">
-            <DialogTitle>Nouveau client</DialogTitle>
+            <DialogTitle>{t('pages.clients_new')}</DialogTitle>
           </DialogHeader>
 
           {/* Type selector */}
@@ -165,9 +167,9 @@ export default function ClientsPage() {
           </div>
 
           <DialogFooter className="shrink-0 pt-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleSave} disabled={saving} className="bg-yelha-500 hover:bg-yelha-600">
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
+              {saving ? t('common.loading') : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

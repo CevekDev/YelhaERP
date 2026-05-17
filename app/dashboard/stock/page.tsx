@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
+import { useT } from '@/lib/i18n'
 
 interface Movement {
   id: string; type: string; quantity: number; unitCost?: number; reference?: string; createdAt: string
@@ -21,12 +22,19 @@ interface Movement {
 }
 interface Product { id: string; name: string }
 
-const TYPE_LABELS: Record<string, string> = { IN: 'Entrée', OUT: 'Sortie', ADJUSTMENT: 'Ajustement' }
 const TYPE_VARIANTS: Record<string, 'success' | 'destructive' | 'secondary'> = {
   IN: 'success', OUT: 'destructive', ADJUSTMENT: 'secondary',
 }
 
 export default function StockPage() {
+  const { t } = useT()
+
+  const TYPE_LABELS: Record<string, string> = {
+    IN: t('pages.stock_in'),
+    OUT: t('pages.stock_out'),
+    ADJUSTMENT: t('pages.stock_adj'),
+  }
+
   const [movements, setMovements] = useState<Movement[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
@@ -59,22 +67,22 @@ export default function StockPage() {
   }
 
   const columns = [
-    { key: 'product', header: 'Produit', render: (r: Movement) => r.product?.name ?? '—' },
-    { key: 'type', header: 'Type', render: (r: Movement) => <Badge variant={TYPE_VARIANTS[r.type]}>{TYPE_LABELS[r.type]}</Badge> },
-    { key: 'quantity', header: 'Quantité', render: (r: Movement) => `${r.quantity} ${r.product?.unit ?? ''}` },
-    { key: 'unitCost', header: 'Coût unitaire', className: 'da-amount', render: (r: Movement) => r.unitCost ? formatDA(r.unitCost) : '—' },
-    { key: 'reference', header: 'Référence', render: (r: Movement) => r.reference ?? '—' },
-    { key: 'createdAt', header: 'Date', render: (r: Movement) => new Date(r.createdAt).toLocaleDateString('fr-DZ') },
+    { key: 'product', header: t('pages.stock_col_product'), render: (r: Movement) => r.product?.name ?? '—' },
+    { key: 'type', header: t('pages.stock_col_type'), render: (r: Movement) => <Badge variant={TYPE_VARIANTS[r.type]}>{TYPE_LABELS[r.type]}</Badge> },
+    { key: 'quantity', header: t('pages.stock_col_qty'), render: (r: Movement) => `${r.quantity} ${r.product?.unit ?? ''}` },
+    { key: 'unitCost', header: t('common.amount'), className: 'da-amount', render: (r: Movement) => r.unitCost ? formatDA(r.unitCost) : '—' },
+    { key: 'reference', header: t('common.reference'), render: (r: Movement) => r.reference ?? '—' },
+    { key: 'createdAt', header: t('common.date'), render: (r: Movement) => new Date(r.createdAt).toLocaleDateString('fr-DZ') },
   ]
 
   return (
     <div>
-      <Header title="Stock" />
+      <Header title={t('pages.stock_title')} />
       <div className="p-4 md:p-6">
-        <PageHeader title="Mouvements de stock" description={`${total} mouvement${total > 1 ? 's' : ''}`} actionLabel="Nouveau mouvement" onAction={() => setOpen(true)} actionDataTutorial="new-movement" />
+        <PageHeader title={t('pages.stock_title')} description={`${total} ${t('pages.stock_title').toLowerCase()}`} actionLabel={t('pages.stock_new')} onAction={() => setOpen(true)} actionDataTutorial="new-movement" />
         <Card>
           <CardContent className="p-0">
-            <DataTable data={movements as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading} emptyText="Aucun mouvement de stock" />
+            <DataTable data={movements as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading} emptyText={t('pages.stock_title')} />
           </CardContent>
         </Card>
       </div>

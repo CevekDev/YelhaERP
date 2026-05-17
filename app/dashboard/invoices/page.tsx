@@ -15,11 +15,7 @@ import { Eye, Plus, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
-
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: 'Brouillon', SENT: 'Envoyée', PAID: 'Payée',
-  PARTIAL: 'Partielle', OVERDUE: 'En retard', CANCELLED: 'Annulée',
-}
+import { useT } from '@/lib/i18n'
 const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info'> = {
   DRAFT: 'secondary', SENT: 'info', PAID: 'success',
   PARTIAL: 'warning', OVERDUE: 'destructive', CANCELLED: 'outline',
@@ -31,7 +27,18 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const { t } = useT()
   const router = useRouter()
+
+  const STATUS_LABELS: Record<string, string> = {
+    DRAFT: t('pages.invoices_status_draft'),
+    SENT: t('pages.invoices_status_sent'),
+    PAID: t('pages.invoices_status_paid'),
+    PARTIAL: t('pages.invoices_status_partial'),
+    OVERDUE: t('pages.invoices_status_overdue'),
+    CANCELLED: t('pages.invoices_status_cancelled'),
+  }
+
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -54,14 +61,14 @@ export default function InvoicesPage() {
   useEffect(() => { fetchInvoices() }, [fetchInvoices])
 
   const columns = [
-    { key: 'number', header: 'N° Facture', className: 'font-mono', render: (row: Invoice) => (
+    { key: 'number', header: t('pages.invoices_col_number'), className: 'font-mono', render: (row: Invoice) => (
       <Link href={`/dashboard/invoices/${row.id}`} className="hover:underline text-yelha-600">{row.number}</Link>
     )},
-    { key: 'client', header: 'Client', render: (row: Invoice) => row.client?.name ?? '—' },
-    { key: 'issueDate', header: 'Date', render: (row: Invoice) => new Date(row.issueDate).toLocaleDateString('fr-DZ') },
-    { key: 'total', header: 'Montant', className: 'da-amount text-right',
+    { key: 'client', header: t('pages.invoices_col_client'), render: (row: Invoice) => row.client?.name ?? '—' },
+    { key: 'issueDate', header: t('pages.invoices_col_date'), render: (row: Invoice) => new Date(row.issueDate).toLocaleDateString('fr-DZ') },
+    { key: 'total', header: t('pages.invoices_col_total'), className: 'da-amount text-right',
       render: (row: Invoice) => formatDA(Number(row.total)) },
-    { key: 'status', header: 'Statut', render: (row: Invoice) => (
+    { key: 'status', header: t('pages.invoices_col_status'), render: (row: Invoice) => (
       <Badge variant={STATUS_VARIANTS[row.status]}>{STATUS_LABELS[row.status]}</Badge>
     )},
     { key: 'actions', header: '', render: (row: Invoice) => (
@@ -74,28 +81,25 @@ export default function InvoicesPage() {
   return (
     <>
     <div>
-      <Header title="Facturation" />
+      <Header title={t('pages.invoices_title')} />
       <div className="p-4 md:p-6">
-        <PageHeader title="Factures" description={`${total} facture${total > 1 ? 's' : ''} au total`} />
+        <PageHeader title={t('pages.invoices_title')} description={`${total} ${t('pages.invoices_title').toLowerCase()}`} />
         <Card>
-          <div className="p-4 border-b flex items-center gap-3">
+          <div className="p-4 border-b flex items-center gap-3 flex-wrap">
             <Select value={status} onValueChange={v => { setStatus(v); setPage(1) }}>
               <SelectTrigger className="w-40" data-tutorial="invoice-filters">
-                <SelectValue placeholder="Statut" />
+                <SelectValue placeholder={t('common.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Tous</SelectItem>
+                <SelectItem value="ALL">{t('common.apply')}</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([k, v]) => (
                   <SelectItem key={k} value={k}>{v}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <div className="flex-1" />
-            <Link href="/dashboard/invoices/new" data-tutorial="invoice-export">
-              <Button variant="outline" className="gap-2"><FileText className="h-4 w-4" />Exporter</Button>
-            </Link>
             <Link href="/dashboard/invoices/new">
-              <Button className="gap-2" data-tutorial="new-invoice"><Plus className="h-4 w-4" />Nouvelle facture</Button>
+              <Button className="gap-2" data-tutorial="new-invoice"><Plus className="h-4 w-4" />{t('pages.invoices_new')}</Button>
             </Link>
           </div>
           <CardContent className="p-0">
@@ -105,9 +109,9 @@ export default function InvoicesPage() {
               total={total} page={page} limit={20}
               onPageChange={setPage} loading={loading}
               emptyIcon={FileText}
-              emptyText="Aucune facture"
-              emptyDescription="Créez votre première facture pour commencer."
-              emptyAction={{ label: 'Nouvelle facture', onClick: () => router.push('/dashboard/invoices/new') }}
+              emptyText={t('pages.invoices_title')}
+              emptyDescription={t('pages.invoices_desc')}
+              emptyAction={{ label: t('pages.invoices_new'), onClick: () => router.push('/dashboard/invoices/new') }}
             />
           </CardContent>
         </Card>

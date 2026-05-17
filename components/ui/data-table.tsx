@@ -37,6 +37,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div>
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -80,6 +81,7 @@ export function DataTable<T extends Record<string, unknown>>({
           )}
         </TableBody>
       </Table>
+      </div>
 
       {pages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t">

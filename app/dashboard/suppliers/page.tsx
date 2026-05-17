@@ -15,10 +15,12 @@ import { WILAYAS_LIST } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Truck } from 'lucide-react'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
+import { useT } from '@/lib/i18n'
 
 interface Supplier { id: string; name: string; email?: string; phone?: string; nif?: string; wilaya?: string }
 
 export default function SuppliersPage() {
+  const { t } = useT()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -48,47 +50,47 @@ export default function SuppliersPage() {
   }
 
   const columns = [
-    { key: 'name', header: 'Nom', render: (r: Supplier) => <span className="font-medium">{r.name}</span> },
+    { key: 'name', header: t('common.name'), render: (r: Supplier) => <span className="font-medium">{r.name}</span> },
     { key: 'nif', header: 'NIF', render: (r: Supplier) => r.nif ?? '—' },
-    { key: 'phone', header: 'Téléphone', render: (r: Supplier) => r.phone ?? '—' },
-    { key: 'email', header: 'Email', render: (r: Supplier) => r.email ?? '—' },
-    { key: 'wilaya', header: 'Wilaya', render: (r: Supplier) => r.wilaya ?? '—' },
+    { key: 'phone', header: t('common.phone'), render: (r: Supplier) => r.phone ?? '—' },
+    { key: 'email', header: t('common.email'), render: (r: Supplier) => r.email ?? '—' },
+    { key: 'wilaya', header: t('common.wilaya'), render: (r: Supplier) => r.wilaya ?? '—' },
   ]
 
   return (
     <div>
-      <Header title="Fournisseurs" />
+      <Header title={t('pages.suppliers_title')} />
       <div className="p-4 md:p-6">
-        <PageHeader title="Fournisseurs" description={`${total} fournisseur${total > 1 ? 's' : ''}`} actionLabel="Nouveau fournisseur" onAction={() => setOpen(true)} actionDataTutorial="new-supplier" />
+        <PageHeader title={t('pages.suppliers_title')} description={`${total} ${t('pages.suppliers_title').toLowerCase()}`} actionLabel={t('pages.suppliers_new')} onAction={() => setOpen(true)} actionDataTutorial="new-supplier" />
         <Card>
-          <div className="p-4 border-b"><SearchInput placeholder="Rechercher..." onSearch={v => { setSearch(v); setPage(1) }} /></div>
+          <div className="p-4 border-b"><SearchInput placeholder={t('common.search')} onSearch={v => { setSearch(v); setPage(1) }} /></div>
           <CardContent className="p-0">
             <DataTable data={suppliers as unknown as Record<string, unknown>[]} columns={columns as never} total={total} page={page} limit={20} onPageChange={setPage} loading={loading}
-              emptyIcon={Truck} emptyText="Aucun fournisseur" emptyDescription="Ajoutez vos fournisseurs pour gérer vos achats." emptyAction={{ label: 'Ajouter un fournisseur', onClick: () => setOpen(true) }} />
+              emptyIcon={Truck} emptyText={t('pages.suppliers_title')} emptyDescription={t('pages.suppliers_desc')} emptyAction={{ label: t('pages.suppliers_new'), onClick: () => setOpen(true) }} />
           </CardContent>
         </Card>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Nouveau fournisseur</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('pages.suppliers_new')}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-2"><Label>Nom *</Label><Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} /></div>
+            <div className="col-span-2 space-y-2"><Label>{t('common.name')} *</Label><Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} /></div>
             <div className="space-y-2"><Label>NIF</Label><Input value={form.nif} onChange={e => setForm(f => ({...f, nif: e.target.value}))} /></div>
             <div className="space-y-2"><Label>RC</Label><Input value={form.rc} onChange={e => setForm(f => ({...f, rc: e.target.value}))} /></div>
-            <div className="space-y-2"><Label>Téléphone</Label><Input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} /></div>
-            <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} /></div>
-            <div className="col-span-2 space-y-2"><Label>Adresse</Label><Input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} /></div>
+            <div className="space-y-2"><Label>{t('common.phone')}</Label><Input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} /></div>
+            <div className="space-y-2"><Label>{t('common.email')}</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} /></div>
+            <div className="col-span-2 space-y-2"><Label>{t('common.address')}</Label><Input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} /></div>
             <div className="col-span-2 space-y-2">
-              <Label>Wilaya</Label>
+              <Label>{t('common.wilaya')}</Label>
               <Select value={form.wilaya} onValueChange={v => setForm(f => ({...f, wilaya: v}))}>
-                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('common.search')} /></SelectTrigger>
                 <SelectContent>{WILAYAS_LIST.map(w => <SelectItem key={w.code} value={w.name}>{w.code} — {w.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={saving}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleSave} disabled={saving}>{t('common.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

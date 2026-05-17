@@ -18,6 +18,7 @@ import { formatDA } from '@/lib/algerian/format'
 import { toast } from 'sonner'
 import { Package, ScanLine, Plus, Trash2, AlertTriangle, Weight, Ruler, Tag } from 'lucide-react'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
+import { useT } from '@/lib/i18n'
 
 interface ProductVariant {
   id?: string
@@ -61,6 +62,7 @@ const emptyForm = {
 const emptyVariant: ProductVariant = { name: '', sku: '', barcode: '', size: '', color: '', stockQty: 0 }
 
 export default function ProductsPage() {
+  const { t } = useT()
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -166,24 +168,24 @@ export default function ProductsPage() {
   }
 
   const columns = [
-    { key: 'name', header: 'Nom', render: (r: Product) => (
+    { key: 'name', header: t('common.name'), render: (r: Product) => (
       <div className="flex items-center gap-2">
         <span className="font-medium">{r.name}</span>
         {r.isFragile && <Badge variant="outline" className="text-orange-500 border-orange-300 text-[10px] gap-1"><AlertTriangle className="h-2.5 w-2.5" />Fragile</Badge>}
         {r.variants && r.variants.length > 0 && <Badge variant="secondary" className="text-[10px]">{r.variants.length} variante{r.variants.length > 1 ? 's' : ''}</Badge>}
       </div>
     )},
-    { key: 'sku', header: 'SKU / Code', render: (r: Product) => (
+    { key: 'sku', header: t('pages.products_col_sku'), render: (r: Product) => (
       <div className="font-mono text-xs space-y-0.5">
         {r.sku && <div>{r.sku}</div>}
         {r.barcode && <div className="text-muted-foreground">{r.barcode}</div>}
         {!r.sku && !r.barcode && <span className="text-muted-foreground">—</span>}
       </div>
     )},
-    { key: 'unitPrice', header: 'Prix', className: 'da-amount text-right',
+    { key: 'unitPrice', header: t('pages.products_col_price'), className: 'da-amount text-right',
       render: (r: Product) => formatDA(Number(r.unitPrice)) },
     { key: 'taxRate', header: 'TVA', render: (r: Product) => Number(r.taxRate) === 0 ? <span className="text-muted-foreground">Exonéré</span> : `${Number(r.taxRate)}%` },
-    { key: 'stockQty', header: 'Stock', render: (r: Product) => {
+    { key: 'stockQty', header: t('pages.products_col_stock'), render: (r: Product) => {
       const low = Number(r.stockQty) <= Number(r.stockAlert)
       return (
         <span className={low ? 'text-red-600 font-medium' : 'text-yelha-600'}>
@@ -203,18 +205,18 @@ export default function ProductsPage() {
 
   return (
     <div>
-      <Header title="Produits & Services" />
+      <Header title={t('pages.products_title')} />
       <div className="p-4 md:p-6">
         <PageHeader
-          title="Produits & Services"
-          description={`${total} article${total > 1 ? 's' : ''}`}
-          actionLabel="Nouveau produit"
+          title={t('pages.products_title')}
+          description={`${total} ${t('pages.products_title').toLowerCase()}`}
+          actionLabel={t('pages.products_new')}
           onAction={() => { setOpen(true); setForm(emptyForm); setVariants([]) }}
           actionDataTutorial="new-product"
         />
         <Card>
           <div className="p-4 border-b">
-            <SearchInput placeholder="Rechercher par nom, SKU ou code-barres..." onSearch={v => { setSearch(v); setPage(1) }} />
+            <SearchInput placeholder={t('common.search')} onSearch={v => { setSearch(v); setPage(1) }} />
           </div>
           <CardContent className="p-0">
             <DataTable
