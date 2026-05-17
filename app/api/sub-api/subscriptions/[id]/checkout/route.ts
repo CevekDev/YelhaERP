@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.chargilyKey}` },
         body: JSON.stringify({
-          amount: Math.round(amount * 100),
+          amount: Math.round(amount),
           currency: 'dzd',
           success_url: successUrl,
           failure_url: failureUrl,

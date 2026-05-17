@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
           Authorization: `Bearer ${chargilySecret}`,
         },
         body: JSON.stringify({
-          amount: totalDA * 100, // centimes
+          amount: totalDA,
           currency: 'dzd',
           success_url: 'https://erp.yelha.net/subscriptions/success',
           failure_url: 'https://erp.yelha.net/subscriptions/checkout',
