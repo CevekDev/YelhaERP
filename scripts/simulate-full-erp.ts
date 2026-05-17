@@ -575,8 +575,12 @@ async function main() {
       subApi('POST', '/plans', subk.raw, { name: 'Plan Post-Paiement', price: 3000 }),
     ])
 
-    rGet.status === 200                                                       ? pass(`GET  /plans → 200 ✓ (accès restauré via AppSub)`) : fail(`GET  /plans devrait être 200`, `HTTP ${rGet.status}`)
-    (rCreate.data as { data?: { id: string } }).data?.id ? pass(`POST /plans → créé ✓ (écriture restaurée)`)                          : fail(`POST /plans devrait créer`, `HTTP ${rCreate.status}`)
+    rGet.status === 200
+      ? pass(`GET  /plans → 200 ✓ (accès restauré via AppSub)`)
+      : fail(`GET  /plans devrait être 200`, `HTTP ${rGet.status}`)
+    ;(rCreate.data as { data?: { id: string } }).data?.id
+      ? pass(`POST /plans → créé ✓ (écriture restaurée)`)
+      : fail(`POST /plans devrait créer`, `HTTP ${rCreate.status}`)
 
     const newPlanId = (rCreate.data as { data?: { id: string } }).data?.id
     if (newPlanId) await subApi('DELETE', `/plans/${newPlanId}`, subk.raw)
