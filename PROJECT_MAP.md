@@ -1,6 +1,6 @@
 # 🗺️ PROJECT_MAP.md — YelhaERP
 
-> Dernière mise à jour : 2026-05-15
+> Dernière mise à jour : 2026-05-17
 > Lire ce fichier EN PREMIER à chaque session (voir CLAUDE.md).
 
 ---
@@ -446,6 +446,27 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 - ✅ Dark/Light mode
 - ✅ Tutoriels interactifs
 - ✅ Raccourcis clavier
+
+---
+
+## 🔄 Changements session 2026-05-17 (suite) — i18n, profil, responsive
+
+### Traductions & i18n
+- ✅ `lib/i18n/translations.ts` : ajout section `profile` en FR/EN/AR (34 clés)
+- ✅ `app/dashboard/invoices/page.tsx` : STATUS_LABELS + colonnes + headers via `useT()`
+- ✅ `app/dashboard/clients/page.tsx` : colonnes, labels, boutons via `useT()`
+- ✅ `app/dashboard/suppliers/page.tsx` : entête, colonnes, formulaire via `useT()`
+- ✅ `app/dashboard/products/page.tsx` : entête, colonnes via `useT()`
+- ✅ `app/dashboard/stock/page.tsx` : TYPE_LABELS + colonnes + entête via `useT()`
+
+### Profil & Sécurité Auth
+- ✅ `app/api/auth/change-password/route.ts` : CRÉÉ — bcrypt.compare + validation Zod + bcrypt.hash (12 rounds)
+- ✅ `app/api/settings/profile/route.ts` : GET expose `hasPassword: !!user.password` (hash jamais renvoyé)
+- ✅ `app/dashboard/settings/profile/page.tsx` : traduit entièrement + cache section mot de passe pour comptes Google OAuth
+
+### Responsive Mobile
+- ✅ `components/ui/data-table.tsx` : `<Table>` wrappé dans `<div className="overflow-x-auto">` → corrige dépassement horizontal sur toutes les pages liste (factures, clients, produits, fournisseurs, stock…)
+- ✅ `app/dashboard/settings/profile/page.tsx` : `flex-col sm:flex-row` sur section avatar, `p-4 sm:p-6` sur toutes les Cards
 
 ---
 
