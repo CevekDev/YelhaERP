@@ -88,9 +88,10 @@ function AppCheckout({ appId }: { appId: string }) {
     fetch(`/api/app-billing/${appId}/plans`)
       .then(r => r.json())
       .then(d => {
-        if (d.data?.plans) {
+        const plans = d.plans ?? d.data?.plans
+        if (Array.isArray(plans)) {
           const overrides: Record<string, number> = {}
-          for (const p of d.data.plans) overrides[p.id] = p.price
+          for (const p of plans) overrides[p.id] = p.price
           setPriceOverrides(overrides)
         }
       })

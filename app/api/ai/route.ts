@@ -106,6 +106,9 @@ Ne jamais inventer de données non fournies — indique clairement ce que tu ne 
 
     if (!process.env.DEEPSEEK_API_KEY) return apiError('Service IA non configuré', 503)
 
+    // Plans sans accès IA
+    if (quota === 0) return apiError('L\'assistance IA est disponible à partir du plan Pro. Passez à Pro pour débloquer l\'accès.', 403)
+
     // Atomic quota check + increment — prevents race conditions under concurrent requests
     if (quota !== Infinity) {
       if (needsReset) {

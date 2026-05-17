@@ -23,7 +23,7 @@ export const APP_PLANS = {
         aiRequestsPerMonth: 0,
         aiRequestsPerDay: 0,
         description: 'Pour les petites activités',
-        features: ['20 abonnements', 'Chargily Pay + CCP', 'Relances auto', 'PDF professionnel'],
+        features: ['20 abonnements max', 'Facturation récurrente', 'Portail client', 'Chargily & CCP'],
       },
       premium: {
         id: 'premium',
@@ -34,7 +34,7 @@ export const APP_PLANS = {
         aiRequestsPerMonth: 0,
         aiRequestsPerDay: 0,
         description: 'Pour les activités en croissance',
-        features: ['50 abonnements', 'Tout Starter', 'Statistiques avancées', 'Export Excel'],
+        features: ['50 abonnements max', 'Facturation récurrente', 'Portail client', 'Chargily & CCP'],
       },
       pro: {
         id: 'pro',
@@ -45,7 +45,7 @@ export const APP_PLANS = {
         aiRequestsPerMonth: 30,
         aiRequestsPerDay: 0,
         description: 'Pour les entreprises établies',
-        features: ['200 abonnements', 'Tout Premium', 'Assistance IA 30 req/mois', 'API webhooks'],
+        features: ['200 abonnements max', 'Facturation récurrente', 'Portail client', 'Chargily & CCP', 'Assistance IA – 30 req/mois'],
       },
       agency: {
         id: 'agency',
@@ -56,7 +56,7 @@ export const APP_PLANS = {
         aiRequestsPerMonth: 0,
         aiRequestsPerDay: 30,
         description: 'Pour les agences et grandes structures',
-        features: ['Abonnements illimités', 'Tout Pro', 'IA 30 req/jour', 'Support prioritaire', 'Multi-comptes'],
+        features: ['Abonnements illimités', 'Facturation récurrente', 'Portail client', 'Chargily & CCP', 'Assistance IA – 30 req/jour'],
       },
     },
   },

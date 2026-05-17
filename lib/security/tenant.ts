@@ -71,10 +71,10 @@ export function requireRole(userRole: Role, requiredRole: Role): void {
   }
 }
 
-// Quotas IA par plan
+// Quotas IA par plan — IA disponible uniquement à partir du plan PRO
 export const AI_QUOTAS: Record<string, number> = {
-  TRIAL: 30,
-  STARTER: 50,
+  TRIAL: 0,
+  STARTER: 0,
   PRO: 300,
   AGENCY: Infinity,
 }
