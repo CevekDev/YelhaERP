@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimitByKey } from '@/lib/security/ratelimit'
+import { canAccessApp } from '@/lib/billing/check-app-access'
 
 const KEY_PREFIX = 'yelha_sub_'
 
@@ -67,6 +68,16 @@ export async function withSubApi(
     res.headers.set('X-RateLimit-Remaining', '0')
     res.headers.set('X-RateLimit-Reset', String(rl.reset))
     return res
+  }
+
+  // Vérifier que l'abonnement app Abonnements est toujours actif
+  const hasAccess = await canAccessApp(key.companyId, 'subscriptions')
+  if (!hasAccess) {
+    return errorRes(
+      'Votre abonnement app Abonnements a expiré. Renouvelez sur erp.yelha.net/dashboard/settings/applications',
+      403,
+      'APP_SUBSCRIPTION_EXPIRED',
+    )
   }
 
   // Touch lastUsedAt (fire & forget)

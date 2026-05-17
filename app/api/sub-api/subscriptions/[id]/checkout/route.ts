@@ -20,6 +20,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     })
     if (!sub) return apiError('Abonnement introuvable', 404, 'NOT_FOUND')
 
+    if (sub.status === 'EXPIRED' || sub.status === 'CANCELLED') {
+      return apiError(
+        'Impossible de générer un paiement pour un abonnement expiré ou annulé.',
+        409,
+        'SUBSCRIPTION_NOT_RENEWABLE',
+      )
+    }
+
     const settings = sub.company.subscriptionSettings
     if (!settings?.chargilyKey) {
       return apiError(

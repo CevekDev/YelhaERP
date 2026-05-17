@@ -1830,7 +1830,8 @@ model Subscription {
   // Email du client (pour rappels)
   clientEmail    String?
   // Anti-spam : derniers emails envoyés (date)
-  lastRenewalReminderAt DateTime?
+  lastRenewalReminder3At DateTime?
+  lastRenewalReminderAt  DateTime?
   lastTrialEndReminderAt DateTime?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
