@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { MobileSidebarTrigger } from '@/components/layout/sidebar'
+import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { useT } from '@/lib/i18n'
 import { APPS } from '@/lib/pricing/config'
 
 
@@ -315,6 +317,7 @@ const MODULE_APPS: Record<string, string[]> = {
 export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const { t } = useT()
   const [activeApps, setActiveApps] = useState<string[] | null>(null)
 
   useEffect(() => {
@@ -363,7 +366,7 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-muted-foreground/40 cursor-not-allowed select-none"
                 >
                   <module.icon className="h-3.5 w-3.5" />
-                  <span>{module.label}</span>
+                  <span>{t('modules.' + module.id)}</span>
                   <span className="text-[9px] font-bold bg-slate-100 text-slate-400 px-1 py-0.5 rounded-full leading-none">
                     Bientôt
                   </span>
@@ -383,7 +386,7 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
                 )}
               >
                 <module.icon className="h-3.5 w-3.5" />
-                <span>{module.label}</span>
+                <span>{t('modules.' + module.id)}</span>
               </Link>
             )
           })}
@@ -392,6 +395,7 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
         {/* Right side — always visible */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
 
+          <LanguageSwitcher />
           <NotificationBell />
 
           {/* User menu */}
@@ -449,12 +453,32 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
   )
 }
 
+// href → translation key (when sidebar key matches semantically)
+const SUBNAV_KEYS: Record<string, string> = {
+  '/dashboard/quotes':              'sidebar.quotes',
+  '/dashboard/invoices':            'sidebar.invoices',
+  '/dashboard/clients':             'sidebar.clients',
+  '/dashboard/suppliers':           'sidebar.suppliers',
+  '/dashboard/products':            'sidebar.products',
+  '/dashboard/stock':               'sidebar.stock',
+  '/dashboard/expenses':            'sidebar.expenses',
+  '/dashboard/tax':                 'sidebar.tax',
+  '/dashboard/settings':            'sidebar.settings',
+  '/dashboard/notifications':       'sidebar.notifications',
+  '/dashboard/ai':                  'sidebar.ai',
+  '/dashboard/subscriptions':       'modules.abonnements',
+  '/dashboard/subscriptions/plans': 'pricing.badge',
+}
+
 // ── Sub Navigation ───────────────────────────────────────────
 function SubNav({ module, pathname }: { module: Module; pathname: string }) {
+  const { t } = useT()
   return (
     <nav className="fixed w-full h-10 bg-background border-b border-border z-40 flex items-center px-4 gap-1 overflow-x-auto top-14">
       {module.subNav.map((item: { label: string; href: string }) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const key = SUBNAV_KEYS[item.href]
+        const label = key ? t(key) : item.label
         return (
           <Link
             key={item.href}
@@ -466,7 +490,7 @@ function SubNav({ module, pathname }: { module: Module; pathname: string }) {
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             )}
           >
-            {item.label}
+            {label}
           </Link>
         )
       })}

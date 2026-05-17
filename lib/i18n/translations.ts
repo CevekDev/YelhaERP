@@ -350,6 +350,22 @@ const fr = {
     notifications: 'Notifications',
     language: 'Langue',
   },
+  // ── Modules navigation (top-nav tabs) ─────────────────────
+  modules: {
+    dashboard:    'Tableau de bord',
+    ventes:       'Ventes',
+    achats:       'Achats',
+    stocks:       'Stocks',
+    compta:       'Compta',
+    rh:           'RH',
+    projets:      'Projets',
+    production:   'Production',
+    crm:          'CRM',
+    pos:          'Caisse',
+    ecommerce:    'E-commerce',
+    abonnements:  'Abonnements',
+    restaurant:   'Restaurant',
+  },
 }
 
 const en: typeof fr = {
@@ -689,6 +705,21 @@ const en: typeof fr = {
     notifications: 'Notifications',
     language: 'Language',
   },
+  modules: {
+    dashboard:    'Dashboard',
+    ventes:       'Sales',
+    achats:       'Purchases',
+    stocks:       'Inventory',
+    compta:       'Accounting',
+    rh:           'HR',
+    projets:      'Projects',
+    production:   'Production',
+    crm:          'CRM',
+    pos:          'POS',
+    ecommerce:    'E-commerce',
+    abonnements:  'Subscriptions',
+    restaurant:   'Restaurant',
+  },
 }
 
 const ar: typeof fr = {
@@ -1027,6 +1058,21 @@ const ar: typeof fr = {
     theme_dark: 'الوضع الداكن',
     notifications: 'الإشعارات',
     language: 'اللغة',
+  },
+  modules: {
+    dashboard:    'لوحة التحكم',
+    ventes:       'المبيعات',
+    achats:       'المشتريات',
+    stocks:       'المخزون',
+    compta:       'المحاسبة',
+    rh:           'الموارد البشرية',
+    projets:      'المشاريع',
+    production:   'الإنتاج',
+    crm:          'إدارة العملاء',
+    pos:          'نقطة البيع',
+    ecommerce:    'التجارة الإلكترونية',
+    abonnements:  'الاشتراكات',
+    restaurant:   'المطعم',
   },
 }
 
