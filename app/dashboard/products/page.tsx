@@ -175,7 +175,7 @@ export default function ProductsPage() {
         {r.variants && r.variants.length > 0 && <Badge variant="secondary" className="text-[10px]">{r.variants.length} variante{r.variants.length > 1 ? 's' : ''}</Badge>}
       </div>
     )},
-    { key: 'sku', header: t('pages.products_col_sku'), render: (r: Product) => (
+    { key: 'sku', header: t('pages.products_col_sku'), className: 'hidden sm:table-cell', render: (r: Product) => (
       <div className="font-mono text-xs space-y-0.5">
         {r.sku && <div>{r.sku}</div>}
         {r.barcode && <div className="text-muted-foreground">{r.barcode}</div>}
@@ -194,7 +194,7 @@ export default function ProductsPage() {
         </span>
       )
     }},
-    { key: 'details', header: 'Détails', render: (r: Product) => (
+    { key: 'details', header: 'Détails', className: 'hidden lg:table-cell', render: (r: Product) => (
       <div className="text-xs text-muted-foreground space-y-0.5">
         {r.weight && <span className="flex items-center gap-1"><Weight className="h-3 w-3" />{r.weight} kg</span>}
         {r.dimensions && <span className="flex items-center gap-1"><Ruler className="h-3 w-3" />{r.dimensions}</span>}

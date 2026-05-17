@@ -70,9 +70,9 @@ export default function StockPage() {
     { key: 'product', header: t('pages.stock_col_product'), render: (r: Movement) => r.product?.name ?? '—' },
     { key: 'type', header: t('pages.stock_col_type'), render: (r: Movement) => <Badge variant={TYPE_VARIANTS[r.type]}>{TYPE_LABELS[r.type]}</Badge> },
     { key: 'quantity', header: t('pages.stock_col_qty'), render: (r: Movement) => `${r.quantity} ${r.product?.unit ?? ''}` },
-    { key: 'unitCost', header: t('common.amount'), className: 'da-amount', render: (r: Movement) => r.unitCost ? formatDA(r.unitCost) : '—' },
-    { key: 'reference', header: t('common.reference'), render: (r: Movement) => r.reference ?? '—' },
-    { key: 'createdAt', header: t('common.date'), render: (r: Movement) => new Date(r.createdAt).toLocaleDateString('fr-DZ') },
+    { key: 'unitCost', header: t('common.amount'), className: 'da-amount hidden sm:table-cell', render: (r: Movement) => r.unitCost ? formatDA(r.unitCost) : '—' },
+    { key: 'reference', header: t('common.reference'), className: 'hidden md:table-cell', render: (r: Movement) => r.reference ?? '—' },
+    { key: 'createdAt', header: t('common.date'), className: 'hidden sm:table-cell', render: (r: Movement) => new Date(r.createdAt).toLocaleDateString('fr-DZ') },
   ]
 
   return (

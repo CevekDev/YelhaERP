@@ -135,7 +135,7 @@ export default function SubscriptionsPage() {
       render: (row: Sub) => (
         <div>
           <p className="font-medium text-sm">{row.plan.name}</p>
-          <p className="text-xs text-muted-foreground da-amount">
+          <p className="text-xs text-muted-foreground da-amount whitespace-nowrap">
             {formatDA(Number(row.plan.price))} / {row.plan.intervalCount > 1 ? `${row.plan.intervalCount} ` : ''}{INTERVAL_LABELS[row.plan.interval]}
           </p>
         </div>
@@ -143,10 +143,12 @@ export default function SubscriptionsPage() {
     },
     {
       key: 'startDate', header: 'Début',
+      className: 'hidden sm:table-cell',
       render: (row: Sub) => new Date(row.startDate).toLocaleDateString('fr-DZ'),
     },
     {
-      key: 'nextBilling', header: 'Prochain paiement',
+      key: 'nextBilling', header: 'Paiement',
+      className: 'hidden md:table-cell',
       render: (row: Sub) => row.nextBilling
         ? new Date(row.nextBilling).toLocaleDateString('fr-DZ')
         : <span className="text-muted-foreground">—</span>,
@@ -157,6 +159,7 @@ export default function SubscriptionsPage() {
     },
     {
       key: 'reminder', header: 'Rappel',
+      className: 'hidden lg:table-cell',
       render: (row: Sub) =>
         row.clientEmail ? (
           <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400" title={row.clientEmail}>

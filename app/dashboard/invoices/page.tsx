@@ -65,8 +65,8 @@ export default function InvoicesPage() {
       <Link href={`/dashboard/invoices/${row.id}`} className="hover:underline text-yelha-600">{row.number}</Link>
     )},
     { key: 'client', header: t('pages.invoices_col_client'), render: (row: Invoice) => row.client?.name ?? '—' },
-    { key: 'issueDate', header: t('pages.invoices_col_date'), render: (row: Invoice) => new Date(row.issueDate).toLocaleDateString('fr-DZ') },
-    { key: 'total', header: t('pages.invoices_col_total'), className: 'da-amount text-right',
+    { key: 'issueDate', header: t('pages.invoices_col_date'), className: 'hidden sm:table-cell', render: (row: Invoice) => new Date(row.issueDate).toLocaleDateString('fr-DZ') },
+    { key: 'total', header: t('pages.invoices_col_total'), className: 'da-amount text-right hidden sm:table-cell',
       render: (row: Invoice) => formatDA(Number(row.total)) },
     { key: 'status', header: t('pages.invoices_col_status'), render: (row: Invoice) => (
       <Badge variant={STATUS_VARIANTS[row.status]}>{STATUS_LABELS[row.status]}</Badge>
