@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { Building2, CreditCard, Plug, Users, ChevronRight, CheckCircle, User, LayoutGrid } from 'lucide-react'
+import { Building2, CreditCard, Users, ChevronRight, CheckCircle, User, LayoutGrid } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -27,13 +27,6 @@ const SECTIONS = [
     label: 'Abonnement',
     description: 'Vos abonnements actifs, renouveler ou résilier',
     color: 'bg-yelha-50 text-yelha-600',
-  },
-  {
-    href: '/dashboard/settings/integrations',
-    icon: Plug,
-    label: 'Intégrations',
-    description: 'Connecter Shopify, WooCommerce et autres services',
-    color: 'bg-green-50 text-green-600',
   },
   {
     href: '/dashboard/settings/admins',
