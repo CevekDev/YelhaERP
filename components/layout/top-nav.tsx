@@ -465,7 +465,6 @@ const SUBNAV_KEYS: Record<string, string> = {
   '/dashboard/tax':                 'sidebar.tax',
   '/dashboard/settings':            'sidebar.settings',
   '/dashboard/notifications':       'sidebar.notifications',
-  '/dashboard/ai':                  'sidebar.ai',
   '/dashboard/subscriptions':       'modules.abonnements',
   '/dashboard/subscriptions/plans': 'pricing.badge',
 }
