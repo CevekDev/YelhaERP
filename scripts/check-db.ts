@@ -28,9 +28,6 @@ async function main() {
     console.log(`  AppSubscriptions: ${c.appSubscriptions.map((a: any) => `${a.appId}=${a.status}`).join(', ') || 'none'}`)
   }
 
-  const plans = await prisma.yelhaPlan.findMany({ take: 5 })
-  console.log(`\n=== ${plans.length} YelhaPlan(s) ===`)
-  plans.forEach((p: any) => console.log(`  • ${p.name} (${p.id}) — ${p.price} DZD`))
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())
