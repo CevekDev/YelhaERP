@@ -158,11 +158,6 @@ function SidebarContent({ companyName, businessType, activeApps, onNavigate }: S
             >
               <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
               <span className="flex-1 truncate">{t(item.key)}</span>
-              {'badge' in item && item.badge && (
-                <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-bold', active ? 'bg-white/25 text-white' : 'bg-yelha-100 text-yelha-700 dark:bg-yelha-900/30 dark:text-yelha-400')}>
-                  {item.badge}
-                </span>
-              )}
             </Link>
           )
         })}
