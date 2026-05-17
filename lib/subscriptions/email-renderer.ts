@@ -60,6 +60,17 @@ function whatsappLinkFor(lang: EmailLang, whatsapp: string, planName: string, is
   return `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`
 }
 
+function makeEmailButton(href: string, label: string, bg: string): string {
+  // Table-based button — the only reliably clickable pattern across all email clients
+  return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:10px;">
+      <tr>
+        <td style="border-radius:8px;background:${bg};">
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:12px 24px;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;line-height:1.4;border-radius:8px;">${label}</a>
+        </td>
+      </tr>
+    </table>`
+}
+
 function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s: PaymentSettings): string {
   const isNew = s.isNew ?? false
   const t = {
@@ -68,30 +79,33 @@ function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s
       ccpTitle: '💳 Virement CCP',
       ccpInstr: (a: string) => `Effectuez un virement de <strong>${a}</strong> sur le compte CCP :`,
       chargilyTitle: '🔵 Paiement en ligne (Chargily ePay)',
-      chargilyBtn: 'Payer maintenant',
+      chargilyBtn: 'Payer maintenant →',
       whatsappTitle: '📱 WhatsApp',
       whatsappInstr: isNew ? 'Contactez-nous sur WhatsApp pour payer votre abonnement :' : 'Contactez-nous sur WhatsApp pour finaliser votre renouvellement :',
-      whatsappBtn: 'Ouvrir WhatsApp',
+      whatsappBtn: 'Ouvrir WhatsApp →',
+      contactMsg: (a: string) => `Veuillez nous contacter pour effectuer votre paiement de <strong>${a}</strong>.`,
     },
     en: {
       title: isNew ? '👇 How to pay?' : '👇 How to renew?',
       ccpTitle: '💳 CCP Bank Transfer',
       ccpInstr: (a: string) => `Transfer <strong>${a}</strong> to CCP account:`,
       chargilyTitle: '🔵 Online Payment (Chargily ePay)',
-      chargilyBtn: 'Pay now',
+      chargilyBtn: 'Pay now →',
       whatsappTitle: '📱 WhatsApp',
       whatsappInstr: isNew ? 'Contact us on WhatsApp to pay for your subscription:' : 'Contact us on WhatsApp to complete your renewal:',
-      whatsappBtn: 'Open WhatsApp',
+      whatsappBtn: 'Open WhatsApp →',
+      contactMsg: (a: string) => `Please contact us to make your payment of <strong>${a}</strong>.`,
     },
     ar: {
       title: isNew ? '👇 كيفية الدفع؟' : '👇 كيفية التجديد؟',
       ccpTitle: '💳 تحويل CCP',
       ccpInstr: (a: string) => `قم بتحويل مبلغ <strong>${a}</strong> إلى حساب CCP:`,
       chargilyTitle: '🔵 الدفع الإلكتروني (Chargily ePay)',
-      chargilyBtn: 'ادفع الآن',
+      chargilyBtn: '← ادفع الآن',
       whatsappTitle: '📱 واتساب',
       whatsappInstr: isNew ? 'تواصل معنا عبر واتساب للدفع :' : 'تواصل معنا عبر واتساب لإتمام التجديد:',
-      whatsappBtn: 'فتح واتساب',
+      whatsappBtn: '← فتح واتساب',
+      contactMsg: (a: string) => `يرجى التواصل معنا لإتمام دفع مبلغ <strong>${a}</strong>.`,
     },
   }[lang]
 
@@ -100,44 +114,55 @@ function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s
 
   if (s.ccpNumber) {
     blocks.push(`
-      <div style="margin-bottom:12px;padding:16px 20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
-        <p style="margin:0 0 6px;font-weight:700;font-size:14px;color:#15803d;">${t.ccpTitle}</p>
-        <p style="margin:0 0 8px;font-size:14px;color:#166534;">${t.ccpInstr(amountStr)}</p>
-        <p style="margin:0;font-size:18px;font-weight:800;letter-spacing:1px;color:#14532d;background:#dcfce7;display:inline-block;padding:6px 14px;border-radius:8px;">${escapeHtml(s.ccpNumber)}</p>
-      </div>`)
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:16px 20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
+          <p style="margin:0 0 6px;font-weight:700;font-size:14px;color:#15803d;">${t.ccpTitle}</p>
+          <p style="margin:0 0 10px;font-size:14px;color:#166534;">${t.ccpInstr(amountStr)}</p>
+          <p style="margin:0;font-size:18px;font-weight:800;letter-spacing:2px;color:#14532d;background:#dcfce7;padding:8px 16px;border-radius:8px;">${escapeHtml(s.ccpNumber)}</p>
+        </td>
+      </tr>
+    </table>`)
   }
 
   if (s.chargilyCheckoutUrl) {
     blocks.push(`
-      <div style="margin-bottom:12px;padding:16px 20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;">
-        <p style="margin:0 0 10px;font-weight:700;font-size:14px;color:#1d4ed8;">${t.chargilyTitle}</p>
-        <a href="${s.chargilyCheckoutUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">${t.chargilyBtn}</a>
-      </div>`)
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:16px 20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;">
+          <p style="margin:0 0 10px;font-weight:700;font-size:14px;color:#1d4ed8;">${t.chargilyTitle}</p>
+          ${makeEmailButton(s.chargilyCheckoutUrl, t.chargilyBtn, '#2563eb')}
+        </td>
+      </tr>
+    </table>`)
   }
 
   if (s.whatsapp) {
     const link = whatsappLinkFor(lang, s.whatsapp, planName, s.isNew)
     blocks.push(`
-      <div style="margin-bottom:12px;padding:16px 20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
-        <p style="margin:0 0 6px;font-weight:700;font-size:14px;color:#15803d;">${t.whatsappTitle}</p>
-        <p style="margin:0 0 10px;font-size:14px;color:#166534;">${t.whatsappInstr}</p>
-        <a href="${link}" style="display:inline-block;background:#25d366;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">${t.whatsappBtn}</a>
-      </div>`)
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:16px 20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
+          <p style="margin:0 0 6px;font-weight:700;font-size:14px;color:#15803d;">${t.whatsappTitle}</p>
+          <p style="margin:0 0 4px;font-size:14px;color:#166534;">${t.whatsappInstr}</p>
+          ${makeEmailButton(link, t.whatsappBtn, '#25d366')}
+        </td>
+      </tr>
+    </table>`)
   }
 
   if (blocks.length === 0) {
-    const contactMsg = {
-      fr: `Veuillez nous contacter pour effectuer votre paiement de <strong>${amountStr}</strong>.`,
-      en: `Please contact us to make your payment of <strong>${amountStr}</strong>.`,
-      ar: `يرجى التواصل معنا لإتمام دفع مبلغ <strong>${amountStr}</strong>.`,
-    }[lang]
     return `
-      <p style="margin:24px 0 16px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>
-      <div style="margin-bottom:12px;padding:16px 20px;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;">
-        <p style="margin:0;font-size:14px;color:#92400e;">${contactMsg}</p>
-      </div>`
+    <p style="margin:24px 0 12px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:16px 20px;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;">
+          <p style="margin:0;font-size:14px;color:#92400e;">${t.contactMsg(amountStr)}</p>
+        </td>
+      </tr>
+    </table>`
   }
-  return `<p style="margin:24px 0 16px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>${blocks.join('')}`
+  return `<p style="margin:24px 0 12px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>${blocks.join('')}`
 }
 
 export function renderEmail(params: {
