@@ -228,7 +228,7 @@ async function main() {
     fail(`Création abonnement échouée HTTP ${subRes.status}`, JSON.stringify(subRes.data))
     await cleanup(testKeyRecord.id, plan.id); process.exit(1)
   }
-  const sub = (subRes.data as { data: { id: string; status: string; nextBilling: string } }).data
+  const sub = (subRes.data as { data: { id: string; status: string; nextBilling: string; clientId?: string } }).data
   ok(`Abonnement créé : ${sub.id}`)
   ok(`Status : ${sub.status}`)
   ok(`nextBilling : ${new Date(sub.nextBilling).toLocaleDateString('fr-DZ')}`)
