@@ -393,7 +393,7 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
         </nav>
 
         {/* Right side — always visible */}
-        <div className="flex items-center gap-1 ml-2 shrink-0">
+        <div className="flex items-center gap-1 ml-auto shrink-0">
 
           <LanguageSwitcher />
           <NotificationBell />
