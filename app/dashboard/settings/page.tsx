@@ -48,7 +48,6 @@ function SettingsContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const upgraded = searchParams.get('upgraded') === '1'
-  const plan = session?.user?.plan ?? 'TRIAL'
 
   return (
     <div className="p-4 md:p-6 max-w-2xl space-y-6">
@@ -80,7 +79,6 @@ function SettingsContent() {
         ))}
       </div>
 
-      <p className="text-xs text-muted-foreground">Plan actuel : <strong>{plan}</strong> · cvkdev@outlook.fr</p>
     </div>
   )
 }
