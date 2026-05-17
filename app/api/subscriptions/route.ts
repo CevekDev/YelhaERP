@@ -137,8 +137,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Always try to send start email (fire-and-forget — skips if no email configured)
-    sendWelcomeEmail(subscription.id).catch(console.error)
+    // Send start/payment email (awaited so Vercel doesn't kill it before it completes)
+    try { await sendWelcomeEmail(subscription.id) } catch (e) { console.error('[welcome]', e) }
 
     return apiSuccess(subscription, 201)
   } catch (e: unknown) {

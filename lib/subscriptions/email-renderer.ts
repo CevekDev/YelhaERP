@@ -125,7 +125,18 @@ function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s
       </div>`)
   }
 
-  if (blocks.length === 0) return ''
+  if (blocks.length === 0) {
+    const contactMsg = {
+      fr: `Veuillez nous contacter pour effectuer votre paiement de <strong>${amountStr}</strong>.`,
+      en: `Please contact us to make your payment of <strong>${amountStr}</strong>.`,
+      ar: `يرجى التواصل معنا لإتمام دفع مبلغ <strong>${amountStr}</strong>.`,
+    }[lang]
+    return `
+      <p style="margin:24px 0 16px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>
+      <div style="margin-bottom:12px;padding:16px 20px;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;">
+        <p style="margin:0;font-size:14px;color:#92400e;">${contactMsg}</p>
+      </div>`
+  }
   return `<p style="margin:24px 0 16px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>${blocks.join('')}`
 }
 

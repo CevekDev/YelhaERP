@@ -100,7 +100,7 @@ export default function NewSubscriptionPage() {
     setSaving(true)
     const payload: Record<string, unknown> = {
       planId, status,
-      startDate: new Date(startDate).toISOString(),
+      ...(status !== 'PENDING' ? { startDate: new Date(startDate).toISOString() } : {}),
       notes: notes || undefined,
       clientEmail: clientEmail || undefined,
     }
@@ -341,10 +341,12 @@ export default function NewSubscriptionPage() {
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Date de début</Label>
-                  <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                </div>
+                {status !== 'PENDING' && (
+                  <div className="space-y-1.5">
+                    <Label>Date de début</Label>
+                    <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                  </div>
+                )}
               </div>
               {status === 'TRIAL' && selectedPlan && !selectedPlan.trialDays && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
