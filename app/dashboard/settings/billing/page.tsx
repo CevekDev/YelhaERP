@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, AlertTriangle, CheckCircle, Clock,
-  TrendingUp, X, RefreshCw, Zap, Package,
+  X, RefreshCw, Zap, Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { APPS, type AppId } from '@/lib/pricing/config'
@@ -79,29 +79,6 @@ function fmtDate(d: string) {
 
 function daysLeft(isoDate: string) {
   return Math.max(0, Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000))
-}
-
-// ── Usage bar ──────────────────────────────────────────────────
-
-function UsageBar({ label, used, limit, resetDate }: { label: string; used: number; limit: number; resetDate: string }) {
-  const pct = limit <= 0 ? 0 : Math.min(100, Math.round((used / limit) * 100))
-  const color = pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-green-500'
-  const textColor = pct > 90 ? 'text-red-600' : pct > 70 ? 'text-amber-600' : 'text-green-600'
-  const displayLimit = limit <= 0 ? '∞' : limit.toLocaleString('fr-DZ')
-  const reset = new Date(resetDate).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long' })
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-foreground">{label}</span>
-        <span className={`font-semibold ${textColor}`}>{used.toLocaleString('fr-DZ')} / {displayLimit}</span>
-      </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <p className="text-xs text-muted-foreground">Réinitialisation le {reset}</p>
-    </div>
-  )
 }
 
 // ── App subscription card ──────────────────────────────────────
@@ -366,20 +343,7 @@ export default function BillingPage() {
         )}
       </section>
 
-      {/* ── 3. Usage ── */}
-      <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <TrendingUp className="h-5 w-5 text-muted-foreground" />
-          <h2 className="font-semibold text-lg">Usage du mois</h2>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-6">
-          <UsageBar label="Emails envoyés"  used={sub.usageEmails ?? 0} limit={sub.limitEmails ?? 50}   resetDate={sub.usageResetAt ?? new Date().toISOString()} />
-          <UsageBar label="Requêtes API"    used={sub.usageApiReq ?? 0} limit={sub.limitApiReq ?? 500}  resetDate={sub.usageResetAt ?? new Date().toISOString()} />
-          <UsageBar label="Requêtes IA"     used={sub.usageAiReq ?? 0}  limit={sub.limitAiReq ?? 15}   resetDate={sub.usageResetAt ?? new Date().toISOString()} />
-        </div>
-      </section>
-
-      {/* ── 4. Historique paiements ── */}
+      {/* ── 3. Historique paiements ── */}
       {allPayments.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <div className="flex items-center gap-2 mb-1">
@@ -417,18 +381,6 @@ export default function BillingPage() {
         </section>
       )}
 
-      {/* ── 5. Danger zone ── */}
-      <section className="rounded-2xl border-2 border-red-200 bg-red-50/30 p-5 space-y-3">
-        <div className="flex items-center gap-2 text-red-700">
-          <AlertTriangle className="h-5 w-5" />
-          <h2 className="font-semibold">Zone dangereuse</h2>
-        </div>
-        <p className="text-sm text-red-600">
-          Pour résilier l'ensemble de votre compte, contactez-nous à{' '}
-          <a href="mailto:cvkdev@outlook.fr" className="underline font-medium">cvkdev@outlook.fr</a>.
-          Vos données sont conservées 30 jours après la résiliation.
-        </p>
-      </section>
     </div>
   )
 }
