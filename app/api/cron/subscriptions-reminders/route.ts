@@ -68,11 +68,11 @@ export async function GET(req: NextRequest) {
     let skipped = 0
 
     // ── Envoi d'un email de rappel ─────────────────────────────────────────────
-    async function sendReminder(
+    const sendReminder = async (
       sub: (typeof expiring3)[0],
       isTrial: boolean,
       reminderType: '3day' | '1day',
-    ) {
+    ) => {
       if (!sub.clientEmail || !sub.nextBilling) return
 
       // Arrêter si l'AppSubscription de la company a expiré
