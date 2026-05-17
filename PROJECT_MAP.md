@@ -1,6 +1,6 @@
 # 🗺️ PROJECT_MAP.md — YelhaERP
 
-> Dernière mise à jour : 2026-05-17
+> Dernière mise à jour : 2026-05-18
 > Lire ce fichier EN PREMIER à chaque session (voir CLAUDE.md).
 
 ---
@@ -635,3 +635,32 @@ import { toast } from 'sonner'
 | Prisma `db push` (pas migrate) | Environnement dev/prod unique sur Supabase, migrations formelles non utilisées |
 | Upstash Redis pour rate limiting | Serverless compatible, pas besoin d'infra Redis permanente |
 | CCP uniquement pour apps (pas Chargily) | Première itération ; Chargily viendra dans une prochaine version |
+
+---
+
+## 🔄 Changements session 2026-05-18 — Simulation complète ERP + fixes production
+
+### Bugs critiques corrigés
+- ✅ `middleware.ts` : ajout `/api/v1` dans PUBLIC_PATHS — toutes les requêtes API v1 externes retournaient 401 "Non authentifié" en production (la middleware interceptait avant `authenticateApiKey()`)
+- ✅ `middleware.ts` : `/api/sub-api` et `/api/cron` également whitelistés (session précédente)
+- ✅ `app/api/cron/subscriptions-reminders/route.ts` : fix Vercel build — spread Set non supporté en ES5 (`[...allCompanyIds]` → `Array.from()`), et `async function` dans bloc strict → arrow function
+
+### Tests et simulation
+- ✅ `scripts/simulate-full-erp.ts` : simulation complète 6 phases, 35/35 ✅
+  - Phase 1 : Achat → Stock → Vente via API v1 (ApiKey auth)
+  - Phase 2 : Expiration trial ERP → v1 core toujours OK, sub-api bloquée (403)
+  - Phase 3 : Webhook Chargily ERP → YelhaPayment PAID, YelhaSubscription ACTIVE
+  - Phase 4 : App Abonnements via sub-api (plan starter inclut subscriptions)
+  - Phase 5 : Expiration totale → sub-api 403, v1 API toujours accessible
+  - Phase 6 : Paiement AppSubscription seul → sub-api restaurée indépendamment
+- ✅ `scripts/simulate-dev-integration.ts` : 48/48 tests intégration dev
+- ✅ `scripts/test-subscriptions-e2e.ts` : test E2E module Abonnements
+
+### Logique d'accès clarifiée
+- `canAccessApp(companyId, 'subscriptions')` → CORE_APPS toujours free, puis AppSub (ACTIVE/TRIAL), puis YelhaSubscription plan + extraApps + trialApps
+- `starter` plan inclut `'subscriptions'` dans `includedApps` → sub-api accessible sans AppSubscription séparée
+- v1 API `/api/v1/*` n'a AUCUNE vérification subscription → accès API key uniquement (core ERP toujours accessible)
+- sub-api `/api/sub-api/*` vérifie `canAccessApp` sur chaque requête
+
+### Scripts utilitaires
+- `scripts/check-db.ts` : diagnostic DB (companies, YelhaSubscription, AppSubscriptions)
