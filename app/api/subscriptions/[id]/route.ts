@@ -6,7 +6,7 @@ import { apiSuccess, apiError, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 
 const patchSchema = z.object({
-  status:      z.enum(['TRIAL', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']).optional(),
+  status:      z.enum(['PENDING', 'TRIAL', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']).optional(),
   planId:      z.string().optional(),
   endDate:     z.string().datetime().optional().nullable(),
   nextBilling: z.string().datetime().optional().nullable(),
@@ -64,6 +64,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (parsed.data.status === 'CANCELLED') updateData.cancelledAt = new Date()
     if (parsed.data.endDate !== undefined) updateData.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null
     if (parsed.data.nextBilling !== undefined) updateData.nextBilling = parsed.data.nextBilling ? new Date(parsed.data.nextBilling) : null
+
+    // PENDING → ACTIVE: set startDate = now and compute nextBilling
+    if (parsed.data.status === 'ACTIVE' && sub.status === 'PENDING' && parsed.data.nextBilling === undefined) {
+      const now = new Date()
+      updateData.startDate = now
+      const count = newPlan.intervalCount
+      const next = new Date(now)
+      switch (newPlan.interval) {
+        case 'DAILY':     next.setDate(now.getDate() + count); break
+        case 'WEEKLY':    next.setDate(now.getDate() + count * 7); break
+        case 'MONTHLY':   next.setMonth(now.getMonth() + count); break
+        case 'QUARTERLY': next.setMonth(now.getMonth() + count * 3); break
+        case 'YEARLY':    next.setFullYear(now.getFullYear() + count); break
+      }
+      updateData.nextBilling = next
+    }
 
     // Recalculate nextBilling when planId changes and no explicit nextBilling provided
     if (parsed.data.planId && parsed.data.planId !== sub.planId && parsed.data.nextBilling === undefined && newPlan) {

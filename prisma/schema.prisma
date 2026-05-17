@@ -1869,6 +1869,7 @@ enum SubInterval {
 }
 
 enum SubStatus {
+  PENDING
   TRIAL
   ACTIVE
   PAUSED

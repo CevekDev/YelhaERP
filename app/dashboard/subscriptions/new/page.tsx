@@ -32,7 +32,7 @@ export default function NewSubscriptionPage() {
   const [clientMode, setClientMode] = useState<'existing' | 'new'>('existing')
   const [clientSearch, setClientSearch] = useState('')
   const [selectedClientId, setSelectedClientId] = useState('')
-  const [status, setStatus] = useState('ACTIVE')
+  const [status, setStatus] = useState('PENDING')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
   const [clientEmail, setClientEmail] = useState('')
@@ -294,11 +294,11 @@ export default function NewSubscriptionPage() {
           <Card>
             <CardContent className="p-5 space-y-4">
               <div>
-                <h2 className="font-semibold">Email de rappel</h2>
+                <h2 className="font-semibold">Email du client</h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Adresse à laquelle le client recevra son rappel 1 jour avant l&apos;expiration (ou la fin d&apos;essai).
-                  <Link href="/dashboard/subscriptions/settings" className="text-primary underline ml-1">
-                    Configurer le contenu et la langue
+                  Si renseigné, le client recevra un email avec les instructions de paiement dès la création de l&apos;abonnement, puis un rappel 1 jour avant l&apos;expiration.{' '}
+                  <Link href="/dashboard/subscriptions/settings" className="text-primary underline">
+                    Configurer les emails
                   </Link>
                 </p>
               </div>
@@ -329,11 +329,17 @@ export default function NewSubscriptionPage() {
                   <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ACTIVE">Actif</SelectItem>
+                      <SelectItem value="PENDING">En attente de paiement</SelectItem>
+                      <SelectItem value="ACTIVE">Actif (paiement déjà reçu)</SelectItem>
                       <SelectItem value="TRIAL">Essai gratuit</SelectItem>
                       <SelectItem value="PAUSED">Pausé</SelectItem>
                     </SelectContent>
                   </Select>
+                  {status === 'PENDING' && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      Un email de paiement sera envoyé au client. L&apos;abonnement s&apos;activera dès que vous cliquerez sur <strong>Activer</strong> (paiement WhatsApp/CCP) ou automatiquement si Chargily ePay est configuré.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Date de début</Label>

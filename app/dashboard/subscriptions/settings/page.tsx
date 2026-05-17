@@ -30,7 +30,7 @@ interface Settings {
 }
 
 const TYPE_LABELS: Record<EmailType, { label: string; icon: string; description: string }> = {
-  welcome:  { label: 'Bienvenue',          icon: '🎉', description: 'Envoyé au client dès la création de son abonnement' },
+  welcome:  { label: 'Email de début',      icon: '💳', description: 'Envoyé dès la création — invite le client à payer pour activer son abonnement' },
   renewal:  { label: 'Renouvellement',     icon: '⚠️', description: 'Envoyé 1 jour avant l\'expiration d\'un abonnement actif' },
   trialEnd: { label: 'Fin d\'essai gratuit', icon: '🎁', description: 'Envoyé 1 jour avant la fin d\'une période d\'essai' },
 }
