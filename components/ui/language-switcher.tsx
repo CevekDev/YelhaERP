@@ -2,37 +2,47 @@
 
 import { useT } from '@/lib/i18n'
 import type { Locale } from '@/lib/i18n/translations'
+import { Globe } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
-const LANGS: { code: Locale; label: string; flag: string }[] = [
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ar', label: 'العربية', flag: '🇩🇿' },
+const LANGS: { code: Locale; label: string; short: string }[] = [
+  { code: 'fr', label: 'Français',  short: 'FR' },
+  { code: 'en', label: 'English',   short: 'EN' },
+  { code: 'ar', label: 'العربية',   short: 'AR' },
 ]
 
-export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' | 'dark' }) {
+export function LanguageSwitcher() {
   const { locale, setLocale } = useT()
+  const current = LANGS.find(l => l.code === locale) ?? LANGS[0]
 
   return (
-    <div className="flex items-center gap-1">
-      {LANGS.map(l => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button
-          key={l.code}
-          onClick={() => setLocale(l.code)}
-          title={l.label}
-          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-            locale === l.code
-              ? variant === 'dark'
-                ? 'bg-yelha-500/20 text-yelha-300 border border-yelha-500/30'
-                : 'bg-yelha-100 text-yelha-700 border border-yelha-200'
-              : variant === 'dark'
-              ? 'text-slate-400 hover:text-white hover:bg-white/10'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-          }`}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+          title={current.label}
         >
-          <span>{l.flag}</span>
-          <span className="hidden sm:inline">{l.code.toUpperCase()}</span>
+          <Globe className="h-3.5 w-3.5" />
+          <span>{current.short}</span>
         </button>
-      ))}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[120px]">
+        {LANGS.map(l => (
+          <DropdownMenuItem
+            key={l.code}
+            onClick={() => setLocale(l.code)}
+            className={l.code === locale ? 'font-semibold text-primary' : ''}
+          >
+            {l.label}
+            {l.code === locale && <span className="ml-auto text-primary">✓</span>}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, FileText, ShoppingCart, Package, Calculator,
   UserCheck, Briefcase, Factory, Users, CreditCard, ShoppingBag,
-  RefreshCw, UtensilsCrossed, Bot, Settings, Bell, LogOut,
+  RefreshCw, UtensilsCrossed, Settings, Bell, LogOut,
   TrendingUp, Menu,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,7 +54,6 @@ const MODULE_APP_IDS: Record<string, string[]> = {
 // Utility items always visible
 const UTILITY_NAV = [
   { href: '/dashboard/notifications', key: 'sidebar.notifications', icon: Bell },
-  { href: '/dashboard/ai',            key: 'sidebar.ai',            icon: Bot,  badge: 'IA' as const },
   { href: '/dashboard/settings',      key: 'sidebar.settings',      icon: Settings },
 ] as const
 
