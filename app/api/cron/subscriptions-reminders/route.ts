@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       ...expiring1.map(s => s.company.id),
     ])
     const accessMap = new Map<string, boolean>()
-    await Promise.all([...allCompanyIds].map(async (cid) => {
+    await Promise.all(Array.from(allCompanyIds).map(async (cid) => {
       accessMap.set(cid, await canAccessApp(cid, 'subscriptions'))
     }))
 
