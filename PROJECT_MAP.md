@@ -524,6 +524,22 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ---
 
+## 🔄 Changements session 2026-05-17 (billing & webhooks)
+
+### Corrections critiques
+- ✅ `app/api/billing/checkout/route.ts` : suppression `×100` sur amount Chargily (ERP billing)
+- ✅ `app/api/sub-api/subscriptions/[id]/checkout/route.ts` : suppression `×100` sur amount Chargily (sub-api)
+- ✅ Test webhook simulé avec `scripts/simulate-chargily-webhook.ts` → PAID + ACTIVE confirmés
+
+### Renouvellement anticipé & rappels ERP
+- ✅ `prisma/schema.prisma` : 2 nouveaux champs sur `YelhaSubscription` (`lastRenewalReminder3At`, `lastRenewalReminder1At`)
+- ✅ `lib/email/resend.ts` : `sendYelhaRenewalReminder()` — email J-3 et J-1 avec boutons Chargily + instructions CCP
+- ✅ `app/api/cron/billing/route.ts` : rappels J-3 et J-1 pour abonnements ACTIVE (1 envoi par période)
+- ✅ `app/api/billing/checkout/route.ts` : `periodStart = currentPeriodEnd` si renouvellement dans les 3 derniers jours
+- ✅ `app/api/webhooks/chargily-yelha/route.ts` : utilise `payment.periodStart` (calculé au checkout) au lieu de `now`
+
+---
+
 ## 🚧 En cours / À faire
 
 - ⏳ `prisma db push` requis pour les 6 nouveaux champs sur `Subscription`
