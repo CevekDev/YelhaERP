@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useT } from '@/lib/i18n'
 
-interface SidebarProps { companyName: string; plan: string; businessType: string }
+interface SidebarProps { companyName: string; businessType: string }
 
 const HIDDEN_ITEMS: Record<string, string[]> = {
   AE:   ['/dashboard/payroll', '/dashboard/accounting', '/dashboard/tax'],
@@ -49,12 +49,6 @@ const ALL_NAV_ITEMS = [
   { href: '/dashboard/settings',      key: 'sidebar.settings',      icon: Settings },
 ]
 
-const PLAN_COLORS: Record<string, string> = {
-  TRIAL:   'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  STARTER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  PRO:     'bg-yelha-100 text-yelha-800 dark:bg-yelha-900/30 dark:text-yelha-400',
-  AGENCY:  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-}
 
 const BT_LABEL: Record<string, { label: string; color: string }> = {
   RC:   { label: 'Société (RC)', color: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800' },
@@ -62,14 +56,13 @@ const BT_LABEL: Record<string, { label: string; color: string }> = {
   NONE: { label: 'Non enregistré', color: 'bg-muted text-muted-foreground border border-border' },
 }
 
-function SidebarContent({ companyName, plan, businessType, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
+function SidebarContent({ companyName, businessType, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname()
   const { t } = useT()
   const { data: session } = useSession()
 
   const bt = session?.user?.businessType ?? businessType
   const cn_ = session?.user?.companyName ?? companyName
-  const pl = session?.user?.plan ?? plan
 
   const hidden = HIDDEN_ITEMS[bt] ?? []
   const navItems = ALL_NAV_ITEMS.filter(item => !hidden.includes(item.href))
@@ -88,12 +81,9 @@ function SidebarContent({ companyName, plan, businessType, onNavigate }: Sidebar
         </div>
       </div>
 
-      {/* Plan + business type */}
-      <div className="px-3 py-2 border-b border-border space-y-1">
-        <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold', PLAN_COLORS[pl] ?? PLAN_COLORS.TRIAL)}>
-          {pl}
-        </span>
-        <div className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ml-1.5', btInfo.color)}>
+      {/* Business type */}
+      <div className="px-3 py-2 border-b border-border">
+        <div className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', btInfo.color)}>
           {btInfo.label}
         </div>
       </div>
@@ -160,7 +150,6 @@ export function MobileSidebarTrigger() {
   const { data: session } = useSession()
 
   const companyName = session?.user?.companyName ?? ''
-  const plan = session?.user?.plan ?? 'TRIAL'
   const businessType = session?.user?.businessType ?? 'RC'
 
   return (
@@ -173,7 +162,6 @@ export function MobileSidebarTrigger() {
       <SheetContent side="left" className="p-0 w-[240px]">
         <SidebarContent
           companyName={companyName}
-          plan={plan}
           businessType={businessType}
           onNavigate={() => setOpen(false)}
         />

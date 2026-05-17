@@ -26,8 +26,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const dir = locale === 'ar' ? 'rtl' : 'ltr'
-    document.documentElement.dir = dir
     document.documentElement.lang = locale
   }, [locale])
 
@@ -55,7 +53,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return typeof fallback === 'string' ? fallback : key
   }
 
-  const dir: 'ltr' | 'rtl' = locale === 'ar' ? 'rtl' : 'ltr'
+  const dir: 'ltr' | 'rtl' = 'ltr'
 
   return (
     <I18nContext.Provider value={{ locale, setLocale, t, dir }}>

@@ -10,7 +10,7 @@ import {
   FileText, Users, Truck, Package, BarChart3, Calculator, Receipt,
   Bot, Bell, Factory, Briefcase, UserCheck, Layers,
   Building2, ShoppingCart, ShoppingBag, LayoutDashboard, ChevronDown, X, RefreshCw,
-  UtensilsCrossed, CreditCard, Globe,
+  UtensilsCrossed, CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { MobileSidebarTrigger } from '@/components/layout/sidebar'
-import { useT } from '@/lib/i18n'
 import { APPS } from '@/lib/pricing/config'
 
 
@@ -311,40 +310,6 @@ const MODULE_APPS: Record<string, string[]> = {
   restaurant:  ['restaurant'],
 }
 
-// ── Language switcher ────────────────────────────────────────
-const LOCALES = [
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'en', label: 'English',  flag: '🇬🇧' },
-  { code: 'ar', label: 'العربية',  flag: '🇩🇿' },
-] as const
-
-function LanguageSwitcher() {
-  const { locale, setLocale } = useT()
-  const current = LOCALES.find(l => l.code === locale) ?? LOCALES[0]
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <span className="text-base leading-none">{current.flag}</span>
-          <Globe className="h-3.5 w-3.5 hidden sm:block" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        {LOCALES.map(loc => (
-          <DropdownMenuItem
-            key={loc.code}
-            onClick={() => setLocale(loc.code)}
-            className={cn('flex items-center gap-2 cursor-pointer', locale === loc.code && 'font-semibold')}
-          >
-            <span>{loc.flag}</span>
-            <span>{loc.label}</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
 
 // ── Top Navbar ───────────────────────────────────────────────
 export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
@@ -372,14 +337,6 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
   const activeModule = getActiveModule(pathname)
   const initials = (session?.user?.name ?? 'U')
     .split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-
-  const plan = session?.user?.plan ?? 'TRIAL'
-  const planColors: Record<string, string> = {
-    TRIAL: 'bg-amber-100 text-amber-800',
-    STARTER: 'bg-blue-100 text-blue-800',
-    PRO: 'bg-emerald-100 text-emerald-800',
-    AGENCY: 'bg-purple-100 text-purple-800',
-  }
 
   return (
     <>
@@ -435,7 +392,6 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
         {/* Right side — always visible */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
 
-          <LanguageSwitcher />
           <NotificationBell />
 
           {/* User menu */}
@@ -447,9 +403,7 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
                 </div>
                 <div className="hidden lg:block text-left">
                   <p className="text-xs font-medium text-foreground leading-none max-w-[120px] truncate">{session?.user?.name}</p>
-                  <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block', planColors[plan] ?? planColors.TRIAL)}>
-                    {plan}
-                  </span>
+                  <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">{session?.user?.companyName}</p>
                 </div>
                 <ChevronDown className="hidden lg:block h-3 w-3 text-muted-foreground" />
               </button>
