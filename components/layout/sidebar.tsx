@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
@@ -14,10 +14,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useT } from '@/lib/i18n'
+import { APPS } from '@/lib/pricing/config'
 
-interface SidebarProps { companyName: string; businessType: string }
+interface SidebarProps { companyName: string; businessType: string; activeApps?: string[] | null }
 
-// Module-level navigation — mirrors the desktop top-nav tabs
+// Mirrors MODULES in top-nav.tsx
 const MODULE_NAV = [
   { id: 'dashboard',   href: '/dashboard',                   icon: LayoutDashboard, prefixes: [] as string[] },
   { id: 'ventes',      href: '/dashboard/invoices',          icon: FileText,        prefixes: ['/dashboard/invoices', '/dashboard/quotes', '/dashboard/clients'] },
@@ -34,13 +35,23 @@ const MODULE_NAV = [
   { id: 'restaurant',  href: '/dashboard/restaurant',        icon: UtensilsCrossed, prefixes: ['/dashboard/restaurant'] },
 ] as const
 
-// Modules to hide per business type
-const MODULE_HIDE: Record<string, string[]> = {
-  AE:   ['compta', 'rh'],
-  NONE: ['compta', 'rh', 'achats'],
+// Same mapping as MODULE_APPS in top-nav.tsx
+const MODULE_APP_IDS: Record<string, string[]> = {
+  ventes:      ['invoices', 'quotes', 'clients'],
+  achats:      ['purchases'],
+  stocks:      ['stock'],
+  compta:      ['accounting', 'expenses', 'tax'],
+  rh:          ['hr', 'payroll'],
+  projets:     ['projects'],
+  production:  ['production'],
+  crm:         ['crm'],
+  pos:         ['pos'],
+  ecommerce:   ['ecommerce'],
+  abonnements: ['subscriptions'],
+  restaurant:  ['restaurant'],
 }
 
-// Utility items (always visible)
+// Utility items always visible
 const UTILITY_NAV = [
   { href: '/dashboard/notifications', key: 'sidebar.notifications', icon: Bell },
   { href: '/dashboard/ai',            key: 'sidebar.ai',            icon: Bot,  badge: 'IA' as const },
@@ -58,21 +69,39 @@ function isModuleActive(m: typeof MODULE_NAV[number], pathname: string): boolean
   return m.prefixes.some(p => pathname === p || pathname.startsWith(p + '/'))
 }
 
-function SidebarContent({ companyName, businessType, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
+/** Same visibility rules as the desktop top-nav */
+function isModuleVisible(moduleId: string, activeApps: string[] | null): boolean {
+  if (moduleId === 'dashboard') return true
+  const appIds = MODULE_APP_IDS[moduleId]
+  if (!appIds?.length) return true
+
+  // Coming soon = all appIds are comingSoon → never show
+  const allComingSoon = appIds.every(
+    id => (APPS as Record<string, { comingSoon: boolean }>)[id]?.comingSoon
+  )
+  if (allComingSoon) return false
+
+  // While loading → show all non-coming-soon
+  if (activeApps === null) return true
+
+  // Only show if at least one appId is active
+  return appIds.some(id => activeApps.includes(id))
+}
+
+function SidebarContent({ companyName, businessType, activeApps, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname()
   const { t } = useT()
   const { data: session } = useSession()
 
   const bt = session?.user?.businessType ?? businessType
   const cn_ = session?.user?.companyName ?? companyName
-
-  const hiddenModules = MODULE_HIDE[bt] ?? []
-  const visibleModules = MODULE_NAV.filter(m => !hiddenModules.includes(m.id))
   const btInfo = BT_LABEL[bt] ?? BT_LABEL.NONE
+
+  const visibleModules = MODULE_NAV.filter(m => isModuleVisible(m.id, activeApps ?? null))
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Logo header */}
+      {/* Logo */}
       <div className="px-4 h-16 flex items-center gap-3 shrink-0 bg-primary">
         <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center shrink-0 border border-white/30">
           <TrendingUp className="w-4 h-4 text-white" />
@@ -90,7 +119,7 @@ function SidebarContent({ companyName, businessType, onNavigate }: SidebarProps 
         </div>
       </div>
 
-      {/* Module nav */}
+      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
         {visibleModules.map(m => {
           const active = isModuleActive(m, pathname)
@@ -112,7 +141,6 @@ function SidebarContent({ companyName, businessType, onNavigate }: SidebarProps 
           )
         })}
 
-        {/* Divider before utility items */}
         <div className="my-2 border-t border-border" />
 
         {UTILITY_NAV.map(item => {
@@ -155,7 +183,6 @@ function SidebarContent({ companyName, businessType, onNavigate }: SidebarProps 
   )
 }
 
-// Desktop sidebar — not rendered in layout, kept for potential future use
 export function Sidebar(props: SidebarProps) {
   return (
     <aside className="hidden md:flex fixed top-0 h-screen w-[240px] flex-col bg-background border-r border-border z-40 left-0">
@@ -164,13 +191,22 @@ export function Sidebar(props: SidebarProps) {
   )
 }
 
-// Mobile hamburger trigger
 export function MobileSidebarTrigger() {
   const [open, setOpen] = useState(false)
+  const [activeApps, setActiveApps] = useState<string[] | null>(null)
   const { data: session } = useSession()
 
   const companyName = session?.user?.companyName ?? ''
   const businessType = session?.user?.businessType ?? 'RC'
+
+  // Fetch active apps — same API call as desktop top-nav
+  useEffect(() => {
+    if (!session?.user) return
+    fetch('/api/billing/subscription')
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d.activeApps)) setActiveApps(d.activeApps) })
+      .catch(() => setActiveApps([]))
+  }, [session?.user])
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -183,6 +219,7 @@ export function MobileSidebarTrigger() {
         <SidebarContent
           companyName={companyName}
           businessType={businessType}
+          activeApps={activeApps}
           onNavigate={() => setOpen(false)}
         />
       </SheetContent>
