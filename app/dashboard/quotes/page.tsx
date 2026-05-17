@@ -62,12 +62,12 @@ export default function QuotesPage() {
       <Link href={`/dashboard/quotes/${r.id}`} className="font-mono hover:underline text-yelha-600">{r.number}</Link>
     )},
     { key: 'client', header: 'Client', render: (r: Quote) => r.client?.name ?? '—' },
-    { key: 'issueDate', header: 'Date', render: (r: Quote) => new Date(r.issueDate).toLocaleDateString('fr-DZ') },
-    { key: 'expiryDate', header: 'Expiration', render: (r: Quote) => r.expiryDate
+    { key: 'issueDate', header: 'Date', className: 'hidden sm:table-cell', render: (r: Quote) => new Date(r.issueDate).toLocaleDateString('fr-DZ') },
+    { key: 'expiryDate', header: 'Expiration', className: 'hidden md:table-cell', render: (r: Quote) => r.expiryDate
       ? <span className={isExpired(r) ? 'text-red-600 font-medium' : ''}>{new Date(r.expiryDate).toLocaleDateString('fr-DZ')}</span>
       : <span className="text-muted-foreground">—</span>
     },
-    { key: 'total', header: 'Montant', className: 'da-amount text-right', render: (r: Quote) => formatDA(Number(r.total)) },
+    { key: 'total', header: 'Montant', className: 'da-amount text-right hidden sm:table-cell', render: (r: Quote) => formatDA(Number(r.total)) },
     { key: 'status', header: 'Statut', render: (r: Quote) => (
       <Badge variant={STATUS_VARIANTS[r.status]}>{STATUS_LABELS[r.status]}</Badge>
     )},
