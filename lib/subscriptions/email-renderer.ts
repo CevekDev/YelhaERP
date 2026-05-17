@@ -12,6 +12,7 @@ export interface PaymentSettings {
   whatsapp?: string | null
   ccpNumber?: string | null
   chargilyCheckoutUrl?: string | null
+  isNew?: boolean  // true = start email (activate), false/undefined = renewal email
 }
 
 function escapeHtml(s: string): string {
@@ -47,44 +48,49 @@ function renderBodyHtml(body: string): string {
     .join('')
 }
 
-function whatsappLinkFor(lang: EmailLang, whatsapp: string, planName: string): string {
+function whatsappLinkFor(lang: EmailLang, whatsapp: string, planName: string, isNew = false): string {
   const msg =
-    lang === 'ar'  ? `مرحباً، أريد تجديد اشتراك ${planName}` :
-    lang === 'en'  ? `Hello, I want to renew my ${planName} subscription` :
-                     `Bonjour, je souhaite renouveler mon abonnement ${planName}`
+    isNew
+      ? (lang === 'ar'  ? `مرحباً، أريد الدفع لاشتراك ${planName}` :
+         lang === 'en'  ? `Hello, I would like to pay for my ${planName} subscription` :
+                          `Bonjour, je souhaite payer pour mon abonnement ${planName}`)
+      : (lang === 'ar'  ? `مرحباً، أريد تجديد اشتراك ${planName}` :
+         lang === 'en'  ? `Hello, I want to renew my ${planName} subscription` :
+                          `Bonjour, je souhaite renouveler mon abonnement ${planName}`)
   return `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`
 }
 
 function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s: PaymentSettings): string {
+  const isNew = s.isNew ?? false
   const t = {
     fr: {
-      title: '👇 Comment renouveler ?',
+      title: isNew ? '👇 Comment payer ?' : '👇 Comment renouveler ?',
       ccpTitle: '💳 Virement CCP',
       ccpInstr: (a: string) => `Effectuez un virement de <strong>${a}</strong> sur le compte CCP :`,
       chargilyTitle: '🔵 Paiement en ligne (Chargily ePay)',
       chargilyBtn: 'Payer maintenant',
       whatsappTitle: '📱 WhatsApp',
-      whatsappInstr: 'Contactez-nous sur WhatsApp pour finaliser votre renouvellement :',
+      whatsappInstr: isNew ? 'Contactez-nous sur WhatsApp pour payer votre abonnement :' : 'Contactez-nous sur WhatsApp pour finaliser votre renouvellement :',
       whatsappBtn: 'Ouvrir WhatsApp',
     },
     en: {
-      title: '👇 How to renew?',
+      title: isNew ? '👇 How to pay?' : '👇 How to renew?',
       ccpTitle: '💳 CCP Bank Transfer',
       ccpInstr: (a: string) => `Transfer <strong>${a}</strong> to CCP account:`,
       chargilyTitle: '🔵 Online Payment (Chargily ePay)',
       chargilyBtn: 'Pay now',
       whatsappTitle: '📱 WhatsApp',
-      whatsappInstr: 'Contact us on WhatsApp to complete your renewal:',
+      whatsappInstr: isNew ? 'Contact us on WhatsApp to pay for your subscription:' : 'Contact us on WhatsApp to complete your renewal:',
       whatsappBtn: 'Open WhatsApp',
     },
     ar: {
-      title: '👇 كيفية التجديد؟',
+      title: isNew ? '👇 كيفية الدفع؟' : '👇 كيفية التجديد؟',
       ccpTitle: '💳 تحويل CCP',
       ccpInstr: (a: string) => `قم بتحويل مبلغ <strong>${a}</strong> إلى حساب CCP:`,
       chargilyTitle: '🔵 الدفع الإلكتروني (Chargily ePay)',
       chargilyBtn: 'ادفع الآن',
       whatsappTitle: '📱 واتساب',
-      whatsappInstr: 'تواصل معنا عبر واتساب لإتمام التجديد:',
+      whatsappInstr: isNew ? 'تواصل معنا عبر واتساب للدفع :' : 'تواصل معنا عبر واتساب لإتمام التجديد:',
       whatsappBtn: 'فتح واتساب',
     },
   }[lang]
@@ -110,7 +116,7 @@ function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s
   }
 
   if (s.whatsapp) {
-    const link = whatsappLinkFor(lang, s.whatsapp, planName)
+    const link = whatsappLinkFor(lang, s.whatsapp, planName, s.isNew)
     blocks.push(`
       <div style="margin-bottom:12px;padding:16px 20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;">
         <p style="margin:0 0 6px;font-weight:700;font-size:14px;color:#15803d;">${t.whatsappTitle}</p>

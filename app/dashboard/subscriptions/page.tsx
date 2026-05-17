@@ -13,15 +13,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
-import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap, Trash2, AlertTriangle } from 'lucide-react'
+import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap, Trash2, AlertTriangle, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 const STATUS_LABELS: Record<string, string> = {
-  TRIAL: 'Essai', ACTIVE: 'Actif', PAUSED: 'Pausé', CANCELLED: 'Annulé', EXPIRED: 'Expiré',
+  PENDING: 'En attente', TRIAL: 'Essai', ACTIVE: 'Actif', PAUSED: 'Pausé', CANCELLED: 'Annulé', EXPIRED: 'Expiré',
 }
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'outline'> = {
-  TRIAL: 'secondary', ACTIVE: 'success', PAUSED: 'warning', CANCELLED: 'destructive', EXPIRED: 'outline',
+const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'outline' | 'info'> = {
+  PENDING: 'info', TRIAL: 'secondary', ACTIVE: 'success', PAUSED: 'warning', CANCELLED: 'destructive', EXPIRED: 'outline',
 }
 const INTERVAL_LABELS: Record<string, string> = {
   DAILY: 'jour', WEEKLY: 'semaine', MONTHLY: 'mois', QUARTERLY: 'trimestre', YEARLY: 'an',
@@ -37,7 +37,7 @@ interface Sub {
   plan: { id: string; name: string; price: number; currency: string; interval: string; intervalCount: number }
 }
 
-const STATUS_TABS = ['ALL', 'ACTIVE', 'TRIAL', 'PAUSED', 'CANCELLED', 'EXPIRED']
+const STATUS_TABS = ['ALL', 'PENDING', 'ACTIVE', 'TRIAL', 'PAUSED', 'CANCELLED', 'EXPIRED']
 
 export default function SubscriptionsPage() {
   const router = useRouter()
@@ -180,6 +180,12 @@ export default function SubscriptionsPage() {
           <Button variant="ghost" size="icon" title="Email de rappel" onClick={() => openEmailDialog(row)}>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </Button>
+          {row.status === 'PENDING' && (
+            <Button variant="ghost" size="icon" title="Activer (paiement reçu)" onClick={() => updateStatus(row.id, 'ACTIVE')}
+              className="text-green-600 hover:text-green-700 hover:bg-green-50">
+              <CheckCircle className="h-4 w-4" />
+            </Button>
+          )}
           {row.status === 'ACTIVE' && (
             <Button variant="ghost" size="icon" title="Mettre en pause" onClick={() => updateStatus(row.id, 'PAUSED')}>
               <Pause className="h-4 w-4" />

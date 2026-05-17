@@ -19,7 +19,7 @@ const createSchema = z.object({
     address:   z.string().max(300).optional(),
     clientType: z.enum(['COMPANY', 'INDIVIDUAL']).default('INDIVIDUAL'),
   }).optional(),
-  status:      z.enum(['TRIAL', 'ACTIVE', 'PAUSED']).default('ACTIVE'),
+  status:      z.enum(['PENDING', 'TRIAL', 'ACTIVE', 'PAUSED']).default('PENDING'),
   startDate:   z.string().datetime().optional(),
   endDate:     z.string().datetime().optional().nullable(),
   nextBilling: z.string().datetime().optional().nullable(),
@@ -99,9 +99,9 @@ export async function POST(req: NextRequest) {
       return apiError('Veuillez sélectionner ou créer un client', 422)
     }
 
-    // Compute nextBilling
+    // Compute nextBilling (only for non-PENDING statuses)
     let computedNextBilling = nextBilling ? new Date(nextBilling) : null
-    if (!computedNextBilling) {
+    if (!computedNextBilling && status !== 'PENDING') {
       const start = startDate ? new Date(startDate) : new Date()
       if (status === 'TRIAL' && plan.trialDays && plan.trialDays > 0) {
         computedNextBilling = new Date(start)
@@ -137,9 +137,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    if (subscription.clientEmail) {
-      await sendWelcomeEmail(subscription.id)
-    }
+    // Always try to send start email (fire-and-forget — skips if no email configured)
+    sendWelcomeEmail(subscription.id).catch(console.error)
 
     return apiSuccess(subscription, 201)
   } catch (e: unknown) {

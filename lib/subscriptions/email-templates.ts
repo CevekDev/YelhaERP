@@ -81,28 +81,34 @@ Use one of the payment methods below to activate your subscription.`,
   },
   welcome: {
     fr: {
-      subject: '🎉 Bienvenue chez {{companyName}}',
+      subject: '💳 Activez votre abonnement {{planName}} chez {{companyName}}',
       body: `Bonjour {{clientName}},
 
-Nous sommes ravis de vous compter parmi nos abonnés ! Votre abonnement au plan **{{planName}}** est désormais actif.
+Merci de votre intérêt pour nos services ! Votre abonnement au plan **{{planName}}** a bien été créé.
 
-Nous restons à votre disposition pour toute question. Bienvenue à bord ! 🚀`,
+Montant à régler : **{{amount}}**.
+
+Pour activer votre abonnement, veuillez effectuer le paiement en utilisant l'un des moyens ci-dessous. Votre accès sera activé dès confirmation du règlement.`,
     },
     en: {
-      subject: '🎉 Welcome to {{companyName}}',
+      subject: '💳 Activate your {{planName}} subscription at {{companyName}}',
       body: `Hello {{clientName}},
 
-We're thrilled to have you on board! Your subscription to the **{{planName}}** plan is now active.
+Thank you for your interest in our services! Your subscription to the **{{planName}}** plan has been created.
 
-We're here to help with any questions you may have. Welcome aboard! 🚀`,
+Amount due: **{{amount}}**.
+
+To activate your subscription, please complete the payment using one of the methods below. Your access will be activated once payment is confirmed.`,
     },
     ar: {
-      subject: '🎉 مرحباً بك في {{companyName}}',
+      subject: '💳 فعّل اشتراكك {{planName}} في {{companyName}}',
       body: `مرحباً {{clientName}}،
 
-يسعدنا انضمامك إلينا! اشتراكك في خطة **{{planName}}** مفعّل الآن.
+شكراً لاهتمامك بخدماتنا! تم إنشاء اشتراكك في خطة **{{planName}}**.
 
-نحن في خدمتك لأي استفسار. أهلاً بك! 🚀`,
+المبلغ المستحق: **{{amount}}**.
+
+لتفعيل اشتراكك، يرجى إتمام الدفع باستخدام إحدى الطرق أدناه. سيتم تفعيل وصولك فور تأكيد الدفع.`,
     },
   },
 }
