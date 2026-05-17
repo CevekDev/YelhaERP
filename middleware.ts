@@ -16,6 +16,8 @@ const PUBLIC_PATHS = [
   '/api/webhooks/chargily-app',
   '/api/webhooks/chargily-subscriptions',
   '/api/webhooks/chargily',
+  '/api/sub-api',
+  '/api/cron',
   '/portal',
   '/pricing',
   '/subscriptions/checkout',
