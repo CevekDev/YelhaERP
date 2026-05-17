@@ -16,15 +16,21 @@ const LANGS: { code: Locale; label: string; short: string }[] = [
   { code: 'ar', label: 'العربية',   short: 'AR' },
 ]
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' | 'dark' }) {
   const { locale, setLocale } = useT()
   const current = LANGS.find(l => l.code === locale) ?? LANGS[0]
+
+  const isDark = variant === 'dark'
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+          className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-semibold transition-all ${
+            isDark
+              ? 'text-white/80 hover:bg-white/10 hover:text-white'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
           title={current.label}
         >
           <Globe className="h-3.5 w-3.5" />
