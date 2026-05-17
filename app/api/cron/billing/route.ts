@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/security/api-response'
-import { sendTrialExpired, sendTrialReminder } from '@/lib/email/resend'
+import { sendTrialExpired, sendTrialReminder, sendYelhaRenewalReminder } from '@/lib/email/resend'
+import { PLANS, type PlanId } from '@/lib/pricing/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date()
-  const counts = { expired: 0, reminders: 0, renewals: 0 }
+  const counts = { expired: 0, reminders: 0, renewals: 0, renewalReminders: 0 }
 
   // 1. Mark expired trials
   const expiredTrials = await prisma.yelhaSubscription.findMany({
@@ -67,7 +68,53 @@ export async function GET(req: NextRequest) {
     counts.renewals++
   }
 
-  // 4. Flag accounts expired for >30 days (log only, no deletion)
+  // 4. Renewal reminders — J-3 and J-1 for ACTIVE subscriptions
+  for (const daysLeft of [3, 1]) {
+    const targetStart = new Date(now)
+    targetStart.setDate(targetStart.getDate() + daysLeft)
+    targetStart.setHours(0, 0, 0, 0)
+    const targetEnd = new Date(targetStart)
+    targetEnd.setHours(23, 59, 59, 999)
+
+    const reminderField = daysLeft === 3 ? 'lastRenewalReminder3At' : 'lastRenewalReminder1At'
+
+    const activeSubs = await prisma.yelhaSubscription.findMany({
+      where: {
+        status: 'ACTIVE',
+        currentPeriodEnd: { gte: targetStart, lte: targetEnd },
+        OR: [
+          { [reminderField]: null },
+          { [reminderField]: { lt: new Date(now.getTime() - 25 * 86400000) } },
+        ],
+      },
+      include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+    })
+
+    for (const sub of activeSubs) {
+      const owner = sub.company.users[0]
+      if (!owner) continue
+      const plan = PLANS[sub.planId as PlanId]
+      if (!plan) continue
+
+      await sendYelhaRenewalReminder({
+        to: owner.email,
+        name: owner.name ?? owner.email,
+        planName: plan.name,
+        amount: sub.monthlyAmount,
+        expiresAt: sub.currentPeriodEnd,
+        daysLeft,
+      }).catch(() => {})
+
+      await prisma.yelhaSubscription.update({
+        where: { id: sub.id },
+        data: { [reminderField]: now },
+      })
+
+      counts.renewalReminders++
+    }
+  }
+
+  // 5. Flag accounts expired for >30 days (log only, no deletion)
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   const stale = await prisma.yelhaSubscription.count({
@@ -77,5 +124,5 @@ export async function GET(req: NextRequest) {
     console.log(`[billing-cron] ${stale} comptes expirés depuis >30 jours — à traiter manuellement`)
   }
 
-  return apiSuccess({ processed: counts, staleAccounts: stale })
+  return apiSuccess({ processed: counts, staleAccounts: stale, renewalReminders: counts.renewalReminders })
 }

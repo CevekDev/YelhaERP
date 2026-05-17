@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
 
     const now = new Date()
     const isAnnual = payment.billingCycle === 'ANNUAL'
-    const periodEnd = new Date(now)
+    // Use periodStart from payment (set at checkout) to preserve early-renewal days
+    const periodStart = payment.periodStart
+    const periodEnd = new Date(periodStart)
     if (isAnnual) {
       periodEnd.setDate(periodEnd.getDate() + 365)
     } else {
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
           planId:             payment.planId,
           billingCycle:       payment.billingCycle,
           extraApps:          payment.extraApps,
-          currentPeriodStart: now,
+          currentPeriodStart: periodStart,
           currentPeriodEnd:   periodEnd,
           lastPaymentAt:      now,
           lastPaymentRef:     payment.id,

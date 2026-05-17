@@ -39,7 +39,14 @@ export async function POST(req: NextRequest) {
     const sub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
     if (!sub) return apiError('Abonnement introuvable', 404)
 
-    const periodStart = new Date()
+    const now = new Date()
+    const daysUntilEnd = sub.currentPeriodEnd
+      ? (sub.currentPeriodEnd.getTime() - now.getTime()) / 86400000
+      : -1
+    // Early renewal within 3 days: new period starts at current period end (days preserved)
+    const periodStart = sub.status === 'ACTIVE' && daysUntilEnd >= 0 && daysUntilEnd <= 3
+      ? sub.currentPeriodEnd
+      : now
     const periodEnd = new Date(periodStart)
     if (isAnnual) {
       periodEnd.setDate(periodEnd.getDate() + 365)

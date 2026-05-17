@@ -2330,6 +2330,9 @@ model YelhaSubscription {
   usageAiReq         Int            @default(0)
   usageResetAt       DateTime       @default(now())
 
+  lastRenewalReminder3At DateTime?
+  lastRenewalReminder1At DateTime?
+
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 

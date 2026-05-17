@@ -458,6 +458,62 @@ export async function sendAppRenewalReminder(params: {
   }).catch(() => {})
 }
 
+export async function sendYelhaRenewalReminder(params: {
+  to: string; name: string; planName: string; amount: number
+  expiresAt: Date; daysLeft: number
+}) {
+  const { to, name, planName, amount, expiresAt, daysLeft } = params
+  const expiryStr = expiresAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const isUrgent = daysLeft === 1
+  const billingUrl = 'https://erp.yelha.net/dashboard/settings/billing'
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">
+      ${isUrgent ? '🚨 Votre abonnement expire demain' : '⏰ Votre abonnement expire dans 3 jours'}
+    </h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">
+      Bonjour ${name}, votre abonnement <strong>YelhaERP ${planName}</strong> se termine le <strong>${expiryStr}</strong>.
+      Renouvelez maintenant pour éviter toute interruption — vos 3 jours restants seront préservés dans la prochaine période.
+    </p>
+    <div style="background:${isUrgent ? '#fef2f2' : '#fff7ed'};border:1px solid ${isUrgent ? '#fca5a5' : '#fcd34d'};border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:${isUrgent ? '#991b1b' : '#92400e'};font-size:14px;font-weight:600;">
+        ${isUrgent ? '🚨' : '⏳'} Il vous reste <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong> — Montant : <strong>${amount.toLocaleString('fr-DZ')} DA/mois</strong>
+      </p>
+    </div>
+
+    <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#0f172a;">Choisissez votre méthode de paiement :</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="padding:0 6px 0 0;" width="50%">
+          <a href="${billingUrl}?method=chargily" style="display:block;background:#1D9E75;color:#fff;font-size:14px;font-weight:600;padding:14px 16px;border-radius:12px;text-decoration:none;text-align:center;">💳 Payer par Chargily<br><span style="font-size:12px;font-weight:400;opacity:.85;">Edahabia / CIB — immédiat</span></a>
+        </td>
+        <td style="padding:0 0 0 6px;" width="50%">
+          <a href="${billingUrl}?method=ccp" style="display:block;background:#1e40af;color:#fff;font-size:14px;font-weight:600;padding:14px 16px;border-radius:12px;text-decoration:none;text-align:center;">🏦 Payer par CCP<br><span style="font-size:12px;font-weight:400;opacity:.85;">Virement postal — 24–48h</span></a>
+        </td>
+      </tr>
+    </table>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f172a;">Instructions CCP :</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Compte CCP</td><td style="padding:4px 0;font-weight:600;font-size:13px;text-align:right;font-family:monospace;">00799999004399346548</td></tr>
+        <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Titulaire</td><td style="padding:4px 0;font-weight:600;font-size:13px;text-align:right;">Yelha Technologies</td></tr>
+        <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Montant</td><td style="padding:4px 0;font-weight:700;font-size:14px;color:#1D9E75;text-align:right;">${amount.toLocaleString('fr-DZ')} DA</td></tr>
+      </table>
+      <p style="margin:10px 0 0;color:#92400e;font-size:12px;">Envoyez votre reçu à <a href="mailto:cvkdev@outlook.fr" style="color:#1D9E75;">cvkdev@outlook.fr</a> — activation sous 24–48h.</p>
+    </div>
+    <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">Vous pouvez aussi renouveler depuis votre <a href="${billingUrl}" style="color:#1D9E75;">espace facturation</a>.</p>`
+
+  await getResend().emails.send({
+    from: FROM, to,
+    subject: isUrgent
+      ? `🚨 Votre abonnement YelhaERP ${planName} expire demain`
+      : `⏰ Votre abonnement YelhaERP ${planName} expire dans 3 jours`,
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
 export async function sendPaymentFailed({ to, name, planName }: { to: string; name: string; planName: string }) {
   const content = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Problème de paiement ⚠️</h1>
