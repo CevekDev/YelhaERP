@@ -663,5 +663,6 @@ import { toast } from 'sonner'
 - sub-api `/api/sub-api/*` vérifie `canAccessApp` sur chaque requête
 
 ### Scripts utilitaires
-- `scripts/check-db.ts` : diagnostic DB (companies, YelhaSubscription, AppSubscriptions)
-- `scripts/diagnose-last-account.ts` : diagnostic complet du dernier compte inscrit (Company, YelhaSubscription, YelhaPayment, AppSubscription). Flag `--cleanup` remet le compte à TRIAL propre (supprime paiements + app subs). Utilisé 2026-05-18 pour nettoyer le compte `merahlwos@gmail.com` (XXI) qui était passé STARTER ACTIVE 990 DA suite à un webhook Chargily **simulé** (chargilyId `sim_…`) exécuté contre la prod via `scripts/simulate-chargily-webhook.ts`. ⚠️ Ne plus lancer les scripts de simulation contre la base prod.
+- `scripts/check-db.ts` : diagnostic DB (companies, YelhaSubscription, AppSubscriptions) — lecture seule, OK sur prod
+- `scripts/diagnose-last-account.ts` : diagnostic complet du dernier compte inscrit (Company, YelhaSubscription, YelhaPayment, AppSubscription). Flag `--cleanup` remet le compte à TRIAL propre (supprime paiements + app subs). Utilisé 2026-05-18 pour nettoyer le compte `merahlwos@gmail.com` (XXI) qui était passé STARTER ACTIVE 990 DA suite à un webhook Chargily **simulé** (chargilyId `sim_…`) exécuté contre la prod via `scripts/simulate-chargily-webhook.ts`.
+- `scripts/lib/prod-guard.ts` : garde-fou partagé. `assertNotProd(name)` refuse de tourner si `DATABASE_URL` contient `supabase.co/com`, sauf flag `--allow-prod` ou env `YELHA_ALLOW_PROD=1` (qui ajoute alors 5s de warning bloquant). Branché sur `simulate-full-erp`, `simulate-dev-integration`, `test-subscriptions-e2e`, et sur `diagnose-last-account --cleanup`.

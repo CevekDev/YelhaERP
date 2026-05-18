@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 import { PrismaClient } from '@prisma/client'
+import { assertNotProd } from './lib/prod-guard'
 
 const envPath = path.resolve(process.cwd(), '.env.local')
 if (fs.existsSync(envPath)) {
@@ -24,6 +25,9 @@ function fmtDate(d: Date | null | undefined) {
 
 async function main() {
   const cleanup = process.argv.includes('--cleanup')
+
+  // Read-only diagnostic stays free on prod; --cleanup writes → gated.
+  if (cleanup) assertNotProd('diagnose-last-account.ts --cleanup')
 
   const user = await prisma.user.findFirst({
     orderBy: { createdAt: 'desc' },

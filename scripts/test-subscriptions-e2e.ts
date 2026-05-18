@@ -26,6 +26,7 @@ import crypto from 'crypto'
 import path from 'path'
 import fs from 'fs'
 import { PrismaClient } from '@prisma/client'
+import { assertNotProd } from './lib/prod-guard'
 
 // ── Charger .env.local ────────────────────────────────────────────────────────
 const envPath = path.resolve(process.cwd(), '.env.local')
@@ -39,6 +40,8 @@ for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
   const val = t.slice(idx + 1).trim().replace(/^["']|["']$/g, '')
   if (!process.env[key]) process.env[key] = val
 }
+
+assertNotProd('test-subscriptions-e2e.ts')
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 const CRON_SECRET = process.env.CRON_SECRET ?? 'undefined'
