@@ -48,16 +48,32 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Compute active apps
+    // Compute active apps — includes per-app subscriptions (AppSubscription)
+    const now = new Date()
+    const appSubs = await prisma.appSubscription.findMany({
+      where: { companyId },
+    })
+    const activeAppSubIds = new Set(
+      appSubs
+        .filter(a =>
+          a.status === 'ACTIVE' ||
+          (a.status === 'TRIAL' && a.trialEndsAt && a.trialEndsAt > now)
+        )
+        .map(a => a.appId)
+    )
+
     const allAppIds = Object.keys(APPS) as AppId[]
     const planId = sub.planId as Parameters<typeof isAppIncluded>[0]
+    const subTrialActive = sub.status === 'TRIAL' && sub.trialEndsAt && sub.trialEndsAt > now
+    const subActive = sub.status === 'ACTIVE'
 
     const activeApps = allAppIds.filter(appId => {
       if (CORE_APPS.includes(appId)) return true
+      if (activeAppSubIds.has(appId)) return true
       if (planId === 'enterprise') return true
-      if (isAppIncluded(planId, appId)) return true
-      if (sub!.extraApps.includes(appId)) return true
-      if (sub!.status === 'TRIAL' && sub!.trialApps.includes(appId)) return true
+      if ((subActive || subTrialActive) && isAppIncluded(planId, appId)) return true
+      if ((subActive || subTrialActive) && sub!.extraApps.includes(appId)) return true
+      if (subTrialActive && sub!.trialApps.includes(appId)) return true
       return false
     })
 
