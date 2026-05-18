@@ -331,9 +331,10 @@ export function TopNav({ hasBanner: _h }: { hasBanner?: boolean }) {
 
   const visibleModules = MODULES.filter(m => {
     if (m.id === 'dashboard') return true
-    if (!activeApps) return true // show all while loading
     const appIds = MODULE_APPS[m.id]
     if (!appIds) return true
+    // While loading → only show modules whose apps are all core (always free)
+    if (!activeApps) return appIds.every(id => (APPS as Record<string, { core: boolean }>)[id]?.core)
     return appIds.some(appId => activeApps.includes(appId))
   })
 

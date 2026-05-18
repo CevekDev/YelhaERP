@@ -80,8 +80,10 @@ function isModuleVisible(moduleId: string, activeApps: string[] | null): boolean
   )
   if (allComingSoon) return false
 
-  // While loading → show all non-coming-soon
-  if (activeApps === null) return true
+  // While loading → only show modules whose apps are all core (always free)
+  if (activeApps === null) {
+    return appIds.every(id => (APPS as Record<string, { core: boolean }>)[id]?.core)
+  }
 
   // Only show if at least one appId is active
   return appIds.some(id => activeApps.includes(id))
