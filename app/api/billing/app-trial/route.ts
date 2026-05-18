@@ -5,6 +5,7 @@ import { getTenantContext } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { APPS, type AppId } from '@/lib/pricing/config'
+import { hasIndependentPlans } from '@/lib/pricing/app-plans'
 
 const TRIAL_DAYS = 15
 
@@ -57,6 +58,27 @@ export async function POST(req: NextRequest) {
         appTrialsEndsAt,
       },
     })
+
+    // Sync l'AppSubscription pour les apps avec plans indépendants — sinon
+    // un paiement ultérieur via le nouveau système verrait une AppSubscription
+    // EXPIRED/null et casserait l'affichage du trial.
+    if (hasIndependentPlans(appId)) {
+      const periodEnd = trialEndsAt
+      await prisma.appSubscription.upsert({
+        where: { companyId_appId: { companyId, appId } },
+        create: {
+          companyId, appId, planId: 'trial',
+          status: 'TRIAL', trialEndsAt,
+          currentPeriodStart: new Date(), currentPeriodEnd: periodEnd,
+          monthlyAmount: 0,
+        },
+        update: {
+          planId: 'trial', status: 'TRIAL', trialEndsAt,
+          currentPeriodStart: new Date(), currentPeriodEnd: periodEnd,
+          monthlyAmount: 0,
+        },
+      })
+    }
 
     return apiSuccess({ subscription: updated, trialEndsAt: trialEndsAt.toISOString() }, 201)
   } catch (err) {

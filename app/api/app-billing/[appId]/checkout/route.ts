@@ -105,16 +105,35 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       return apiSuccess({ type: 'trial', subscription: sub })
     }
 
+    // Récupère l'essai éventuel de l'ancien système (YelhaSubscription.trialApps)
+    // pour que le paiement d'un plan payant ne casse pas l'essai en cours.
+    const yelhaSub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
+    const oldTrialEndsIso = (yelhaSub?.appTrialsEndsAt as Record<string, string> | null)?.[appId]
+    const oldTrialEndsAt = oldTrialEndsIso ? new Date(oldTrialEndsIso) : null
+    const oldTrialValid = !!oldTrialEndsAt && oldTrialEndsAt > now
+
+    // Détermine le statut/trial à utiliser quand on crée un nouveau record
+    const fallbackStatus = oldTrialValid ? 'TRIAL' : 'EXPIRED'
+    const fallbackTrialEndsAt = oldTrialValid ? oldTrialEndsAt : null
+
     // Crée ou met à jour l'AppSubscription + AppPayment
-    const existingStatus = existing?.status ?? 'TRIAL'
-    const existingTrialEndsAt = existing?.trialEndsAt ?? null
+    const existingStatus = existing?.status ?? fallbackStatus
+    const existingTrialEndsAt = existing?.trialEndsAt ?? fallbackTrialEndsAt
     const existingPeriodStart = existing?.currentPeriodStart ?? now
-    const existingPeriodEnd = existing?.currentPeriodEnd ?? periodEnd
+    const existingPeriodEnd = existing?.currentPeriodEnd ?? (oldTrialValid ? oldTrialEndsAt! : periodEnd)
+
+    // Si l'AppSubscription existe mais n'a pas d'info d'essai et qu'un essai ancien est valide,
+    // on synchronise (cas: trial démarré dans l'ancien système, puis paiement via le nouveau).
+    const needsTrialSync = existing && oldTrialValid &&
+      (!existing.trialEndsAt || existing.trialEndsAt < now) &&
+      existing.status !== 'ACTIVE'
 
     const subRecord = existing
       ? await prisma.appSubscription.update({
           where: { id: existing.id },
-          data: { planId, monthlyAmount: effectivePrice },
+          data: needsTrialSync
+            ? { planId, monthlyAmount: effectivePrice, status: 'TRIAL', trialEndsAt: oldTrialEndsAt! }
+            : { planId, monthlyAmount: effectivePrice },
         })
       : await prisma.appSubscription.create({
           data: {
