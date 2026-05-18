@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   '/confidentialite',
   '/mentions-legales',
   '/api/auth',
+  '/api/health',
   '/api/billing/plans',
   '/api/webhooks/chargily-subscriptions',
   '/api/webhooks/chargily',

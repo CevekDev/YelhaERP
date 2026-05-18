@@ -20,8 +20,17 @@ export async function register() {
         missing.push('CRON_SECRET (cron routes will reject everything)')
       }
       if (missing.length > 0) {
+        const msg = '[boot] ⚠ Missing critical env vars in production:\n  - ' + missing.join('\n  - ')
         // eslint-disable-next-line no-console
-        console.warn('[boot] ⚠ Missing critical env vars in production:\n  - ' + missing.join('\n  - '))
+        console.warn(msg)
+        // Remonte aussi à Sentry si configuré — comme ça l'oubli est visible
+        // dans le dashboard d'alerte, pas juste dans les logs Vercel volatiles.
+        if (process.env.SENTRY_DSN) {
+          try {
+            const Sentry = await import('@sentry/nextjs')
+            Sentry.captureMessage(msg, 'warning' as never)
+          } catch { /* sentry init may not be ready yet */ }
+        }
       }
     }
   }
