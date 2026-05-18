@@ -95,24 +95,35 @@ function AppSubCard({
   const app = APPS[entry.appId]
   const [showConfirm, setShowConfirm] = useState(false)
 
+  if (entry.status === 'expired') {
+    return (
+      <div className="rounded-2xl border border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white p-5 flex items-center gap-4">
+        <span className="text-3xl shrink-0">{app.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-900 text-sm">{app.name}</p>
+          <p className="text-xs text-slate-500 mt-0.5">Votre essai est terminé — passez à un plan payant</p>
+        </div>
+        <Link href="/dashboard/settings/applications">
+          <Button size="sm" className="shrink-0 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Zap className="h-3.5 w-3.5" />Souscrire
+          </Button>
+        </Link>
+      </div>
+    )
+  }
+
   const statusChip = entry.status === 'trial'
     ? <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
         <Clock className="h-3 w-3" />
         Essai — {entry.daysLeft}j restant{entry.daysLeft !== 1 ? 's' : ''}
       </span>
-    : entry.status === 'active'
-    ? <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+    : <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
         <CheckCircle className="h-3 w-3" />Actif
-      </span>
-    : <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
-        Expiré
       </span>
 
   return (
     <div className={`relative rounded-2xl border-2 p-5 flex flex-col gap-3 transition-all ${
-      entry.status === 'active'   ? 'border-green-200 bg-green-50/30' :
-      entry.status === 'trial'    ? 'border-amber-200 bg-amber-50/20' :
-                                    'border-slate-200 bg-slate-50/30'
+      entry.status === 'active' ? 'border-green-200 bg-green-50/30' : 'border-amber-200 bg-amber-50/20'
     }`}>
       {/* Header */}
       <div className="flex items-start gap-3">
@@ -129,11 +140,9 @@ function AppSubCard({
         <span className="text-slate-500">
           {entry.status === 'trial'
             ? `Expire le ${fmtDate(entry.trialEndsAt!)}`
-            : entry.status === 'active'
-            ? entry.monthlyAmount === 0
-              ? 'Offert'
-              : `${formatDA(entry.monthlyAmount ?? app.price)}/mois`
-            : 'Essai expiré'}
+            : entry.monthlyAmount === 0
+            ? 'Offert'
+            : `${formatDA(entry.monthlyAmount ?? app.price)}/mois`}
         </span>
       </div>
 
@@ -150,13 +159,6 @@ function AppSubCard({
           <Link href={`/subscriptions/checkout?app=${entry.appId}&renew=1`} className="flex-1">
             <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs">
               <RefreshCw className="h-3.5 w-3.5" />Renouveler
-            </Button>
-          </Link>
-        )}
-        {entry.status === 'expired' && (
-          <Link href="/dashboard/settings/applications" className="flex-1">
-            <Button size="sm" className="w-full gap-1.5 text-xs">
-              <Zap className="h-3.5 w-3.5" />Souscrire
             </Button>
           </Link>
         )}
