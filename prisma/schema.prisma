@@ -2364,21 +2364,16 @@ model YelhaPayment {
 // ============================================================
 // ABONNEMENTS PAR APP (tarification indépendante)
 // ============================================================
-enum AppSubStatus {
-  TRIAL
-  ACTIVE
-  CANCELLED
-  EXPIRED
-  PAST_DUE
-  PAUSED
-}
-
+// Note: status est volontairement gardé en String et pas en enum Prisma.
+// La conversion text → enum casserait les rows existantes en prod (Prisma
+// génère DROP + ADD COLUMN au lieu d'un ALTER … USING). Valeurs attendues :
+// TRIAL | ACTIVE | CANCELLED | EXPIRED | PAST_DUE | PAUSED.
 model AppSubscription {
   id                 String       @id @default(cuid())
   companyId          String
   appId              String       // ex: "subscriptions"
   planId             String       @default("trial") // trial | starter | premium | pro | agency
-  status             AppSubStatus @default(TRIAL)
+  status             String       @default("TRIAL")
   trialEndsAt        DateTime?
   trialUsedAt        DateTime?    // marqué la 1re fois qu'un essai est démarré — bloque le re-trial à vie
   currentPeriodStart DateTime     @default(now())
