@@ -22,8 +22,24 @@ export async function GET(req: NextRequest, { params }: { params: { appId: strin
 
     if (!sub) return apiSuccess({ subscription: null })
 
-    const plan = getAppPlan(appId, sub.planId)
     const now = new Date()
+
+    // Repair: sync trialEndsAt from old system if AppSubscription is missing it
+    if (sub.status === 'TRIAL' && (!sub.trialEndsAt || sub.trialEndsAt < now)) {
+      const yelhaSub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
+      const oldEndsIso = (yelhaSub?.appTrialsEndsAt as Record<string, string> | null)?.[appId]
+      const oldEnds = oldEndsIso ? new Date(oldEndsIso) : null
+      if (oldEnds && oldEnds > now) {
+        const repaired = await prisma.appSubscription.update({
+          where: { id: sub.id },
+          data: { trialEndsAt: oldEnds, currentPeriodEnd: oldEnds },
+        })
+        sub.trialEndsAt = repaired.trialEndsAt
+        sub.currentPeriodEnd = repaired.currentPeriodEnd
+      }
+    }
+
+    const plan = getAppPlan(appId, sub.planId)
     const isTrialExpired = sub.status === 'TRIAL' && sub.trialEndsAt && sub.trialEndsAt < now
     const effectiveStatus = isTrialExpired ? 'EXPIRED' : sub.status
 

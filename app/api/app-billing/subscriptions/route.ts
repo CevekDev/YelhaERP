@@ -19,6 +19,30 @@ export async function GET(req: NextRequest) {
     })
 
     const now = new Date()
+
+    // Repair: si une AppSubscription a status=TRIAL mais trialEndsAt invalide,
+    // et que l'ancien système (YelhaSubscription.trialApps) a un essai encore
+    // valide, on sync. Corrige les données créées par l'ancien bug du checkout.
+    const yelhaSub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
+    const oldTrials = (yelhaSub?.appTrialsEndsAt as Record<string, string> | null) ?? {}
+    for (const sub of subs) {
+      const needsRepair =
+        sub.status === 'TRIAL' &&
+        (!sub.trialEndsAt || sub.trialEndsAt < now)
+      if (!needsRepair) continue
+      const oldEndsIso = oldTrials[sub.appId]
+      if (!oldEndsIso) continue
+      const oldEnds = new Date(oldEndsIso)
+      if (oldEnds <= now) continue
+      // Repair in DB
+      const repaired = await prisma.appSubscription.update({
+        where: { id: sub.id },
+        data: { trialEndsAt: oldEnds, currentPeriodEnd: oldEnds },
+      })
+      sub.trialEndsAt = repaired.trialEndsAt
+      sub.currentPeriodEnd = repaired.currentPeriodEnd
+    }
+
     const enriched = subs.map(sub => {
       const config = getAppPlanConfig(sub.appId)
       const planConfig = config ? Object.values(config.plans).find(p => p.id === sub.planId) : null
