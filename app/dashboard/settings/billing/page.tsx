@@ -153,6 +153,13 @@ function AppSubCard({
             </Button>
           </Link>
         )}
+        {entry.status === 'expired' && (
+          <Link href="/dashboard/settings/applications" className="flex-1">
+            <Button size="sm" className="w-full gap-1.5 text-xs">
+              <Zap className="h-3.5 w-3.5" />Souscrire
+            </Button>
+          </Link>
+        )}
 
         {/* Cancel */}
         {!showConfirm ? (
@@ -269,6 +276,7 @@ export default function BillingPage() {
       const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
       return { appId: e.appId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left, monthlyAmount: n.monthlyAmount, planId: n.planId }
     }
+    if (n.effectiveStatus === 'EXPIRED') return { appId: e.appId, status: 'expired', monthlyAmount: n.monthlyAmount, planId: n.planId }
     return e
   })
   // Add apps only in the new system (e.g. gifted directly without old trial)
@@ -279,6 +287,8 @@ export default function BillingPage() {
     } else if (n.effectiveStatus === 'TRIAL') {
       const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
       entries.push({ appId: n.appId as AppId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left, monthlyAmount: n.monthlyAmount, planId: n.planId })
+    } else if (n.effectiveStatus === 'EXPIRED') {
+      entries.push({ appId: n.appId as AppId, status: 'expired', monthlyAmount: n.monthlyAmount, planId: n.planId })
     }
   }
 

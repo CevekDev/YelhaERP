@@ -138,10 +138,21 @@ function AppCard({ info, onTrial, onCancel, loadingId }: {
           <span className="text-xs text-muted-foreground">Disponible prochainement</span>
         )}
 
-        {(state === 'available' || state === 'expired-trial') && (
+        {state === 'available' && (
           <Button size="sm" className="gap-1.5 text-xs flex-1" disabled={busy} onClick={() => onTrial(info.appId)}>
             {busy ? '…' : <><Zap className="h-3.5 w-3.5" />Essayer 15 jours gratuitement</>}
           </Button>
+        )}
+        {state === 'expired-trial' && (
+          independent
+            ? <Link href="/dashboard/settings/applications" className="flex-1">
+                <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs">
+                  <ArrowRight className="h-3.5 w-3.5" />Souscrire
+                </Button>
+              </Link>
+            : <Button size="sm" className="gap-1.5 text-xs flex-1" disabled={busy} onClick={() => onTrial(info.appId)}>
+                {busy ? '…' : <><Zap className="h-3.5 w-3.5" />Essayer 15 jours gratuitement</>}
+              </Button>
         )}
 
         {state === 'trial' && (
@@ -281,6 +292,10 @@ export default function ModulesPage() {
       if (newSub.effectiveStatus === 'TRIAL') {
         const dl = newSub.trialEndsAt ? dLeft(newSub.trialEndsAt) : 0
         return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: newSub.trialEndsAt ?? undefined, startingPrice }
+      }
+      // EXPIRED in new system → don't fall back to old system
+      if (newSub.effectiveStatus === 'EXPIRED') {
+        return { appId, state: 'expired-trial', startingPrice }
       }
     }
 
