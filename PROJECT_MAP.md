@@ -735,3 +735,36 @@ import { toast } from 'sonner'
 - Compteur `trialUsedAt` persistant pour bloquer le re-trial à vie (actuellement re-trial autorisé une fois EXPIRED).
 - Bloquer le boot si Upstash absent en prod (fallback mémoire non partagé entre instances Vercel).
 - `AppSubscription.status` → enum Prisma strict (actuellement string libre).
+
+---
+
+## 🔄 Changements session 2026-05-19 (suite) — Sprint 2 partiel
+
+### Monitoring (Sentry)
+- ✅ `npm install @sentry/nextjs` (déjà ajouté à package.json + lock)
+- ✅ `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts` — no-op si `SENTRY_DSN` absent → safe en dev/preview
+- ✅ `instrumentation.ts` (Next.js hook) : init Sentry par runtime + **warn en prod si `UPSTASH_REDIS_REST_URL/TOKEN`, `CHARGILY_WEBHOOK_SECRET` ou `CRON_SECRET` manquent**
+- ✅ `next.config.js` : wrap conditionnel via `withSentryConfig` (uniquement si `SENTRY_DSN` ou `NEXT_PUBLIC_SENTRY_DSN` défini → pas de slowdown du build en local)
+- ✅ `app/error.tsx` : `Sentry.captureException(error)` dans `useEffect`
+- ✅ `.env.example` : `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` ajoutés
+- ✅ `types/sentry-nextjs.d.ts` — shim minimal de types (le champ `exports` multi-condition du package ne résolvait pas correctement les .d.ts en moduleResolution `bundler`)
+
+### Logs propres
+- ✅ `lib/subscriptions/send-welcome.ts` : `console.log`/`console.error` supprimés (non-blocking try/catch silencieux)
+- ✅ `app/api/cron/billing/route.ts` : `console.log` retiré (le count `stale` est déjà retourné dans la réponse cron)
+
+### Schema — enum strict + compteur de trial
+- ✅ `prisma/schema.prisma` : `enum AppSubStatus { TRIAL ACTIVE CANCELLED EXPIRED PAST_DUE PAUSED }`. `AppSubscription.status` passe de `String` → `AppSubStatus`. Plus de string libre.
+- ✅ `prisma/schema.prisma` : nouveau champ `AppSubscription.trialUsedAt: DateTime?` — positionné la 1re fois qu'un essai démarre, jamais remis à null → bloque le re-trial à vie.
+- ✅ `app/api/app-billing/[appId]/checkout/route.ts` : refus du re-trial si `existing.trialUsedAt != null` ; positionne `trialUsedAt: now` à la création du trial.
+- ✅ `app/api/billing/app-trial/route.ts` (ancien système) : idem — refuse si trialUsedAt existe, sinon le pose à l'upsert.
+
+⚠ **Migration prod requise** : `npx prisma db push` avec les vars `.env.local` de prod pour appliquer la conversion `status: String → AppSubStatus` + l'ajout de la colonne `trialUsedAt`. Postgres convertit text → enum automatiquement si toutes les valeurs existantes matchent les valeurs de l'enum (`TRIAL`, `ACTIVE`, etc. — ce qui devrait être le cas). En cas d'échec, run `npx prisma migrate diff` pour générer le SQL et l'appliquer à la main.
+
+### Non touché — décision motivée
+- ❌ `withAuth(handler)` wrapper sur 150 routes : refacto à très large surface, à faire avec tests d'intégration. Risk/reward défavorable en une passe.
+- ❌ Split fichiers > 500 lignes : pur refacto, aucun gain fonctionnel, risque de régression sur composants déjà fonctionnels.
+- ❌ Compléter i18n EN/AR sur restaurant/pos/hr/crm/accounting : ~500 chaînes à traduire — out of scope d'une session.
+- ❌ Migrations Prisma versionnées : nécessite un snapshot complet de la prod et un test de roll-forward/back, à planifier hors session.
+- ❌ Standardiser webhooks/portal sur `apiSuccess/apiError` : purement cosmétique, format de réponse différent (`{ received: true }` est attendu par les providers externes).
+

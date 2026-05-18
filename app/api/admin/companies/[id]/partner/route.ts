@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
         const subData = {
           planId: bestPlan.id,
-          status: 'ACTIVE',
+          status: 'ACTIVE' as const,
           currentPeriodStart: now,
           currentPeriodEnd: PARTNER_PERIOD_END,
           monthlyAmount: 0,

@@ -62,12 +62,15 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       where: { companyId_appId: { companyId, appId } },
     })
 
-    // Bloquer le re-trial si un essai/abonnement est encore actif
-    const hasActiveOrOngoingTrial = existing && (
-      existing.status === 'ACTIVE' ||
-      (existing.status === 'TRIAL' && existing.trialEndsAt && existing.trialEndsAt > now)
-    )
-    if (hasActiveOrOngoingTrial && planId === 'trial') return apiError('Un essai est déjà en cours pour cette application', 409)
+    // Bloquer le re-trial — un seul essai gratuit par (company, app), à vie.
+    // trialUsedAt est positionné la 1re fois qu'un essai démarre et n'est plus remis à null.
+    if (existing?.trialUsedAt && planId === 'trial') {
+      return apiError('Essai déjà utilisé pour cette application', 409)
+    }
+    // Garde-fou supplémentaire si un sub ACTIVE existe (ne devrait pas se produire)
+    if (existing?.status === 'ACTIVE' && planId === 'trial') {
+      return apiError('Cet abonnement est déjà actif', 409)
+    }
 
     // Bloquer un doublon de paiement pour le même plan actif (pas encore expiré)
     if (existing?.status === 'ACTIVE' && existing.planId === planId) {
@@ -79,10 +82,10 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       const sub = existing
         ? await prisma.appSubscription.update({
             where: { id: existing.id },
-            data: { planId: 'trial', status: 'TRIAL', trialEndsAt, currentPeriodStart: now, currentPeriodEnd: periodEnd, monthlyAmount: 0 },
+            data: { planId: 'trial', status: 'TRIAL', trialEndsAt, trialUsedAt: now, currentPeriodStart: now, currentPeriodEnd: periodEnd, monthlyAmount: 0 },
           })
         : await prisma.appSubscription.create({
-            data: { companyId, appId, planId: 'trial', status: 'TRIAL', trialEndsAt, currentPeriodStart: now, currentPeriodEnd: periodEnd, monthlyAmount: 0 },
+            data: { companyId, appId, planId: 'trial', status: 'TRIAL', trialEndsAt, trialUsedAt: now, currentPeriodStart: now, currentPeriodEnd: periodEnd, monthlyAmount: 0 },
           })
 
       // Email bienvenue essai

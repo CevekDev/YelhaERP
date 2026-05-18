@@ -64,17 +64,23 @@ export async function POST(req: NextRequest) {
     // EXPIRED/null et casserait l'affichage du trial.
     if (hasIndependentPlans(appId)) {
       const periodEnd = trialEndsAt
+      const now = new Date()
+      // Vérifie qu'aucun essai n'a déjà été utilisé pour cette app
+      const existing = await prisma.appSubscription.findUnique({ where: { companyId_appId: { companyId, appId } } })
+      if (existing?.trialUsedAt) {
+        return apiError('Essai déjà utilisé pour cette application', 409)
+      }
       await prisma.appSubscription.upsert({
         where: { companyId_appId: { companyId, appId } },
         create: {
           companyId, appId, planId: 'trial',
-          status: 'TRIAL', trialEndsAt,
-          currentPeriodStart: new Date(), currentPeriodEnd: periodEnd,
+          status: 'TRIAL', trialEndsAt, trialUsedAt: now,
+          currentPeriodStart: now, currentPeriodEnd: periodEnd,
           monthlyAmount: 0,
         },
         update: {
-          planId: 'trial', status: 'TRIAL', trialEndsAt,
-          currentPeriodStart: new Date(), currentPeriodEnd: periodEnd,
+          planId: 'trial', status: 'TRIAL', trialEndsAt, trialUsedAt: now,
+          currentPeriodStart: now, currentPeriodEnd: periodEnd,
           monthlyAmount: 0,
         },
       })

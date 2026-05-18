@@ -112,15 +112,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 5. Flag accounts expired for >30 days (log only, no deletion)
+  // 5. Flag accounts expired for >30 days (return count in response, no deletion)
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   const stale = await prisma.yelhaSubscription.count({
     where: { status: 'EXPIRED', updatedAt: { lt: thirtyDaysAgo } },
   })
-  if (stale > 0) {
-    console.log(`[billing-cron] ${stale} comptes expirés depuis >30 jours — à traiter manuellement`)
-  }
 
   return apiSuccess({ processed: counts, staleAccounts: stale, renewalReminders: counts.renewalReminders })
 }

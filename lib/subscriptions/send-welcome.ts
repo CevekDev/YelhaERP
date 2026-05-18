@@ -70,9 +70,8 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
       },
     })
 
-    const result = await sendEmail({ to, subject, html })
-    console.log('[welcome] sent to', to, 'result:', JSON.stringify(result))
-  } catch (e) {
-    console.error('[welcome] error:', e)
+    await sendEmail({ to, subject, html })
+  } catch {
+    // non-blocking — email échoué ne doit pas casser le flux
   }
 }

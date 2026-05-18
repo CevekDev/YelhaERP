@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -36,4 +38,20 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+// Wrap with Sentry only if a DSN / auth token is configured.
+// withSentryConfig is a no-op for the runtime if SENTRY_DSN is missing,
+// but it adds build-time source-map upload (slow) if SENTRY_AUTH_TOKEN is set —
+// so we only wrap when the user opted in.
+const sentryEnabled = !!(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)
+
+module.exports = sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      disableLogger: true,
+    })
+  : nextConfig
