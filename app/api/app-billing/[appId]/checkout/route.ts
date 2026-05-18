@@ -62,8 +62,12 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       where: { companyId_appId: { companyId, appId } },
     })
 
-    // Bloquer l'essai si un abonnement existe déjà (peu importe le statut)
-    if (existing && planId === 'trial') return apiError('Essai déjà utilisé pour cette application', 409)
+    // Bloquer le re-trial si un essai/abonnement est encore actif
+    const hasActiveOrOngoingTrial = existing && (
+      existing.status === 'ACTIVE' ||
+      (existing.status === 'TRIAL' && existing.trialEndsAt && existing.trialEndsAt > now)
+    )
+    if (hasActiveOrOngoingTrial && planId === 'trial') return apiError('Un essai est déjà en cours pour cette application', 409)
 
     // Bloquer un doublon de paiement pour le même plan actif (pas encore expiré)
     if (existing?.status === 'ACTIVE' && existing.planId === planId) {
