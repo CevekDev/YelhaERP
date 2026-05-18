@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
     const plan = PLANS[planId]
     const limits = 'limits' in plan ? plan.limits : null
 
+    const planEnum = payment.planId.toUpperCase() as 'TRIAL' | 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
+    const validPlanEnums = ['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
+
     await prisma.$transaction(async (tx) => {
       await tx.yelhaPayment.update({
         where: { id: payment.id },
@@ -103,6 +106,13 @@ export async function POST(req: NextRequest) {
           } : {}),
         },
       })
+
+      if (validPlanEnums.includes(planEnum)) {
+        await tx.company.update({
+          where: { id: payment.subscription.company.id },
+          data: { plan: planEnum },
+        })
+      }
     })
 
     // Send confirmation email to Yelha admin

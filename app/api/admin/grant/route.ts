@@ -51,12 +51,17 @@ export async function POST(req: NextRequest) {
       if (!paymentId) return apiError('paymentId requis', 422)
       const payment = await prisma.yelhaPayment.findUnique({
         where: { id: paymentId },
-        include: { subscription: true },
+        include: { subscription: { include: { company: true } } },
       })
       if (!payment) return apiError('Paiement introuvable', 404)
       if (payment.status !== 'PENDING') return apiError('Ce paiement n\'est pas en attente', 409)
 
       const now = new Date()
+      const ccpPlanId = payment.planId as PlanId
+      const ccpLimits = getPlanLimits(ccpPlanId)
+      const ccpPlanEnum = ccpPlanId.toUpperCase() as 'TRIAL' | 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
+      const validPlansForCcp = ['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
+
       await prisma.$transaction([
         prisma.yelhaPayment.update({ where: { id: paymentId }, data: { status: 'PAID', paidAt: now } }),
         prisma.yelhaSubscription.update({
@@ -64,13 +69,25 @@ export async function POST(req: NextRequest) {
           data: {
             status: 'ACTIVE',
             planId: payment.planId,
+            billingCycle: payment.billingCycle,
+            extraApps: payment.extraApps,
             currentPeriodStart: payment.periodStart,
             currentPeriodEnd: payment.periodEnd,
             lastPaymentAt: now,
             lastPaymentRef: payment.ccpRef ?? payment.id,
             monthlyAmount: payment.amount,
+            ...(ccpLimits ? {
+              limitEmails: ccpLimits.emails,
+              limitApiReq: ccpLimits.apiRequests,
+              limitDeliverers: ccpLimits.deliverers,
+              limitSkus: ccpLimits.skus,
+              limitAiReq: ccpLimits.aiRequests,
+            } : {}),
           },
         }),
+        ...(validPlansForCcp.includes(ccpPlanEnum)
+          ? [prisma.company.update({ where: { id: payment.subscription.company.id }, data: { plan: ccpPlanEnum } })]
+          : []),
       ])
       return apiSuccess({ confirmed: true })
     }

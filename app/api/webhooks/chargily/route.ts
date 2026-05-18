@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
-  const secret = process.env.CHARGILY_SECRET_KEY ?? ''
+  const secret = process.env.CHARGILY_WEBHOOK_SECRET ?? ''
   const computed = crypto.createHmac('sha256', secret).update(payload).digest('hex')
   const computedBuf = Buffer.from(computed)
   const signatureBuf = Buffer.from(signature)
