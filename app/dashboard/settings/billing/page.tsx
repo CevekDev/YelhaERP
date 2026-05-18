@@ -278,7 +278,7 @@ export default function BillingPage() {
       const left = n.trialEndsAt ? daysLeft(n.trialEndsAt) : 0
       return { appId: e.appId, status: left > 0 ? 'trial' : 'expired', trialEndsAt: n.trialEndsAt ?? undefined, daysLeft: left, monthlyAmount: n.monthlyAmount, planId: n.planId }
     }
-    if (n.effectiveStatus === 'EXPIRED') return { appId: e.appId, status: 'expired', monthlyAmount: n.monthlyAmount, planId: n.planId }
+    // EXPIRED → keep old entry (old trial may still be valid)
     return e
   })
   // Add apps only in the new system (e.g. gifted directly without old trial)

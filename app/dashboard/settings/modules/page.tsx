@@ -293,10 +293,7 @@ export default function ModulesPage() {
         const dl = newSub.trialEndsAt ? dLeft(newSub.trialEndsAt) : 0
         return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: newSub.trialEndsAt ?? undefined, startingPrice }
       }
-      // EXPIRED in new system → don't fall back to old system
-      if (newSub.effectiveStatus === 'EXPIRED') {
-        return { appId, state: 'expired-trial', startingPrice }
-      }
+      // EXPIRED → fall back to old system (old trial may still be valid)
     }
 
     // Fall back to old system
