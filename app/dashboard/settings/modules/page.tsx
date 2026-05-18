@@ -29,6 +29,7 @@ interface AppInfo {
   state: AppState
   daysLeft?: number
   trialEndsAt?: string
+  startingPrice?: number | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-function getStartingPrice(appId: string): number | null {
+function getStartingPriceFallback(appId: string): number | null {
   const config = getAppPlanConfig(appId)
   if (!config) return null
   const paid = Object.values(config.plans).filter(p => p.id !== 'trial')
@@ -62,7 +63,9 @@ function AppCard({ info, onTrial, onCancel, loadingId }: {
   const busy = loadingId === info.appId
   const [confirmCancel, setConfirmCancel] = useState(false)
   const independent = hasIndependentPlans(info.appId)
-  const startingPrice = independent ? getStartingPrice(info.appId) : null
+  const startingPrice = independent
+    ? (info.startingPrice ?? getStartingPriceFallback(info.appId))
+    : null
 
   const borderClass =
     state === 'core'          ? 'border-emerald-500/30 bg-emerald-500/5' :
@@ -192,6 +195,7 @@ function AppCard({ info, onTrial, onCancel, loadingId }: {
 export default function ModulesPage() {
   const [sub, setSub] = useState<SubData | null>(null)
   const [appSubs, setAppSubs] = useState<AppSubRecord[]>([])
+  const [startingPrices, setStartingPrices] = useState<Record<string, number>>({})
   const [pageLoading, setPageLoading] = useState(true)
   const [loadingId, setLoadingId] = useState<AppId | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -207,6 +211,26 @@ export default function ModulesPage() {
   }
 
   useEffect(() => { loadSub() }, [])
+
+  // Fetch per-app starting prices (with admin overrides) from the same endpoint
+  // the checkout modal uses, so /modules and the modal stay in sync.
+  useEffect(() => {
+    const indepApps = (Object.keys(APPS) as AppId[]).filter(id => hasIndependentPlans(id))
+    Promise.all(indepApps.map(async appId => {
+      try {
+        const r = await fetch(`/api/app-billing/${appId}/plans`)
+        const d = await r.json()
+        const plans = (d?.data?.plans ?? d?.plans ?? []) as Array<{ id: string; price: number }>
+        const paid = plans.filter(p => p.id !== 'trial')
+        if (!paid.length) return null
+        return [appId, Math.min(...paid.map(p => p.price))] as const
+      } catch { return null }
+    })).then(results => {
+      const map: Record<string, number> = {}
+      for (const r of results) if (r) map[r[0]] = r[1]
+      setStartingPrices(map)
+    })
+  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -246,28 +270,29 @@ export default function ModulesPage() {
 
   const appInfos: AppInfo[] = (Object.keys(APPS) as AppId[]).map(appId => {
     const app = APPS[appId]
+    const startingPrice = startingPrices[appId] ?? null
     if (app.core) return { appId, state: 'core' }
     if (app.comingSoon) return { appId, state: 'coming-soon' }
 
     // Check new system first
     const newSub = newSubMap.get(appId)
     if (newSub) {
-      if (newSub.effectiveStatus === 'ACTIVE') return { appId, state: 'active' }
+      if (newSub.effectiveStatus === 'ACTIVE') return { appId, state: 'active', startingPrice }
       if (newSub.effectiveStatus === 'TRIAL') {
         const dl = newSub.trialEndsAt ? dLeft(newSub.trialEndsAt) : 0
-        return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: newSub.trialEndsAt ?? undefined }
+        return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: newSub.trialEndsAt ?? undefined, startingPrice }
       }
     }
 
     // Fall back to old system
-    if (!sub) return { appId, state: 'available' }
-    if (sub.extraApps.includes(appId)) return { appId, state: 'active' }
+    if (!sub) return { appId, state: 'available', startingPrice }
+    if (sub.extraApps.includes(appId)) return { appId, state: 'active', startingPrice }
     if (sub.trialApps.includes(appId)) {
       const endIso = sub.appTrialsEndsAt?.[appId]
       const dl = endIso ? dLeft(endIso) : 0
-      return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: endIso }
+      return { appId, state: dl > 0 ? 'trial' : 'expired-trial', daysLeft: dl, trialEndsAt: endIso, startingPrice }
     }
-    return { appId, state: 'available' }
+    return { appId, state: 'available', startingPrice }
   })
 
   const activeList = appInfos.filter(i => i.state === 'active' || i.state === 'trial')
