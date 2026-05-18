@@ -7,9 +7,10 @@ import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import {
   PLANS,
   APPS,
-  calcMonthlyTotal,
   type AppId,
   type PlanId,
+  isAppIncluded,
+  ANNUAL_DISCOUNT,
 } from '@/lib/pricing/config'
 
 const schema = z.object({
@@ -33,7 +34,17 @@ export async function POST(req: NextRequest) {
     const { planId, extraApps, billingCycle, method } = parsed.data
     const isAnnual = billingCycle === 'ANNUAL'
 
-    const monthlyAmount = calcMonthlyTotal(planId, extraApps, isAnnual)
+    const pricingConfig = await prisma.systemConfig.findUnique({ where: { key: 'pricing' } })
+    const pricingOverrides = (pricingConfig?.value as { plans?: Record<string, number>; apps?: Record<string, number> } | null) ?? {}
+    const planOverrides = pricingOverrides.plans ?? {}
+    const appOverrides = pricingOverrides.apps ?? {}
+
+    const basePlanPrice = planOverrides[planId] ?? PLANS[planId].price
+    const extrasPrice = extraApps
+      .filter(a => !isAppIncluded(planId, a))
+      .reduce((s, a) => s + (appOverrides[a] ?? APPS[a].price), 0)
+    const subtotal = basePlanPrice + extrasPrice
+    const monthlyAmount = isAnnual ? Math.round(subtotal * (1 - ANNUAL_DISCOUNT)) : subtotal
     const totalDA = isAnnual ? monthlyAmount * 12 : monthlyAmount
 
     const sub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
