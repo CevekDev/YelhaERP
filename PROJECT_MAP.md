@@ -664,3 +664,4 @@ import { toast } from 'sonner'
 
 ### Scripts utilitaires
 - `scripts/check-db.ts` : diagnostic DB (companies, YelhaSubscription, AppSubscriptions)
+- `scripts/diagnose-last-account.ts` : diagnostic complet du dernier compte inscrit (Company, YelhaSubscription, YelhaPayment, AppSubscription). Flag `--cleanup` remet le compte à TRIAL propre (supprime paiements + app subs). Utilisé 2026-05-18 pour nettoyer le compte `merahlwos@gmail.com` (XXI) qui était passé STARTER ACTIVE 990 DA suite à un webhook Chargily **simulé** (chargilyId `sim_…`) exécuté contre la prod via `scripts/simulate-chargily-webhook.ts`. ⚠️ Ne plus lancer les scripts de simulation contre la base prod.
