@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/resend'
 import { sendAppPaymentConfirmation } from '@/lib/email/resend'
 import { PLANS, type AppId } from '@/lib/pricing/config'
 import { getAppPlanConfig } from '@/lib/pricing/app-plans'
+import { isAlreadyProcessed } from '@/lib/webhooks/idempotence'
 
 type ChargilyEvent = {
   type: string
@@ -41,6 +42,12 @@ export async function POST(req: NextRequest) {
 
   const chargilyId = event.data?.id
   const meta = event.data?.metadata ?? {}
+
+  // Idempotence — un même eventId Chargily ne doit pas être traité deux fois
+  // (Chargily peut rejouer en cas de timeout HTTP de notre côté).
+  if (chargilyId && await isAlreadyProcessed('chargily', `${event.type}:${chargilyId}`)) {
+    return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
+  }
 
   // ── Invoice payment ───────────────────────────────────────────────────────
   if (meta.invoice_id && event.type === 'checkout.paid') {
@@ -157,8 +164,10 @@ export async function POST(req: NextRequest) {
     const planId = payment.planId as keyof typeof PLANS
     const plan = PLANS[planId]
     const limits = 'limits' in plan ? plan.limits : null
-    const planEnum = payment.planId.toUpperCase() as 'TRIAL' | 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
-    const validPlanEnums = ['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
+    const planEnum = payment.planId.toUpperCase() as 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
+    // TRIAL volontairement exclu : un paiement confirmé ne doit jamais
+    // downgrade Company.plan à TRIAL (cas où l'API serait appelée avec planId='trial').
+    const validPlanEnums = ['STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
 
     await prisma.$transaction(async (tx) => {
       await tx.yelhaPayment.update({

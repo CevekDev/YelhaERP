@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/security/api-response'
+import { verifyCronSecret } from '@/lib/security/cron-auth'
 import { generateNotificationsForCompany } from '@/lib/notifications/generate'
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) return apiError('Non autorisé', 401)
+  if (!verifyCronSecret(req)) return apiError('Non autorisé', 401)
 
   try {
     const companies = await prisma.company.findMany({ select: { id: true } })

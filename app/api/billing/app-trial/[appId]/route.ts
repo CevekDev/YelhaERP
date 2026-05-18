@@ -31,14 +31,22 @@ export async function DELETE(
     const appTrialsEndsAt = { ...((sub.appTrialsEndsAt as Record<string, string>) ?? {}) }
     delete appTrialsEndsAt[appId]
 
-    const updated = await prisma.yelhaSubscription.update({
-      where: { companyId },
-      data: {
-        trialApps: newTrialApps,
-        extraApps: newExtraApps,
-        appTrialsEndsAt,
-      },
-    })
+    const [updated] = await prisma.$transaction([
+      prisma.yelhaSubscription.update({
+        where: { companyId },
+        data: {
+          trialApps: newTrialApps,
+          extraApps: newExtraApps,
+          appTrialsEndsAt,
+        },
+      }),
+      // Cascade : annuler l'AppSubscription correspondante si présente —
+      // sinon canAccessApp continuerait à grant access via la nouvelle table.
+      prisma.appSubscription.updateMany({
+        where: { companyId, appId, status: { in: ['ACTIVE', 'TRIAL'] } },
+        data: { status: 'CANCELLED' },
+      }),
+    ])
 
     return apiSuccess({ subscription: updated })
   } catch (err) {

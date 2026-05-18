@@ -146,6 +146,28 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
           },
         })
 
+    // Dédup : si un PENDING < 1h existe déjà pour le même (sub, planId, method),
+    // on le réutilise au lieu d'en créer un nouveau. Évite la pollution
+    // d'historique + les CCP refs multiples valides simultanément.
+    const oneHourAgo = new Date(Date.now() - 60 * 60_000)
+    const existingPending = await prisma.appPayment.findFirst({
+      where: {
+        appSubscriptionId: subRecord.id,
+        planId, method, status: 'PENDING',
+        createdAt: { gt: oneHourAgo },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (existingPending) {
+      if (method === 'CCP' && existingPending.ccpRef) {
+        return apiSuccess({ type: 'ccp', ccpRef: existingPending.ccpRef, amount: effectivePrice, planId, paymentId: existingPending.id })
+      }
+      if (method === 'CHARGILY' && existingPending.chargilyLink) {
+        return apiSuccess({ type: 'chargily', url: existingPending.chargilyLink })
+      }
+    }
+
     const payment = await prisma.appPayment.create({
       data: {
         appSubscriptionId: subRecord.id,
@@ -165,6 +187,7 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
       if (!chargilySecret) return apiError('Paiement Chargily non configuré', 500)
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
+      const ctxQs = `app=${encodeURIComponent(appId)}&plan=${encodeURIComponent(planId)}&method=chargily`
 
       const chargilyRes = await fetch(`${CHARGILY_BASE}/checkouts`, {
         method: 'POST',
@@ -173,8 +196,8 @@ export async function POST(req: NextRequest, { params }: { params: { appId: stri
           amount: effectivePrice,
           currency: 'dzd',
           locale: 'fr',
-          success_url: `${appUrl}/subscriptions/success?method=chargily&app=${appId}&plan=${planId}`,
-          failure_url: `${appUrl}/subscriptions/checkout?app=${appId}`,
+          success_url: `${appUrl}/subscriptions/success?${ctxQs}`,
+          failure_url: `${appUrl}/subscriptions/checkout?${ctxQs}`,
           metadata: { appPaymentId: payment.id, appId, planId, companyId },
         }),
       })

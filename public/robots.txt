@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /conditions
+Allow: /confidentialite
+Allow: /mentions-legales
+
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /onboarding
+Disallow: /verify-email
+Disallow: /portal/
+Disallow: /subscriptions/
+
+Sitemap: https://erp.yelha.net/sitemap.xml

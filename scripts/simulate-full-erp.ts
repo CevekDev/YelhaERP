@@ -420,10 +420,10 @@ async function main() {
   pass(`YelhaPayment PENDING créé`, `id=${yelhaPayment.id} chargilyId=${fakeChargilyId}`)
 
   const yelhaPayload = JSON.stringify({ type: 'checkout.paid', data: { id: fakeChargilyId } })
-  const webhookResult = await fireWebhook('/api/webhooks/chargily-yelha', yelhaPayload, CHARGILY)
+  const webhookResult = await fireWebhook('/api/webhooks/chargily', yelhaPayload, CHARGILY)
 
   if (webhookResult.status === 200) {
-    pass(`Webhook chargily-yelha → 200`)
+    pass(`Webhook chargily → 200`)
     const updatedYelha   = await prisma.yelhaSubscription.findUnique({ where: { id: yelhaSub.id } })
     const updatedPayment = await prisma.yelhaPayment.findUnique({ where: { id: yelhaPayment.id } })
     updatedPayment?.status === 'PAID'

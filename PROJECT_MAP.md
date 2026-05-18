@@ -1,6 +1,6 @@
 # 🗺️ PROJECT_MAP.md — YelhaERP
 
-> Dernière mise à jour : 2026-05-18
+> Dernière mise à jour : 2026-05-19
 > Lire ce fichier EN PREMIER à chaque session (voir CLAUDE.md).
 
 ---
@@ -689,3 +689,49 @@ import { toast } from 'sonner'
 - ✅ `app/api/billing/plans/route.ts` : lit SystemConfig cle 'pricing' et applique overrides avant de retourner (etait 100% statique)
 - ✅ `app/api/billing/checkout/route.ts` : remplace calcMonthlyTotal() par calcul avec overrides — Chargily et CCP utilisent desormais le prix effectif admin
 
+
+---
+
+## 🔄 Changements session 2026-05-19 — Audit pré-prod massif (sécurité + billing + pré-prod)
+
+### 🔴 Sécurité critique
+- ✅ `middleware.ts` : PUBLIC_PATHS complétés (`/api/webhooks/delivery`, `/api/portal`, `/api/restaurant/qr`, `/api/restaurant/menu/public`, `/robots.txt`, `/sitemap.xml`). Suppression des paths legacy `chargily-yelha` et `chargily-app`.
+- ✅ `app/api/auth/verify-email/route.ts` : `crypto.randomInt` au lieu de `Math.random` ; rate limit IP (`AUTH_RATE_LIMIT`) + `rateLimitByKey` par email (5/15min sur POST, 3/h sur PUT) → coupe brute-force + email-bombing. `timingSafeEqual` sur comparaison du code.
+- ✅ `app/api/auth/change-password/route.ts` : `AUTH_RATE_LIMIT` + bruteforce par-user (10/15min) — protège contre exploitation de session volée.
+- ✅ `app/api/admins/route.ts` : politique mot de passe alignée sur `register` (`min(8)` + 1 majuscule + 1 chiffre).
+- ✅ `app/api/webhooks/delivery/[companyId]/route.ts` : check de longueur avant `timingSafeEqual` → plus de 500 sur signature de mauvaise longueur.
+- ✅ `lib/security/cron-auth.ts` (NEW) : `verifyCronSecret(req)` constant-time. Branché sur les 6 routes `app/api/cron/**` (billing, app-billing, cleanup-payments, notifications, quotes-followup, subscriptions-reminders).
+- ✅ `lib/auth.ts` : `allowDangerousEmailAccountLinking` retiré du provider Google.
+
+### 🟠 Billing
+- ✅ `app/api/billing/checkout/route.ts` : URLs Chargily passées par `NEXT_PUBLIC_APP_URL` ; `success_url`/`failure_url` enrichies de `?plan=…&cycle=…&apps=…` pour que la page de retour ne perde plus le contexte.
+- ✅ `app/api/app-billing/[appId]/checkout/route.ts` : idem (`app=…&plan=…&method=…`). Dédup `AppPayment PENDING < 1h` : si même (sub, planId, method), on retourne la ref existante au lieu de créer un doublon.
+- ✅ `app/api/billing/cancel/route.ts` : transaction qui annule en cascade les `AppSubscription` ACTIVE/TRIAL → fin du bug où on annule l'ERP mais continue d'accéder aux apps payantes.
+- ✅ `app/api/billing/app-trial/[appId]/route.ts` (DELETE) : annule aussi la `AppSubscription` correspondante → `canAccessApp` ne grant plus l'accès via la nouvelle table après résiliation.
+
+### 🔴 Webhooks
+- ✅ `lib/webhooks/idempotence.ts` (NEW) : `isAlreadyProcessed(namespace, eventId)` backed par Upstash Redis (TTL 7j).
+- ✅ `app/api/webhooks/chargily/route.ts` : idempotence appliquée en tête de POST → un rejeu Chargily (même `data.id` + `event.type`) court-circuite proprement. Plus de doublons `InvoicePayment` sur rejeu. **Filtre TRIAL retiré de `validPlanEnums`** → un paiement confirmé ne peut plus downgrade `Company.plan` à TRIAL.
+- ✅ Suppression définitive des webhooks legacy : `app/api/webhooks/chargily-yelha/route.ts` et `app/api/webhooks/chargily-app/route.ts` (déjà remplacés par le webhook unifié `chargily/route.ts`). Référence corrigée dans `scripts/simulate-full-erp.ts`.
+
+### 🧹 Code mort supprimé
+- `components/dashboard/tax-reminders.tsx`
+- `components/ui/{chatter,progress-ring,enterprise-table,filter-chip,view-toggle,kanban-board,timeline}.tsx`
+- (vérifié `grep` : aucun import orphelin)
+
+### 🚀 Pré-prod infrastructure
+- ✅ `public/robots.txt` + `public/favicon.svg` créés.
+- ✅ `app/sitemap.ts` : sitemap dynamique (`/`, `/pricing`, `/login`, `/register`, pages légales).
+- ✅ `app/layout.tsx` : `robots.index = true` (site désormais indexable). `metadataBase`, `openGraph`, `twitter` complets. Référence du favicon.
+- ✅ `app/loading.tsx`, `app/error.tsx`, `app/not-found.tsx` (fallbacks Next.js).
+- ✅ `.env.example` : ajout `CHARGILY_WEBHOOK_SECRET`.
+
+### 🔜 Reporté à Sprint 2/3 (volontairement non touché ici)
+- Sentry / structured logger : nécessite npm install + config — à faire avec un compte Sentry.
+- Wrapper `withAuth(handler)` pour dédupliquer les 150 routes : refacto touche beaucoup de code, à faire avec des tests d'intégration.
+- Split fichiers > 500 lignes (`prisma/schema.prisma`, `lib/i18n/translations.ts`, `lib/sub-api/docs.ts`, `app/admin/page.tsx`, etc.) : pur refacto sans gain fonctionnel immédiat.
+- i18n EN/AR complète (RTL pour AR).
+- Migration `prisma db push` → migrations versionnées : nécessite snapshot DB prod.
+- Compteur `trialUsedAt` persistant pour bloquer le re-trial à vie (actuellement re-trial autorisé une fois EXPIRED).
+- Bloquer le boot si Upstash absent en prod (fallback mémoire non partagé entre instances Vercel).
+- `AppSubscription.status` → enum Prisma strict (actuellement string libre).

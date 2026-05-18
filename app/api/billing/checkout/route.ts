@@ -69,6 +69,10 @@ export async function POST(req: NextRequest) {
       const chargilySecret = process.env.CHARGILY_SECRET_KEY
       if (!chargilySecret) return apiError('Paiement Chargily non configuré', 500)
 
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
+      const ctxQs = `plan=${encodeURIComponent(planId)}&cycle=${encodeURIComponent(billingCycle)}`
+        + (extraApps.length ? `&apps=${encodeURIComponent(extraApps.join(','))}` : '')
+
       const chargilyRes = await fetch('https://pay.chargily.net/api/v2/checkouts', {
         method: 'POST',
         headers: {
@@ -78,8 +82,8 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           amount: totalDA,
           currency: 'dzd',
-          success_url: 'https://erp.yelha.net/subscriptions/success',
-          failure_url: 'https://erp.yelha.net/subscriptions/checkout',
+          success_url: `${appUrl}/subscriptions/success?${ctxQs}`,
+          failure_url: `${appUrl}/subscriptions/checkout?${ctxQs}`,
           locale: 'fr',
           metadata: {
             planId,

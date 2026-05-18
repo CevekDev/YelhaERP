@@ -74,7 +74,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId:     process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
+      // allowDangerousEmailAccountLinking volontairement désactivé : risque de
+      // hijack si un compte Google non vérifié partage l'email d'un compte
+      // existant. Google force la vérification email mais le flag reste risqué.
     }),
     Credentials({
       async authorize(credentials) {

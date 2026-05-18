@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/security/api-response'
+import { verifyCronSecret } from '@/lib/security/cron-auth'
 import { sendTrialExpired, sendTrialReminder, sendYelhaRenewalReminder } from '@/lib/email/resend'
 import { PLANS, type PlanId } from '@/lib/pricing/config'
 
@@ -11,10 +12,7 @@ function daysDiff(a: Date, b: Date): number {
 }
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  if (secret !== process.env.CRON_SECRET) {
-    return apiError('Non autorisé', 401)
-  }
+  if (!verifyCronSecret(req)) return apiError('Non autorisé', 401)
 
   const now = new Date()
   const counts = { expired: 0, reminders: 0, renewals: 0, renewalReminders: 0 }

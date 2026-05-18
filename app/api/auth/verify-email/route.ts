@@ -1,16 +1,33 @@
 import { NextRequest } from 'next/server'
+import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
-import { apiError, apiSuccess } from '@/lib/security/api-response'
+import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
+import { rateLimit, rateLimitByKey, AUTH_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { sendWelcomeEmail } from '@/lib/email/resend'
 
+function pickLang(req: NextRequest): 'fr' | 'en' | 'ar' {
+  const al = req.headers.get('accept-language') ?? ''
+  if (al.startsWith('ar')) return 'ar'
+  if (al.startsWith('en')) return 'en'
+  return 'fr'
+}
+
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, AUTH_RATE_LIMIT)
+  if (!rl.success) return rateLimitResponse(rl.reset)
+
   let body: unknown
   try { body = await req.json() } catch { return apiError('Corps de requête invalide', 400) }
 
   const { email, code } = body as { email?: string; code?: string }
   if (!email || !code) return apiError('Email et code requis', 400)
 
-  const user = await prisma.user.findUnique({ where: { email } })
+  // Per-email attempt limit: 5 tentatives / 15 min — bloque le brute-force du code à 6 chiffres
+  const emailNorm = email.toLowerCase().trim()
+  const attempts = await rateLimitByKey(`verify_email:${emailNorm}`, { limit: 5, windowMs: 15 * 60_000 })
+  if (!attempts.success) return apiError('Trop de tentatives — réessayez dans 15 minutes', 429)
+
+  const user = await prisma.user.findUnique({ where: { email: emailNorm } })
 
   if (!user || !user.verificationToken || !user.verificationExpiry) {
     return apiError('Code invalide', 400)
@@ -24,20 +41,19 @@ export async function POST(req: NextRequest) {
     return apiError('Code expiré', 400)
   }
 
-  if (user.verificationToken !== code) {
-    return apiError('Code incorrect', 400)
-  }
+  // Comparaison constant-time pour éviter une oracle de timing sur le code
+  const tokenBuf = Buffer.from(user.verificationToken)
+  const codeBuf = Buffer.from(code)
+  const match = tokenBuf.length === codeBuf.length && crypto.timingSafeEqual(tokenBuf, codeBuf)
+  if (!match) return apiError('Code incorrect', 400)
 
   await prisma.user.update({
     where: { id: user.id },
     data: { emailVerified: new Date(), verificationToken: null, verificationExpiry: null },
   })
 
-  const lang = req.headers.get('accept-language')?.startsWith('ar') ? 'ar'
-    : req.headers.get('accept-language')?.startsWith('en') ? 'en' : 'fr'
-
   try {
-    await sendWelcomeEmail(email, user.name, lang)
+    await sendWelcomeEmail(emailNorm, user.name, pickLang(req))
   } catch {
     // non-blocking
   }
@@ -47,16 +63,25 @@ export async function POST(req: NextRequest) {
 
 // Resend code
 export async function PUT(req: NextRequest) {
+  const rl = await rateLimit(req, AUTH_RATE_LIMIT)
+  if (!rl.success) return rateLimitResponse(rl.reset)
+
   let body: unknown
   try { body = await req.json() } catch { return apiError('Corps de requête invalide', 400) }
 
   const { email } = body as { email?: string }
   if (!email) return apiError('Email requis', 400)
 
-  const user = await prisma.user.findUnique({ where: { email } })
+  // Per-email resend limit: 3 par heure — évite l'email bombing via le renvoi
+  const emailNorm = email.toLowerCase().trim()
+  const resend = await rateLimitByKey(`verify_resend:${emailNorm}`, { limit: 3, windowMs: 60 * 60_000 })
+  if (!resend.success) return apiError('Trop de demandes — réessayez dans 1 heure', 429)
+
+  const user = await prisma.user.findUnique({ where: { email: emailNorm } })
   if (!user || user.emailVerified) return apiError('Impossible de renvoyer le code', 400)
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // crypto.randomInt (CSPRNG) au lieu de Math.random
+  const code = String(crypto.randomInt(100000, 1000000))
   const expiry = new Date(Date.now() + 15 * 60 * 1000)
 
   await prisma.user.update({
@@ -64,12 +89,9 @@ export async function PUT(req: NextRequest) {
     data: { verificationToken: code, verificationExpiry: expiry },
   })
 
-  const lang = req.headers.get('accept-language')?.startsWith('ar') ? 'ar'
-    : req.headers.get('accept-language')?.startsWith('en') ? 'en' : 'fr'
-
   try {
     const { sendVerificationCode } = await import('@/lib/email/resend')
-    await sendVerificationCode(email, code, user.name, lang)
+    await sendVerificationCode(emailNorm, code, user.name, pickLang(req))
   } catch {
     return apiError('Erreur envoi email', 500)
   }

@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { apiSuccess, apiError } from '@/lib/security/api-response'
+import { apiSuccess, apiError, rateLimitResponse } from '@/lib/security/api-response'
+import { rateLimit, rateLimitByKey, AUTH_RATE_LIMIT } from '@/lib/security/ratelimit'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
@@ -14,10 +15,16 @@ const schema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, AUTH_RATE_LIMIT)
+  if (!rl.success) return rateLimitResponse(rl.reset)
   try {
     const session = await auth()
     const userId = session?.user?.id
     if (!userId) return apiError('Non autorisé', 401)
+
+    // Bruteforce par session volée : 10 tentatives / 15 min par user
+    const attempts = await rateLimitByKey(`pwd_change:${userId}`, { limit: 10, windowMs: 15 * 60_000 })
+    if (!attempts.success) return apiError('Trop de tentatives — réessayez dans 15 minutes', 429)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }

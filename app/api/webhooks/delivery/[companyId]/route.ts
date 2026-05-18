@@ -47,9 +47,10 @@ export async function POST(req: NextRequest, { params }: { params: { companyId: 
   if (deliveryCompany.webhookSecret) {
     const sig = req.headers.get('x-signature') ?? req.headers.get('x-webhook-signature') ?? req.headers.get('x-hmac-sha256') ?? ''
     const expected = crypto.createHmac('sha256', deliveryCompany.webhookSecret).update(body).digest('hex')
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-    }
+    const sigBuf = Buffer.from(sig)
+    const expectedBuf = Buffer.from(expected)
+    const valid = sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf)
+    if (!valid) return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
   let payload: unknown

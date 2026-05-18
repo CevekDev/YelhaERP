@@ -1,16 +1,14 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/security/api-response'
+import { verifyCronSecret } from '@/lib/security/cron-auth'
 import { sendAppRenewalReminder, sendAppTrialReminder } from '@/lib/email/resend'
 import { getAppPlanConfig } from '@/lib/pricing/app-plans'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  if (secret !== process.env.CRON_SECRET) {
-    return apiError('Non autorisé', 401)
-  }
+  if (!verifyCronSecret(req)) return apiError('Non autorisé', 401)
 
   const now = new Date()
   const counts = { reminders: 0, trialReminders: 0, expired: 0 }

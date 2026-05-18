@@ -9,7 +9,10 @@ import bcrypt from 'bcryptjs'
 const schema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string()
+    .min(8, 'Min. 8 caractères')
+    .regex(/[A-Z]/, '1 majuscule requise')
+    .regex(/[0-9]/, '1 chiffre requis'),
   role: z.enum(['ADMIN', 'ACCOUNTANT', 'EMPLOYEE', 'READONLY']),
 })
 

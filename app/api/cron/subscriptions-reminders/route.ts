@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/resend'
 import { getTemplate, type EmailLang, type EmailType, type TemplatesByLang } from '@/lib/subscriptions/email-templates'
 import { renderEmail, generateChargilyCheckout } from '@/lib/subscriptions/email-renderer'
 import { canAccessApp } from '@/lib/billing/check-app-access'
+import { verifyCronSecret } from '@/lib/security/cron-auth'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
 
@@ -15,8 +16,7 @@ const INCLUDE = {
 } as const
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) return apiError('Non autorisé', 401)
+  if (!verifyCronSecret(req)) return apiError('Non autorisé', 401)
 
   try {
     const now     = new Date()

@@ -8,10 +8,28 @@ import { I18nProvider } from '@/lib/i18n'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
+
 export const metadata: Metadata = {
-  title: { default: 'YelhaERP', template: '%s | YelhaERP' },
-  description: 'Logiciel de gestion pour entreprises algériennes — Facturation, Comptabilité, Paie, Stock',
-  robots: { index: false, follow: false },
+  metadataBase: new URL(APP_URL),
+  title: { default: 'YelhaERP — ERP SaaS algérien', template: '%s | YelhaERP' },
+  description: 'Logiciel de gestion pour entreprises algériennes — Facturation, Comptabilité PCN, Paie IRG/CNAS, Stock, CRM, Restaurant, POS.',
+  applicationName: 'YelhaERP',
+  icons: { icon: '/favicon.svg' },
+  openGraph: {
+    title: 'YelhaERP — ERP SaaS algérien',
+    description: 'Tout votre ERP en un seul outil : facturation, comptabilité, paie, stock, CRM. Conforme à la législation algérienne.',
+    type: 'website',
+    locale: 'fr_DZ',
+    url: APP_URL,
+    siteName: 'YelhaERP',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'YelhaERP — ERP SaaS algérien',
+    description: 'Facturation, comptabilité PCN, paie IRG/CNAS, stock — pour PME algériennes.',
+  },
+  robots: { index: true, follow: true },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
