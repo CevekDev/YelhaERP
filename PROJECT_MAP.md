@@ -666,3 +666,26 @@ import { toast } from 'sonner'
 - `scripts/check-db.ts` : diagnostic DB (companies, YelhaSubscription, AppSubscriptions) — lecture seule, OK sur prod
 - `scripts/diagnose-last-account.ts` : diagnostic complet du dernier compte inscrit (Company, YelhaSubscription, YelhaPayment, AppSubscription). Flag `--cleanup` remet le compte à TRIAL propre (supprime paiements + app subs). Utilisé 2026-05-18 pour nettoyer le compte `merahlwos@gmail.com` (XXI) qui était passé STARTER ACTIVE 990 DA suite à un webhook Chargily **simulé** (chargilyId `sim_…`) exécuté contre la prod via `scripts/simulate-chargily-webhook.ts`.
 - `scripts/lib/prod-guard.ts` : garde-fou partagé. `assertNotProd(name)` refuse de tourner si `DATABASE_URL` contient `supabase.co/com`, sauf flag `--allow-prod` ou env `YELHA_ALLOW_PROD=1` (qui ajoute alors 5s de warning bloquant). Branché sur `simulate-full-erp`, `simulate-dev-integration`, `test-subscriptions-e2e`, et sur `diagnose-last-account --cleanup`.
+
+---
+
+## 🔄 Changements session 2026-05-18 — Audit pré-production (suite)
+
+### P0 #1 : Guards simulation scripts (pushé)
+- ✅ `scripts/lib/prod-guard.ts` : CRÉÉ — bloque toute exécution de script write contre la prod
+- ✅ Branché sur 4 scripts : simulate-full-erp, simulate-dev-integration, test-subscriptions-e2e, diagnose-last-account --cleanup
+
+### P0 #2 : Audit flux de paiement (pushé)
+- ✅ `app/api/webhooks/chargily-yelha/route.ts` : ajout company.update({ plan: planEnum }) dans la transaction — était ABSENT, donc Company.plan restait TRIAL après paiement Chargily ERP (impactait quotas IA)
+- ✅ `app/api/admin/grant/route.ts` : branche confirm_ccp complétée — ajout billingCycle, extraApps, limites plan (emails/API/AI/deliverers/skus) et Company.plan dans la transaction (manquait tout)
+- ✅ `app/api/webhooks/chargily/route.ts` : env var corrigée CHARGILY_SECRET_KEY -> CHARGILY_WEBHOOK_SECRET pour HMAC (cohérence avec tous les autres webhooks)
+
+### P0 #3 / P1 : canAccessApp + navigation active
+- ✅ `app/api/billing/subscription/route.ts` : activeApps inclut maintenant les AppSubscription (ACTIVE ou TRIAL non expirée) — ignoré avant, donc module invisible dans la sidebar si souscription indépendante. Logique YelhaSubscription affinée (accordée seulement si ACTIVE ou TRIAL encore valide)
+- ℹ️ Crons ERP (billing + app-billing) verifies — solides, proteges par CRON_SECRET, configures dans vercel.json
+- ℹ️ canAccessApp() pour subscriptions fonctionne correctement — le bug initial etait uniquement le webhook simule
+
+### P1 #6 : Prix admin overrides (pushé)
+- ✅ `app/api/billing/plans/route.ts` : lit SystemConfig cle 'pricing' et applique overrides avant de retourner (etait 100% statique)
+- ✅ `app/api/billing/checkout/route.ts` : remplace calcMonthlyTotal() par calcul avec overrides — Chargily et CCP utilisent desormais le prix effectif admin
+
