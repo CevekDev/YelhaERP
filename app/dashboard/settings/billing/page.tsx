@@ -112,7 +112,7 @@ function AppSubCard({
     <div className={`relative rounded-2xl border-2 p-5 flex flex-col gap-3 transition-all ${
       entry.status === 'active'   ? 'border-green-200 bg-green-50/30' :
       entry.status === 'trial'    ? 'border-amber-200 bg-amber-50/20' :
-                                    'border-slate-200 bg-slate-50/50 opacity-60'
+                                    'border-slate-200 bg-slate-50/30'
     }`}>
       {/* Header */}
       <div className="flex items-start gap-3">
