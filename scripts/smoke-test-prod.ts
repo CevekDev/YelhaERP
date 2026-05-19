@@ -1,12 +1,12 @@
 /**
- * Smoke test prod — frappe les endpoints critiques de https://erp.yelha.net
+ * Smoke test prod — frappe les endpoints critiques de https://subs.yelha.net
  * et vérifie qu'ils répondent correctement. Ne crée AUCUNE donnée.
  *
  * Usage : npx tsx scripts/smoke-test-prod.ts
  *         BASE_URL=https://staging.yelha.net npx tsx scripts/smoke-test-prod.ts
  */
 
-const BASE_URL = process.env.BASE_URL ?? 'https://erp.yelha.net'
+const BASE_URL = process.env.BASE_URL ?? 'https://subs.yelha.net'
 
 interface Check { name: string; ok: boolean; detail: string }
 
