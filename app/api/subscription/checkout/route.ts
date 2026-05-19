@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       success_url: `${appUrl}/dashboard/settings?upgraded=1`,
       failure_url: `${appUrl}/dashboard/settings/billing?error=1`,
       webhook_url: `${appUrl}/api/webhooks/chargily`,
-      description: `Abonnement YelhaERP — Plan ${plan} × ${months} mois${discount > 0 ? ` (−${discount * 100}%)` : ''}`,
+      description: `Abonnement YelhaSubs — Plan ${plan} × ${months} mois${discount > 0 ? ` (−${discount * 100}%)` : ''}`,
       locale,
       metadata: {
         type:       'subscription',

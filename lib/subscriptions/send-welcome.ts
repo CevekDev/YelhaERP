@@ -47,7 +47,7 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
         settings.chargilyKey,
         Number(sub.plan.price),
         sub.plan.name,
-        'https://erp.yelha.net/dashboard/subscriptions',
+        'https://subs.yelha.net/dashboard/subscriptions',
         { subscriptionId: sub.id, companyId: sub.company.name },
       )
     }

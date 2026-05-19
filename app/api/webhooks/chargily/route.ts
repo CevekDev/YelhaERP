@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email/resend'
-import { sendAppPaymentConfirmation } from '@/lib/email/resend'
-import { PLANS, type AppId } from '@/lib/pricing/config'
-import { getAppPlanConfig } from '@/lib/pricing/app-plans'
+import { PLANS } from '@/lib/pricing/config'
 import { isAlreadyProcessed } from '@/lib/webhooks/idempotence'
 
 type ChargilyEvent = {
@@ -49,96 +47,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
   }
 
-  // ── Invoice payment ───────────────────────────────────────────────────────
-  if (meta.invoice_id && event.type === 'checkout.paid') {
-    const invoice = await prisma.invoice.findUnique({
-      where: { id: meta.invoice_id },
-      select: { id: true, total: true, status: true, companyId: true },
-    })
-
-    if (invoice && invoice.status !== 'PAID') {
-      const paidAmount = Number(event.data?.amount ?? invoice.total)
-
-      await prisma.$transaction(async (tx) => {
-        await tx.invoicePayment.create({
-          data: {
-            invoiceId: invoice.id,
-            amount: paidAmount,
-            method: 'CHARGILY_EDAHABIA',
-            paidAt: new Date(),
-            reference: `chargily-${chargilyId ?? Date.now()}`,
-          },
-        })
-        const totalPaid = await tx.invoicePayment.aggregate({
-          where: { invoiceId: invoice.id },
-          _sum: { amount: true },
-        })
-        const sumPaid = Number(totalPaid._sum.amount ?? 0)
-        const invoiceTotal = Number(invoice.total)
-        await tx.invoice.update({
-          where: { id: invoice.id },
-          data: { status: sumPaid >= invoiceTotal ? 'PAID' : 'PARTIAL' },
-        })
-      })
-    }
-
-    return NextResponse.json({ received: true }, { status: 200 })
-  }
-
-  // ── App payment ───────────────────────────────────────────────────────────
-  if (meta.appPaymentId && event.type === 'checkout.paid') {
-    const payment = await prisma.appPayment.findUnique({
-      where: { id: meta.appPaymentId },
-      include: {
-        appSubscription: {
-          include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
-        },
-      },
-    })
-
-    if (payment && payment.status !== 'PAID') {
-      const now = new Date()
-      const periodEnd = new Date(now)
-      periodEnd.setMonth(periodEnd.getMonth() + 1)
-
-      await prisma.$transaction(async (tx) => {
-        await tx.appPayment.update({
-          where: { id: payment.id },
-          data: { status: 'PAID', paidAt: now, chargilyId: chargilyId ?? undefined },
-        })
-        await tx.appSubscription.update({
-          where: { id: payment.appSubscriptionId },
-          data: {
-            status: 'ACTIVE',
-            planId: payment.planId,
-            currentPeriodStart: now,
-            currentPeriodEnd: periodEnd,
-            monthlyAmount: payment.amount,
-            lastPaymentAt: now,
-            lastPaymentRef: payment.ccpRef ?? payment.id,
-          },
-        })
-      })
-
-      const owner = payment.appSubscription.company.users[0]
-      if (owner) {
-        const appConfig = getAppPlanConfig(payment.appId)
-        await sendAppPaymentConfirmation({
-          to: owner.email,
-          name: owner.name,
-          appName: appConfig?.appName ?? payment.appId,
-          planName: payment.planId,
-          amount: payment.amount,
-          periodStart: new Date(),
-          periodEnd,
-        }).catch(() => {})
-      }
-    }
-
-    return NextResponse.json({ received: true }, { status: 200 })
-  }
-
-  // ── ERP subscription payment ──────────────────────────────────────────────
+  // ── YelhaSubs subscription payment ────────────────────────────────────────
+  // Suppress unused-var lint for meta which is destructured but only used
+  // for the implicit "no metadata = ERP payment" branch logic below.
+  void meta
   if (!chargilyId) return NextResponse.json({ received: true }, { status: 200 })
 
   if (event.type === 'checkout.paid') {
@@ -165,8 +77,6 @@ export async function POST(req: NextRequest) {
     const plan = PLANS[planId]
     const limits = 'limits' in plan ? plan.limits : null
     const planEnum = payment.planId.toUpperCase() as 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
-    // TRIAL volontairement exclu : un paiement confirmé ne doit jamais
-    // downgrade Company.plan à TRIAL (cas où l'API serait appelée avec planId='trial').
     const validPlanEnums = ['STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
 
     await prisma.$transaction(async (tx) => {
@@ -180,18 +90,14 @@ export async function POST(req: NextRequest) {
           status:             'ACTIVE',
           planId:             payment.planId,
           billingCycle:       payment.billingCycle,
-          extraApps:          payment.extraApps,
           currentPeriodStart: periodStart,
           currentPeriodEnd:   periodEnd,
           lastPaymentAt:      now,
           lastPaymentRef:     payment.id,
           monthlyAmount:      payment.amount,
           ...(limits ? {
-            limitEmails:     limits.emails,
-            limitApiReq:     limits.apiRequests,
-            limitAiReq:      limits.aiRequests,
-            limitDeliverers: limits.deliverers,
-            limitSkus:       limits.skus,
+            limitEmails: limits.emails,
+            limitApiReq: limits.apiRequests,
           } : {}),
         },
       })
@@ -204,18 +110,16 @@ export async function POST(req: NextRequest) {
     })
 
     const company = payment.subscription.company
-    const appIds = payment.extraApps as AppId[]
     const periodEndStr = periodEnd.toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
     await sendEmail({
       to: 'cvkdev@outlook.fr',
-      subject: `[YelhaERP] Paiement reçu — ${company.name} — Plan ${payment.planId}`,
+      subject: `[YelhaSubs] Paiement reçu — ${company.name} — Plan ${payment.planId}`,
       html: `
-        <h2>Paiement abonnement reçu ✅</h2>
+        <h2>Paiement YelhaSubs reçu ✅</h2>
         <p><strong>Entreprise :</strong> ${company.name} (${company.id})</p>
         <p><strong>Plan :</strong> ${payment.planId}</p>
         <p><strong>Cycle :</strong> ${payment.billingCycle}</p>
         <p><strong>Montant :</strong> ${payment.amount} DA</p>
-        <p><strong>Apps supplémentaires :</strong> ${appIds.length > 0 ? appIds.join(', ') : 'Aucune'}</p>
         <p><strong>Période jusqu'au :</strong> ${periodEndStr}</p>
         <p><strong>Référence Chargily :</strong> ${chargilyId}</p>
       `,

@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { TrendingUp, ArrowLeft } from 'lucide-react'
 
 export const metadata = {
-  title: 'Politique de confidentialité — YelhaERP',
-  description: 'Découvrez comment YelhaERP collecte, utilise et protège vos données personnelles.',
+  title: 'Politique de confidentialité — YelhaSubs',
+  description: 'Découvrez comment YelhaSubs collecte, utilise et protège vos données personnelles.',
 }
 
 export default function ConfidentialitePage() {
@@ -15,7 +15,7 @@ export default function ConfidentialitePage() {
             <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shadow-sm">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-slate-900">YelhaERP</span>
+            <span className="font-bold text-slate-900">YelhaSubs</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-4 text-xs text-slate-500">
             <Link href="/conditions" className="hover:text-yelha-600 transition-colors">Conditions</Link>
@@ -71,7 +71,7 @@ export default function ConfidentialitePage() {
               </h2>
               <ul className="space-y-2">
                 {[
-                  'Fournir et améliorer les services YelhaERP.',
+                  'Fournir et améliorer les services YelhaSubs.',
                   'Envoyer des notifications essentielles (vérification email, alertes de sécurité).',
                   'Assurer la sécurité de la plateforme et prévenir les abus.',
                   'Respecter nos obligations légales et fiscales en Algérie.',
@@ -159,7 +159,7 @@ export default function ConfidentialitePage() {
                 Cookies
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                YelhaERP utilise uniquement des cookies essentiels au fonctionnement du service (session d&apos;authentification JWT,
+                YelhaSubs utilise uniquement des cookies essentiels au fonctionnement du service (session d&apos;authentification JWT,
                 préférence de langue). Aucun cookie publicitaire, de tracking tiers ou de profilage n&apos;est utilisé.
               </p>
             </section>
@@ -183,7 +183,7 @@ export default function ConfidentialitePage() {
 
       <footer className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} YelhaERP — Alger, Algérie</p>
+          <p>© {new Date().getFullYear()} YelhaSubs — Alger, Algérie</p>
           <div className="flex items-center gap-4">
             <Link href="/conditions" className="hover:text-yelha-600 transition-colors">Conditions</Link>
             <Link href="/confidentialite" className="text-yelha-600 font-medium">Confidentialité</Link>

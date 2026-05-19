@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     'X-Docs-Version': SUB_API_DOCS_VERSION,
   }
   if (download) {
-    headers['Content-Disposition'] = 'attachment; filename="yelhaerp-sub-api-docs.md"'
+    headers['Content-Disposition'] = 'attachment; filename="yelhasubs-sub-api-docs.md"'
   }
 
   return new NextResponse(SUB_API_DOCS_MARKDOWN, { status: 200, headers })

@@ -69,9 +69,8 @@ export async function POST(req: NextRequest) {
       const chargilySecret = process.env.CHARGILY_SECRET_KEY
       if (!chargilySecret) return apiError('Paiement Chargily non configuré', 500)
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subs.yelha.net'
       const ctxQs = `plan=${encodeURIComponent(planId)}&cycle=${encodeURIComponent(billingCycle)}`
-        + (extraApps.length ? `&apps=${encodeURIComponent(extraApps.join(','))}` : '')
 
       const chargilyRes = await fetch('https://pay.chargily.net/api/v2/checkouts', {
         method: 'POST',
@@ -82,8 +81,8 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           amount: totalDA,
           currency: 'dzd',
-          success_url: `${appUrl}/subscriptions/success?${ctxQs}`,
-          failure_url: `${appUrl}/subscriptions/checkout?${ctxQs}`,
+          success_url: `${appUrl}/dashboard/settings/billing?paid=1&${ctxQs}`,
+          failure_url: `${appUrl}/dashboard/settings/billing?failed=1&${ctxQs}`,
           locale: 'fr',
           metadata: {
             planId,
@@ -106,7 +105,6 @@ export async function POST(req: NextRequest) {
           subscriptionId: sub.id,
           amount: totalDA,
           planId,
-          extraApps,
           billingCycle: billingCycle === 'ANNUAL' ? 'ANNUAL' : 'MONTHLY',
           method: 'CHARGILY',
           status: 'PENDING',
@@ -126,7 +124,6 @@ export async function POST(req: NextRequest) {
         subscriptionId: sub.id,
         amount: totalDA,
         planId,
-        extraApps,
         billingCycle: billingCycle === 'ANNUAL' ? 'ANNUAL' : 'MONTHLY',
         method: 'CCP',
         status: 'PENDING',

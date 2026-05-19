@@ -10,7 +10,7 @@ const bodySchema = z.object({
   failureUrl: z.string().url().optional(),
 }).optional()
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subs.yelha.net'
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {

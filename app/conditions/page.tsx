@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { TrendingUp, ArrowLeft } from 'lucide-react'
 
 export const metadata = {
-  title: "Conditions d'utilisation — YelhaERP",
-  description: "Conditions générales d'utilisation de la plateforme YelhaERP.",
+  title: "Conditions d'utilisation — YelhaSubs",
+  description: "Conditions générales d'utilisation de la plateforme YelhaSubs.",
 }
 
 export default function ConditionsPage() {
@@ -15,7 +15,7 @@ export default function ConditionsPage() {
             <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shadow-sm">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-slate-900">YelhaERP</span>
+            <span className="font-bold text-slate-900">YelhaSubs</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-4 text-xs text-slate-500">
             <Link href="/conditions" className="text-yelha-600 font-semibold">Conditions</Link>
@@ -48,7 +48,7 @@ export default function ConditionsPage() {
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Les présentes conditions générales d&apos;utilisation (CGU) régissent l&apos;accès et l&apos;utilisation de la plateforme
-                <strong className="text-slate-800"> YelhaERP</strong>, éditée par YelhaERP, dont le siège social est situé à Alger, Algérie.
+                <strong className="text-slate-800"> YelhaSubs</strong>, éditée par YelhaSubs, dont le siège social est situé à Alger, Algérie.
                 En accédant à la plateforme, vous acceptez sans réserve les présentes CGU.
               </p>
             </section>
@@ -61,14 +61,14 @@ export default function ConditionsPage() {
                 Description du service
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed mb-3">
-                YelhaERP est une solution de gestion d&apos;entreprise en mode SaaS destinée aux entreprises algériennes. Elle comprend :
+                YelhaSubs est une solution de gestion d&apos;entreprise en mode SaaS destinée aux entreprises algériennes. Elle comprend :
               </p>
               <ul className="space-y-2">
                 {[
                   'Core ERP gratuit à vie : facturation, devis, achats, stocks, clients et fournisseurs.',
                   'Module Abonnements clients (payant) : gestion des abonnements récurrents avec paiement Chargily.',
                   'Modules additionnels à venir : CRM, RH, Comptabilité SCF, Point de vente, Assistant IA.',
-                  'API publique permettant d\'intégrer YelhaERP à des applications tierces.',
+                  'API publique permettant d\'intégrer YelhaSubs à des applications tierces.',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
                     <span className="w-1.5 h-1.5 bg-yelha-500 rounded-full mt-1.5 flex-shrink-0" />
@@ -129,7 +129,7 @@ export default function ConditionsPage() {
                   'Utiliser la plateforme conformément à la législation algérienne en vigueur.',
                   'Ne pas tenter de contourner les mesures de sécurité ou d\'accéder aux données d\'autres utilisateurs.',
                   'Ne pas utiliser la plateforme à des fins illicites, frauduleuses ou contraires à l\'ordre public.',
-                  'Respecter les droits de propriété intellectuelle de YelhaERP et de ses partenaires.',
+                  'Respecter les droits de propriété intellectuelle de YelhaSubs et de ses partenaires.',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
                     <span className="w-1.5 h-1.5 bg-yelha-500 rounded-full mt-1.5 flex-shrink-0" />
@@ -147,8 +147,8 @@ export default function ConditionsPage() {
                 Propriété intellectuelle
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                L&apos;ensemble des éléments de la plateforme YelhaERP (code source, interfaces, marques, logos, algorithmes)
-                est la propriété exclusive de YelhaERP et protégé par les lois algériennes et internationales.
+                L&apos;ensemble des éléments de la plateforme YelhaSubs (code source, interfaces, marques, logos, algorithmes)
+                est la propriété exclusive de YelhaSubs et protégé par les lois algériennes et internationales.
                 L&apos;utilisateur bénéficie d&apos;un droit d&apos;utilisation personnel, non exclusif et non transférable.
               </p>
             </section>
@@ -177,7 +177,7 @@ export default function ConditionsPage() {
                 Limitation de responsabilité
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                YelhaERP ne pourra être tenu responsable des dommages indirects, pertes de données ou manques à gagner.
+                YelhaSubs ne pourra être tenu responsable des dommages indirects, pertes de données ou manques à gagner.
                 La responsabilité totale est limitée aux sommes versées au titre de l&apos;abonnement au cours des 3 derniers mois.
               </p>
             </section>
@@ -203,7 +203,7 @@ export default function ConditionsPage() {
 
       <footer className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} YelhaERP — Alger, Algérie</p>
+          <p>© {new Date().getFullYear()} YelhaSubs — Alger, Algérie</p>
           <div className="flex items-center gap-4">
             <Link href="/conditions" className="text-yelha-600 font-medium">Conditions</Link>
             <Link href="/confidentialite" className="hover:text-yelha-600 transition-colors">Confidentialité</Link>

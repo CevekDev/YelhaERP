@@ -56,7 +56,6 @@ export async function assertOwnership(
 const roleHierarchy: Record<Role, number> = {
   OWNER: 5,
   ADMIN: 4,
-  ACCOUNTANT: 3,
   EMPLOYEE: 2,
   READONLY: 1,
 }

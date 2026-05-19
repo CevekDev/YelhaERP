@@ -74,7 +74,7 @@ const fr = {
     title1: '100% conforme à la',
     title2: 'réglementation',
     title3: 'algérienne',
-    subtitle: 'YelhaERP n\'est pas une adaptation d\'un ERP étranger. Il a été conçu depuis le premier jour pour respecter les spécificités du droit fiscal, comptable et social algérien.',
+    subtitle: 'YelhaSubs n\'est pas une adaptation d\'un ERP étranger. Il a été conçu depuis le premier jour pour respecter les spécificités du droit fiscal, comptable et social algérien.',
     cta: 'Commencer l\'essai gratuit',
     irg_title: 'IRG Barème 2026',
     irg_desc: 'Calcul exact de l\'impôt sur le revenu global selon le dernier barème en vigueur.',
@@ -117,7 +117,7 @@ const fr = {
   // ── CTA Banner ─────────────────────────────────────────────
   cta: {
     title: 'Prêt à moderniser votre gestion ?',
-    subtitle: 'Rejoignez plus de 500 entreprises algériennes qui font confiance à YelhaERP.',
+    subtitle: 'Rejoignez plus de 500 entreprises algériennes qui font confiance à YelhaSubs.',
     btn1: 'Démarrer l\'essai gratuit',
     btn2: 'Se connecter',
   },
@@ -135,7 +135,7 @@ const fr = {
     mentions: 'Mentions légales',
     contact: 'Contact',
     location: 'Alger, Algérie',
-    copyright: '© {year} YelhaERP. Tous droits réservés.',
+    copyright: '© {year} YelhaSubs. Tous droits réservés.',
     status: 'Tous les systèmes opérationnels',
   },
   // ── Auth ───────────────────────────────────────────────────
@@ -470,7 +470,7 @@ const en: typeof fr = {
     title1: '100% compliant with',
     title2: 'Algerian',
     title3: 'regulations',
-    subtitle: 'YelhaERP is not an adapted foreign ERP. It was designed from day one to respect the specificities of Algerian tax, accounting and social law.',
+    subtitle: 'YelhaSubs is not an adapted foreign ERP. It was designed from day one to respect the specificities of Algerian tax, accounting and social law.',
     cta: 'Start free trial',
     irg_title: 'IRG Scale 2026',
     irg_desc: 'Exact calculation of personal income tax using the latest applicable scale.',
@@ -511,7 +511,7 @@ const en: typeof fr = {
   },
   cta: {
     title: 'Ready to modernize your management?',
-    subtitle: 'Join over 500 Algerian companies that trust YelhaERP.',
+    subtitle: 'Join over 500 Algerian companies that trust YelhaSubs.',
     btn1: 'Start free trial',
     btn2: 'Log in',
   },
@@ -528,7 +528,7 @@ const en: typeof fr = {
     mentions: 'Legal notice',
     contact: 'Contact',
     location: 'Algiers, Algeria',
-    copyright: '© {year} YelhaERP. All rights reserved.',
+    copyright: '© {year} YelhaSubs. All rights reserved.',
     status: 'All systems operational',
   },
   auth: {
@@ -856,7 +856,7 @@ const ar: typeof fr = {
     title1: 'متوافق 100% مع',
     title2: 'التشريعات',
     title3: 'الجزائرية',
-    subtitle: 'YelhaERP ليس تكييفاً لنظام ERP أجنبي. تم تصميمه منذ اليوم الأول لاحترام خصوصيات القانون الجبائي والمحاسبي والاجتماعي الجزائري.',
+    subtitle: 'YelhaSubs ليس تكييفاً لنظام ERP أجنبي. تم تصميمه منذ اليوم الأول لاحترام خصوصيات القانون الجبائي والمحاسبي والاجتماعي الجزائري.',
     cta: 'ابدأ التجربة المجانية',
     irg_title: 'سلم IRG 2026',
     irg_desc: 'حساب دقيق للضريبة على الدخل الإجمالي وفق آخر جدول ساري.',
@@ -897,7 +897,7 @@ const ar: typeof fr = {
   },
   cta: {
     title: 'هل أنت مستعد لتحديث إدارتك؟',
-    subtitle: 'انضم إلى أكثر من 500 مؤسسة جزائرية تثق في YelhaERP.',
+    subtitle: 'انضم إلى أكثر من 500 مؤسسة جزائرية تثق في YelhaSubs.',
     btn1: 'ابدأ التجربة المجانية',
     btn2: 'تسجيل الدخول',
   },
@@ -914,7 +914,7 @@ const ar: typeof fr = {
     mentions: 'إشعار قانوني',
     contact: 'اتصل بنا',
     location: 'الجزائر العاصمة، الجزائر',
-    copyright: '© {year} YelhaERP. جميع الحقوق محفوظة.',
+    copyright: '© {year} YelhaSubs. جميع الحقوق محفوظة.',
     status: 'جميع الأنظمة تعمل',
   },
   auth: {

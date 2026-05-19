@@ -57,9 +57,6 @@ export async function POST(req: NextRequest) {
         monthlyAmount: 0,
         limitEmails: 50,
         limitApiReq: 500,
-        limitDeliverers: 0,
-        limitSkus: 50,
-        limitAiReq: 15,
       },
     })
   })

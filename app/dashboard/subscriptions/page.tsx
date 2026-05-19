@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
 import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap, Trash2, AlertTriangle, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { TutorialOverlay } from '@/components/tutorial/tutorial-overlay'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'En attente', TRIAL: 'Essai', ACTIVE: 'Actif', PAUSED: 'Pausé', CANCELLED: 'Annulé', EXPIRED: 'Expiré',
@@ -345,7 +344,6 @@ export default function SubscriptionsPage() {
         </DialogContent>
       </Dialog>
 
-      <TutorialOverlay pageKey="subscriptions" />
     </div>
   )
 }

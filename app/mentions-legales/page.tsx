@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { TrendingUp, ArrowLeft } from 'lucide-react'
 
 export const metadata = {
-  title: 'Mentions légales — YelhaERP',
-  description: 'Mentions légales de la plateforme YelhaERP — éditeur, hébergeur, propriété intellectuelle.',
+  title: 'Mentions légales — YelhaSubs',
+  description: 'Mentions légales de la plateforme YelhaSubs — éditeur, hébergeur, propriété intellectuelle.',
 }
 
 export default function MentionsLegalesPage() {
@@ -15,7 +15,7 @@ export default function MentionsLegalesPage() {
             <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shadow-sm">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-slate-900">YelhaERP</span>
+            <span className="font-bold text-slate-900">YelhaSubs</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-4 text-xs text-slate-500">
             <Link href="/conditions" className="hover:text-yelha-600 transition-colors">Conditions</Link>
@@ -45,11 +45,11 @@ export default function MentionsLegalesPage() {
               <h2 className="text-lg font-bold text-slate-900 mb-4">Éditeur du site</h2>
               <div className="rounded-xl border border-slate-200 overflow-hidden">
                 {[
-                  { key: 'Dénomination', val: 'YelhaERP' },
+                  { key: 'Dénomination', val: 'YelhaSubs' },
                   { key: 'Forme juridique', val: 'Entreprise individuelle / Startup' },
                   { key: 'Siège social', val: 'Alger, Algérie' },
                   { key: 'Email', val: 'cvkdev@outlook.fr', link: 'mailto:cvkdev@outlook.fr' },
-                  { key: 'Directeur de la publication', val: 'Équipe YelhaERP' },
+                  { key: 'Directeur de la publication', val: 'Équipe YelhaSubs' },
                 ].map((row, i) => (
                   <div key={row.key} className={`flex gap-4 px-5 py-3.5 text-sm ${i % 2 === 0 ? 'bg-slate-50' : 'bg-white'} border-b border-slate-100 last:border-0`}>
                     <span className="font-semibold text-slate-700 w-48 flex-shrink-0">{row.key}</span>
@@ -128,9 +128,9 @@ export default function MentionsLegalesPage() {
             <section>
               <h2 className="text-lg font-bold text-slate-900 mb-3">Propriété intellectuelle</h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                L&apos;ensemble du contenu du site YelhaERP (textes, images, code source, design, algorithmes) est protégé
-                par le droit d&apos;auteur et appartient à YelhaERP. Toute reproduction, même partielle, est strictement
-                interdite sans autorisation préalable écrite de YelhaERP.
+                L&apos;ensemble du contenu du site YelhaSubs (textes, images, code source, design, algorithmes) est protégé
+                par le droit d&apos;auteur et appartient à YelhaSubs. Toute reproduction, même partielle, est strictement
+                interdite sans autorisation préalable écrite de YelhaSubs.
               </p>
             </section>
 
@@ -149,7 +149,7 @@ export default function MentionsLegalesPage() {
 
       <footer className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} YelhaERP — Alger, Algérie</p>
+          <p>© {new Date().getFullYear()} YelhaSubs — Alger, Algérie</p>
           <div className="flex items-center gap-4">
             <Link href="/conditions" className="hover:text-yelha-600 transition-colors">Conditions</Link>
             <Link href="/confidentialite" className="hover:text-yelha-600 transition-colors">Confidentialité</Link>

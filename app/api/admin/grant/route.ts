@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
             status: 'ACTIVE',
             planId: payment.planId,
             billingCycle: payment.billingCycle,
-            extraApps: payment.extraApps,
             currentPeriodStart: payment.periodStart,
             currentPeriodEnd: payment.periodEnd,
             lastPaymentAt: now,
@@ -79,9 +78,6 @@ export async function POST(req: NextRequest) {
             ...(ccpLimits ? {
               limitEmails: ccpLimits.emails,
               limitApiReq: ccpLimits.apiRequests,
-              limitDeliverers: ccpLimits.deliverers,
-              limitSkus: ccpLimits.skus,
-              limitAiReq: ccpLimits.aiRequests,
             } : {}),
           },
         }),
@@ -115,9 +111,6 @@ export async function POST(req: NextRequest) {
     if (limits) {
       updateData.limitEmails = limits.emails
       updateData.limitApiReq = limits.apiRequests
-      updateData.limitDeliverers = limits.deliverers
-      updateData.limitSkus = limits.skus
-      updateData.limitAiReq = limits.aiRequests
     }
 
     const planEnum = effectivePlanId.toUpperCase() as 'TRIAL' | 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
@@ -133,7 +126,6 @@ export async function POST(req: NextRequest) {
           subscriptionId: sub.id,
           amount: type === 'free' ? 0 : (sub.monthlyAmount ?? 0),
           planId: effectivePlanId,
-          extraApps: sub.extraApps,
           billingCycle: 'MONTHLY',
           method: type === 'free' ? 'ADMIN_FREE' : 'ADMIN_ACTIVATE',
           status: 'PAID',

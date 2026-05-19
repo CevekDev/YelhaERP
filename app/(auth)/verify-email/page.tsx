@@ -178,7 +178,7 @@ export default function VerifyEmailPage() {
             <div className="w-10 h-10 bg-yelha-500 rounded-xl flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-yelha-700">YelhaERP</span>
+            <span className="text-2xl font-bold text-yelha-700">YelhaSubs</span>
           </div>
           <LanguageSwitcher />
         </div>

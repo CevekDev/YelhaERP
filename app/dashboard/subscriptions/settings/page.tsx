@@ -498,7 +498,7 @@ export default function SubscriptionSettingsPage() {
                   <div className="flex gap-2">
                     <Input
                       readOnly
-                      value="https://erp.yelha.net/api/webhooks/chargily-subscriptions"
+                      value="https://subs.yelha.net/api/webhooks/chargily-subscriptions"
                       className="font-mono text-xs"
                       onClick={(e) => (e.target as HTMLInputElement).select()}
                     />
@@ -506,7 +506,7 @@ export default function SubscriptionSettingsPage() {
                       variant="outline"
                       size="icon"
                       onClick={() => {
-                        navigator.clipboard.writeText('https://erp.yelha.net/api/webhooks/chargily-subscriptions')
+                        navigator.clipboard.writeText('https://subs.yelha.net/api/webhooks/chargily-subscriptions')
                           .then(() => toast.success('URL copiée'))
                       }}
                     >

@@ -201,7 +201,7 @@ export function renderEmail(params: {
       <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06);">
         <tr><td>
           <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1D9E75,#3ec79c);padding:32px 40px;">
-            <tr><td align="center"><span style="color:#fff;font-size:22px;font-weight:800;">📊 YelhaERP</span></td></tr>
+            <tr><td align="center"><span style="color:#fff;font-size:22px;font-weight:800;">📊 YelhaSubs</span></td></tr>
           </table>
         </td></tr>
         <tr><td style="padding:40px;" dir="${isRtl ? 'rtl' : 'ltr'}">
@@ -225,7 +225,7 @@ export async function generateChargilyCheckout(
   key: string,
   amountDA: number,
   planName: string,
-  successUrl = 'https://erp.yelha.net',
+  successUrl = 'https://subs.yelha.net',
   metadata?: { subscriptionId: string; companyId: string },
 ): Promise<string | null> {
   try {

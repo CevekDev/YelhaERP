@@ -1,6 +1,6 @@
 export const SUB_API_DOCS_VERSION = '1.1.0'
 
-export const SUB_API_DOCS_MARKDOWN = `# YelhaERP — API Abonnements
+export const SUB_API_DOCS_MARKDOWN = `# YelhaSubs — API Abonnements
 
 Documentation complète de l'API publique permettant de piloter votre module d'abonnements clients depuis votre propre site, application ou SaaS.
 
@@ -8,7 +8,7 @@ Documentation complète de l'API publique permettant de piloter votre module d'a
 
 ## 🏠 Introduction
 
-L'API YelhaERP Abonnements vous permet de gérer programmatiquement vos **plans tarifaires**, vos **clients** et leurs **abonnements** sans passer par le dashboard.
+L'API YelhaSubs Abonnements vous permet de gérer programmatiquement vos **plans tarifaires**, vos **clients** et leurs **abonnements** sans passer par le dashboard.
 
 **Cas d'usage typiques :**
 - Créer automatiquement un abonnement quand un client s'inscrit sur votre site
@@ -39,7 +39,7 @@ L'URL de base n'inclut pas de numéro de version (\`/api/sub-api/\`). En cas de 
 
 | Environnement | URL de base |
 |---|---|
-| Production | \`https://erp.yelha.net/api/sub-api\` |
+| Production | \`https://subs.yelha.net/api/sub-api\` |
 | Local (dev) | \`http://localhost:3000/api/sub-api\` |
 
 Il n'existe pas d'environnement sandbox distinct. Pour tester, utilisez des données de test dans votre compte de production (plans avec \`isActive: false\`, clients fictifs, etc.).
@@ -64,7 +64,7 @@ Authorization: Bearer yelha_sub_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 | Expiration automatique | ❌ Non — les clés n'expirent jamais |
 | Révocation via API | ❌ Non — uniquement depuis le dashboard |
 | Format | \`yelha_sub_\` suivi de 64 caractères hexadécimaux |
-| Stockage côté YelhaERP | Hash SHA256 — la clé brute n'est jamais conservée |
+| Stockage côté YelhaSubs | Hash SHA256 — la clé brute n'est jamais conservée |
 
 > ⚠️ La clé brute n'est affichée **qu'une seule fois** à sa création. Si vous la perdez, révoquez-la et générez-en une nouvelle.
 
@@ -79,7 +79,7 @@ Authorization: Bearer yelha_sub_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ## 🌐 URL de base
 
 \`\`\`
-https://erp.yelha.net/api/sub-api
+https://subs.yelha.net/api/sub-api
 \`\`\`
 
 ---
@@ -723,7 +723,7 @@ Les deux champs sont **optionnels** (défaut : URL de base de l'application).
 | Question | Réponse |
 |---|---|
 | Devises supportées | **DZD uniquement** |
-| Durée de validité du lien | Dépend de Chargily (~24h). YelhaERP ne contrôle pas cette durée. |
+| Durée de validité du lien | Dépend de Chargily (~24h). YelhaSubs ne contrôle pas cette durée. |
 | Appels multiples | Chaque appel génère un **nouveau** lien Chargily indépendant |
 | Abonnement EXPIRED ou CANCELLED | \`409 SUBSCRIPTION_NOT_RENEWABLE\` |
 | Clé Chargily non configurée | \`409 CHARGILY_NOT_CONFIGURED\` |
@@ -746,13 +746,13 @@ Pour que les paiements en ligne activent automatiquement les abonnements, config
 2. Créez un webhook avec l'URL :
 
    \`\`\`
-   https://erp.yelha.net/api/webhooks/chargily-subscriptions
+   https://subs.yelha.net/api/webhooks/chargily-subscriptions
    \`\`\`
 
 3. Cochez l'événement **\`checkout.paid\`**
 4. La clé de signature doit être identique à votre **clé secrète Chargily** (celle renseignée dans Dashboard > Abonnements > Paramètres > Chargily).
 
-## Payload reçu par YelhaERP
+## Payload reçu par YelhaSubs
 
 \`\`\`json
 {
@@ -770,7 +770,7 @@ Pour que les paiements en ligne activent automatiquement les abonnements, config
 }
 \`\`\`
 
-> Le champ \`metadata\` est injecté automatiquement par YelhaERP lors de la création du checkout.
+> Le champ \`metadata\` est injecté automatiquement par YelhaSubs lors de la création du checkout.
 
 ## Comportement à la réception
 
@@ -784,7 +784,7 @@ Pour que les paiements en ligne activent automatiquement les abonnements, config
 
 ## Réponse attendue
 
-Chargily attend un statut **\`200\`** dans un délai de **10 secondes**. YelhaERP répond toujours en moins de 2 secondes. En cas d'absence de réponse, Chargily ré-essaie automatiquement (voir leur documentation).
+Chargily attend un statut **\`200\`** dans un délai de **10 secondes**. YelhaSubs répond toujours en moins de 2 secondes. En cas d'absence de réponse, Chargily ré-essaie automatiquement (voir leur documentation).
 
 ## Vérification de la signature HMAC SHA256
 
@@ -886,7 +886,7 @@ def chargily_webhook():
 ## Créer un abonnement — cURL
 
 \`\`\`bash
-curl -X POST https://erp.yelha.net/api/sub-api/subscriptions \\
+curl -X POST https://subs.yelha.net/api/sub-api/subscriptions \\
   -H "Authorization: Bearer yelha_sub_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -900,7 +900,7 @@ curl -X POST https://erp.yelha.net/api/sub-api/subscriptions \\
 ## Créer un abonnement — JavaScript / Node.js
 
 \`\`\`javascript
-const res = await fetch('https://erp.yelha.net/api/sub-api/subscriptions', {
+const res = await fetch('https://subs.yelha.net/api/sub-api/subscriptions', {
   method: 'POST',
   headers: {
     'Authorization': \`Bearer \${process.env.YELHA_SUB_KEY}\`,
@@ -920,7 +920,7 @@ console.log('Abonnement créé :', data.id)
 ## Créer un abonnement — PHP
 
 \`\`\`php
-$ch = curl_init('https://erp.yelha.net/api/sub-api/subscriptions');
+$ch = curl_init('https://subs.yelha.net/api/sub-api/subscriptions');
 curl_setopt_array($ch, [
     CURLOPT_POST           => true,
     CURLOPT_RETURNTRANSFER => true,
@@ -945,7 +945,7 @@ curl_close($ch);
 import os, requests
 
 r = requests.post(
-    'https://erp.yelha.net/api/sub-api/subscriptions',
+    'https://subs.yelha.net/api/sub-api/subscriptions',
     headers={
         'Authorization': f"Bearer {os.environ['YELHA_SUB_KEY']}",
         'Content-Type': 'application/json',
@@ -969,7 +969,7 @@ async function fetchAll(endpoint, apiKey) {
   let page = 1
   while (true) {
     const res = await fetch(
-      \`https://erp.yelha.net/api/sub-api/\${endpoint}?page=\${page}&limit=100\`,
+      \`https://subs.yelha.net/api/sub-api/\${endpoint}?page=\${page}&limit=100\`,
       { headers: { Authorization: \`Bearer \${apiKey}\` } }
     )
     const { data, meta } = await res.json()
@@ -1012,7 +1012,7 @@ async function callWithRetry(requestFn, maxRetries = 3) {
 
 // Usage
 const res = await callWithRetry(() =>
-  fetch('https://erp.yelha.net/api/sub-api/subscriptions/clx123/checkout', {
+  fetch('https://subs.yelha.net/api/sub-api/subscriptions/clx123/checkout', {
     method: 'POST',
     headers: { Authorization: \`Bearer \${process.env.YELHA_SUB_KEY}\` },
   })
@@ -1054,5 +1054,5 @@ window.location.href = body.data.checkoutUrl
 
 ---
 
-© ${new Date().getFullYear()} YelhaERP — Documentation API Abonnements v${SUB_API_DOCS_VERSION}
+© ${new Date().getFullYear()} YelhaSubs — Documentation API Abonnements v${SUB_API_DOCS_VERSION}
 `

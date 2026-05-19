@@ -31,17 +31,10 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date()
-    await prisma.$transaction([
-      prisma.yelhaSubscription.update({
-        where: { companyId },
-        data: { status: 'CANCELLED', cancelledAt: now },
-      }),
-      // Cascade : un ERP annulé annule tous les modules payés associés.
-      prisma.appSubscription.updateMany({
-        where: { companyId, status: { in: ['ACTIVE', 'TRIAL'] } },
-        data: { status: 'CANCELLED' },
-      }),
-    ])
+    await prisma.yelhaSubscription.update({
+      where: { companyId },
+      data: { status: 'CANCELLED', cancelledAt: now },
+    })
 
     // Get company info for email
     const company = await prisma.company.findUnique({
@@ -52,7 +45,7 @@ export async function POST(req: NextRequest) {
     // Send notification email to Yelha team
     await sendEmail({
       to: 'cvkdev@outlook.fr',
-      subject: `[YelhaERP] Annulation abonnement — ${company?.name ?? companyId}`,
+      subject: `[YelhaSubs] Annulation abonnement — ${company?.name ?? companyId}`,
       html: `
         <h2>Annulation d'abonnement</h2>
         <p><strong>Entreprise :</strong> ${company?.name ?? 'Inconnue'} (${companyId})</p>

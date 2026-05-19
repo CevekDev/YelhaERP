@@ -4,20 +4,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   ShieldAlert, BarChart3, Users, DollarSign,
-  Search, Check, TrendingUp, Clock, Ban, Star, Gift, Zap,
-  ChevronLeft, ChevronRight, Loader2, Save,
+  Search, Loader2, Save, Ban, Gift, Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { APP_PLANS } from '@/lib/pricing/app-plans'
 
-// ── Types ──────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────
 
 interface UserRow {
   id: string; name: string; email: string; role: string; createdAt: string
   company: {
     id: string; name: string; plan: string; isBanned: boolean; isPartner: boolean
-    appSubscriptions: { appId: string; status: string; planId: string }[]
     yelhaSubscription: { status: string; monthlyAmount: number } | null
   }
 }
@@ -33,9 +30,7 @@ interface Stats {
   }>
 }
 
-interface PricingData {
-  [appId: string]: { defaults: Record<string, number>; overrides: Record<string, number>; effective: Record<string, number> }
-}
+interface Pricing { plans: Record<string, number>; apps: Record<string, number> }
 
 type Tab = 'stats' | 'users' | 'pricing'
 
@@ -48,100 +43,6 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// ── Subscription dialog (gift or activate) ─────────────────────
-
-function SubscriptionDialog({ target, type, onClose, onDone }: {
-  target: { id: string; name: string }
-  type: 'gift' | 'activate'
-  onClose: () => void
-  onDone: () => void
-}) {
-  const [appId, setAppId]   = useState(Object.keys(APP_PLANS)[0] ?? '')
-  const [planId, setPlanId] = useState('')
-  const [months, setMonths] = useState(1)
-  const [loading, setLoading] = useState(false)
-
-  const appConfig = APP_PLANS[appId as keyof typeof APP_PLANS]
-  const paidPlans = appConfig ? Object.values(appConfig.plans).filter((p: { id: string }) => p.id !== 'trial') : []
-
-  useEffect(() => { setPlanId(paidPlans[0]?.id ?? '') }, [appId])
-
-  async function submit() {
-    if (!planId) return
-    setLoading(true)
-    const res = await fetch('/api/admin/app-grant', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, companyId: target.id, appId, planId, months }),
-    })
-    const d = await res.json()
-    setLoading(false)
-    if (res.ok) {
-      toast.success(type === 'gift' ? 'Abonnement offert ✓' : 'Abonnement activé ✓')
-      onDone(); onClose()
-    } else toast.error(d.error ?? 'Erreur')
-  }
-
-  const isGift = type === 'gift'
-
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center gap-2 mb-6">
-          {isGift
-            ? <Gift className="w-5 h-5 text-amber-400" />
-            : <Zap className="w-5 h-5 text-emerald-400" />}
-          <h3 className="font-bold text-white">{isGift ? 'Offrir un abonnement' : 'Activer un abonnement'}</h3>
-          <span className="text-zinc-500 text-sm ml-1">— {target.name}</span>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-2">Application</label>
-            <select value={appId} onChange={e => setAppId(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-              {Object.entries(APP_PLANS).map(([id, cfg]) => (
-                <option key={id} value={id}>{cfg.appName}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-2">Plan</label>
-            <select value={planId} onChange={e => setPlanId(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-              {paidPlans.map((p: { id: string; name: string; price: number }) => (
-                <option key={p.id} value={p.id}>{p.name} — {fmtDA(p.price)}/mois</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-2">Durée</label>
-            <select value={months} onChange={e => setMonths(Number(e.target.value))}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-              {[1,2,3,6,12].map(m => <option key={m} value={m}>{m} mois</option>)}
-            </select>
-          </div>
-          {isGift ? (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-300">
-              🎁 Gratuit — le client reçoit un email de cadeau et un rappel 2j avant la fin.
-            </div>
-          ) : (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-300">
-              ⚡ Payant — à utiliser après réception du paiement WhatsApp/CCP. Un email de confirmation sera envoyé.
-            </div>
-          )}
-        </div>
-        <div className="flex gap-3 mt-6">
-          <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={onClose}>Annuler</Button>
-          <Button
-            className={`flex-1 font-semibold ${isGift ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
-            onClick={submit} disabled={loading || !planId}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isGift ? '🎁 Offrir' : '⚡ Activer'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Stats tab ──────────────────────────────────────────────────
 
 function StatsTab() {
@@ -149,75 +50,51 @@ function StatsTab() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/stats')
-      .then(r => r.json())
-      .then(d => setStats(d.data ?? d))
-      .finally(() => setLoading(false))
+    fetch('/api/admin/stats').then(r => r.json()).then(d => {
+      setStats(d.data ?? d)
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-zinc-500" /></div>
-  if (!stats) return null
-
-  const kpis = [
-    { label: 'Comptes',      value: stats.companies.total,                sub: `+${stats.companies.newThisMonth} ce mois`,       icon: Users,      color: 'text-blue-400' },
-    { label: 'MRR',          value: fmtDA(stats.revenue.mrr),             sub: 'Abonnements actifs',                             icon: TrendingUp, color: 'text-emerald-400' },
-    { label: 'Ce mois',      value: fmtDA(stats.revenue.thisMonth),       sub: `${stats.revenue.paymentsThisMonth} paiements`,   icon: DollarSign, color: 'text-indigo-400' },
-    { label: 'Paiements',    value: stats.revenue.paymentsThisMonth,      sub: 'Ce mois-ci',                                     icon: Clock,      color: 'text-amber-400' },
-    { label: 'Utilisateurs', value: stats.users.total,                    sub: 'Comptes actifs',                                 icon: Users,      color: 'text-purple-400' },
-    { label: 'Actifs',       value: stats.companies.byStatus.active ?? 0, sub: `Trial: ${stats.companies.byStatus.trial ?? 0}`,  icon: Check,      color: 'text-emerald-400' },
-  ]
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
+  if (!stats) return <p className="text-muted-foreground">Aucune donnée disponible.</p>
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {kpis.map(k => (
-          <div key={k.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{k.label}</span>
-              <k.icon className={`w-4 h-4 ${k.color}`} />
-            </div>
-            <div className="text-2xl font-bold text-white">{k.value}</div>
-            <div className="text-xs text-zinc-500 mt-1">{k.sub}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard label="Entreprises" value={stats.companies.total} sub={`+${stats.companies.newThisMonth} ce mois`} />
+        <KpiCard label="Utilisateurs" value={stats.users.total} />
+        <KpiCard label="MRR" value={fmtDA(stats.revenue.mrr)} />
+        <KpiCard label="Encaissé (mois)" value={fmtDA(stats.revenue.thisMonth)} sub={`${stats.revenue.paymentsThisMonth} paiements`} />
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-zinc-800">
-          <h3 className="font-semibold text-white text-sm">Paiements récents</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-zinc-500 border-b border-zinc-800">
-                <th className="text-left px-5 py-3 font-medium">Entreprise</th>
-                <th className="text-left px-5 py-3 font-medium">Plan</th>
-                <th className="text-left px-5 py-3 font-medium">Montant</th>
-                <th className="text-left px-5 py-3 font-medium">Méthode</th>
-                <th className="text-left px-5 py-3 font-medium">Statut</th>
-                <th className="text-left px-5 py-3 font-medium">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.recentPayments.map(p => (
-                <tr key={p.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
-                  <td className="px-5 py-3 font-medium text-white">{p.subscription?.company.name ?? '—'}</td>
-                  <td className="px-5 py-3 text-zinc-400">{p.planId}</td>
-                  <td className="px-5 py-3 font-semibold text-emerald-400">{fmtDA(p.amount)}</td>
-                  <td className="px-5 py-3 text-zinc-400 text-xs">{p.method}</td>
-                  <td className="px-5 py-3">
-                    <span className="text-xs bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Payé</span>
-                  </td>
-                  <td className="px-5 py-3 text-zinc-500 text-xs">{fmtDate(p.paidAt ?? p.createdAt)}</td>
-                </tr>
-              ))}
-              {stats.recentPayments.length === 0 && (
-                <tr><td colSpan={6} className="py-12 text-center text-zinc-600 text-sm">Aucun paiement</td></tr>
-              )}
-            </tbody>
-          </table>
+      <div className="rounded-2xl border bg-card p-5">
+        <h3 className="font-bold text-foreground mb-3">Paiements récents</h3>
+        <div className="space-y-2">
+          {stats.recentPayments.slice(0, 10).map(p => (
+            <div key={p.id} className="flex items-center justify-between border-b border-border/40 pb-2 last:border-0">
+              <div>
+                <p className="text-sm font-medium text-foreground">{p.subscription?.company.name ?? '—'}</p>
+                <p className="text-xs text-muted-foreground">{p.planId} · {p.method} · {fmtDate(p.paidAt ?? p.createdAt)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-foreground">{fmtDA(p.amount)}</p>
+                <p className={`text-[11px] font-semibold ${p.status === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>{p.status}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+function KpiCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+  return (
+    <div className="rounded-2xl border bg-card p-4">
+      <p className="text-xs text-muted-foreground font-medium uppercase">{label}</p>
+      <p className="text-2xl font-black text-foreground mt-1">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   )
 }
@@ -226,191 +103,86 @@ function StatsTab() {
 
 function UsersTab() {
   const [users, setUsers] = useState<UserRow[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
-  const [acting, setActing] = useState<string | null>(null)
-  const [subDialog, setSubDialog] = useState<{ target: { id: string; name: string }; type: 'gift' | 'activate' } | null>(null)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
 
   const load = useCallback(() => {
     setLoading(true)
-    fetch(`/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`)
-      .then(r => r.json())
-      .then(d => { const data = d.data ?? d; setUsers(data.users ?? []); setTotal(data.total ?? 0) })
-      .finally(() => setLoading(false))
+    const params = new URLSearchParams({ page: String(page), search })
+    fetch(`/api/admin/companies?${params}`).then(r => r.json()).then(d => {
+      setUsers(d.data?.users ?? d.users ?? [])
+      setTotal(d.data?.total ?? d.total ?? 0)
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [page, search])
 
   useEffect(() => { load() }, [load])
 
-  async function toggleBan(u: UserRow) {
-    setActing(u.id)
-    const action = u.company.isBanned ? 'unban' : 'ban'
-    const res = await fetch(`/api/admin/companies/${u.company.id}/ban`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
+  async function grant(companyId: string, planId: string) {
+    const res = await fetch('/api/admin/grant', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ companyId, action: 'free', planId, months: 12 }),
     })
-    if (res.ok) { toast.success(action === 'ban' ? 'Compte banni' : 'Compte débanni'); load() }
-    else toast.error('Erreur')
-    setActing(null)
+    if (res.ok) { toast.success('Plan offert'); load() } else toast.error('Erreur')
   }
 
-  async function togglePartner(u: UserRow) {
-    setActing(u.id)
-    const action = u.company.isPartner ? 'demote' : 'promote'
-    const res = await fetch(`/api/admin/companies/${u.company.id}/partner`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
+  async function ban(companyId: string, isBanned: boolean) {
+    const res = await fetch('/api/admin/companies', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ companyId, action: isBanned ? 'unban' : 'ban' }),
     })
-    if (res.ok) { toast.success(action === 'promote' ? '⭐ Promu partenaire' : 'Statut partenaire retiré'); load() }
-    else toast.error('Erreur')
-    setActing(null)
+    if (res.ok) { toast.success(isBanned ? 'Compte réactivé' : 'Compte banni'); load() } else toast.error('Erreur')
   }
-
-  const ROLE_LABELS: Record<string, string> = {
-    OWNER: 'Propriétaire', ADMIN: 'Admin', ACCOUNTANT: 'Comptable', EMPLOYEE: 'Employé', READONLY: 'Lecture',
-  }
-
-  const totalPages = Math.ceil(total / 30)
 
   return (
     <div className="space-y-4">
-      {subDialog && <SubscriptionDialog target={subDialog.target} type={subDialog.type} onClose={() => setSubDialog(null)} onDone={load} />}
-
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <input
-            value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Rechercher un utilisateur…"
-            className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-        <span className="text-sm text-zinc-500">{total} utilisateur{total !== 1 ? 's' : ''}</span>
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1) }}
+          placeholder="Recherche (nom, email)…"
+          className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2 text-sm"
+        />
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-zinc-600" /></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-zinc-500 border-b border-zinc-800">
-                  <th className="text-left px-5 py-3 font-medium">Utilisateur</th>
-                  <th className="text-left px-5 py-3 font-medium">Rôle</th>
-                  <th className="text-left px-5 py-3 font-medium">Entreprise</th>
-                  <th className="text-left px-5 py-3 font-medium">Abonnement</th>
-                  <th className="text-left px-5 py-3 font-medium">Apps actives</th>
-                  <th className="text-left px-5 py-3 font-medium">Inscrit</th>
-                  <th className="text-right px-5 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id} className={`border-b border-zinc-800/50 hover:bg-zinc-800/20 ${u.company.isBanned ? 'opacity-60' : ''}`}>
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-white">{u.name}</div>
-                      <div className="text-xs text-zinc-500">{u.email}</div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full">{ROLE_LABELS[u.role] ?? u.role}</span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-zinc-300">{u.company.name}</div>
-                      <div className="flex gap-1 mt-0.5">
-                        {u.company.isBanned  && <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Banni</span>}
-                        {u.company.isPartner && <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Partenaire</span>}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-xs">
-                      {(() => {
-                        const activeSubs = u.company.appSubscriptions.filter(s => s.status === 'ACTIVE')
-                        const trialSubs  = u.company.appSubscriptions.filter(s => s.status === 'TRIAL')
-                        if (activeSubs.length > 0) return (
-                          <span className="text-emerald-400">ACTIVE · {activeSubs.length} app{activeSubs.length > 1 ? 's' : ''}</span>
-                        )
-                        if (trialSubs.length > 0) return (
-                          <span className="text-amber-400">TRIAL · {trialSubs.length} app{trialSubs.length > 1 ? 's' : ''}</span>
-                        )
-                        const legacy = u.company.yelhaSubscription
-                        if (legacy) return <span className="text-zinc-400">{legacy.status}{legacy.monthlyAmount ? ` · ${fmtDA(legacy.monthlyAmount)}` : ''}</span>
-                        return <span className="text-zinc-600">—</span>
-                      })()}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {u.company.appSubscriptions.map(s => (
-                          <span key={s.appId} className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                            s.status === 'ACTIVE'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                              : 'bg-zinc-800 text-zinc-500 border-zinc-700'
-                          }`}>
-                            {APP_PLANS[s.appId as keyof typeof APP_PLANS]?.appName ?? s.appId}
-                          </span>
-                        ))}
-                        {u.company.appSubscriptions.length === 0 && <span className="text-zinc-600 text-xs">—</span>}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-zinc-500 text-xs">{fmtDate(u.createdAt)}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {acting === u.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setSubDialog({ target: { id: u.company.id, name: u.company.name }, type: 'gift' })}
-                              title="Offrir (gratuit)"
-                              className="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
-                            >
-                              <Gift className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setSubDialog({ target: { id: u.company.id, name: u.company.name }, type: 'activate' })}
-                              title="Activer (payé WhatsApp/CCP)"
-                              className="p-1.5 rounded-lg text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                            >
-                              <Zap className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => togglePartner(u)}
-                              title={u.company.isPartner ? 'Retirer partenaire' : 'Promouvoir partenaire'}
-                              className={`p-1.5 rounded-lg transition-colors ${u.company.isPartner ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10'}`}
-                            >
-                              <Star className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => toggleBan(u)}
-                              title={u.company.isBanned ? 'Débannir' : 'Bannir'}
-                              className={`p-1.5 rounded-lg transition-colors ${u.company.isBanned ? 'text-red-400 bg-red-500/10' : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'}`}
-                            >
-                              <Ban className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
-                  <tr><td colSpan={7} className="py-16 text-center text-zinc-600 text-sm">Aucun utilisateur trouvé</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-zinc-500">Page {page} / {totalPages}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="border-zinc-800 text-zinc-400 hover:bg-zinc-800"><ChevronLeft className="w-4 h-4" /></Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="border-zinc-800 text-zinc-400 hover:bg-zinc-800"><ChevronRight className="w-4 h-4" /></Button>
-          </div>
+      {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto my-12" /> : (
+        <div className="rounded-2xl border bg-card divide-y divide-border">
+          {users.map(u => (
+            <div key={u.id} className="p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-foreground truncate">{u.company.name}</p>
+                  {u.company.isBanned && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Banni</span>}
+                  {u.company.isPartner && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full"><Star className="inline h-3 w-3" /> Partenaire</span>}
+                </div>
+                <p className="text-xs text-muted-foreground">{u.email} · {u.company.plan} · inscrit {fmtDate(u.createdAt)}</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Button size="sm" variant="outline" onClick={() => grant(u.company.id, 'starter')}>
+                  <Gift className="h-3.5 w-3.5 mr-1" /> Offrir 12 mois
+                </Button>
+                <Button size="sm" variant="ghost" className={u.company.isBanned ? 'text-green-500' : 'text-destructive'} onClick={() => ban(u.company.id, u.company.isBanned)}>
+                  <Ban className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          {users.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">Aucune entreprise</p>}
         </div>
       )}
+
+      <div className="flex justify-between text-sm text-muted-foreground">
+        <span>{total} total</span>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Précédent</Button>
+          <Button size="sm" variant="outline" disabled={users.length < 20} onClick={() => setPage(p => p + 1)}>Suivant</Button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -418,165 +190,115 @@ function UsersTab() {
 // ── Pricing tab ────────────────────────────────────────────────
 
 function PricingTab() {
-  const [data, setData] = useState<PricingData | null>(null)
-  const [edits, setEdits] = useState<Record<string, Record<string, string>>>({})
-  const [saving, setSaving] = useState<string | null>(null)
+  const [pricing, setPricing] = useState<Pricing>({ plans: {}, apps: {} })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch('/api/admin/app-pricing').then(r => r.json()).then(d => {
-      const result = d.data ?? d
-      setData(result)
-      const initial: Record<string, Record<string, string>> = {}
-      for (const [appId, cfg] of Object.entries(result as PricingData)) {
-        initial[appId] = {}
-        for (const [planId, price] of Object.entries(cfg.effective)) {
-          if (planId !== 'trial') initial[appId][planId] = String(price)
-        }
-      }
-      setEdits(initial)
-    }).catch(() => {})
+    fetch('/api/admin/pricing').then(r => r.json()).then(d => {
+      setPricing(d.data?.overrides ?? d.overrides ?? { plans: {}, apps: {} })
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [])
 
-  async function savePricing(appId: string) {
-    setSaving(appId)
-    const prices: Record<string, number> = {}
-    for (const [planId, val] of Object.entries(edits[appId] ?? {})) {
-      const n = parseInt(val, 10)
-      if (!isNaN(n) && n >= 0) prices[planId] = n
-    }
-    const res = await fetch('/api/admin/app-pricing', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appId, prices }),
+  async function save() {
+    setSaving(true)
+    const res = await fetch('/api/admin/pricing', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ overrides: pricing }),
     })
-    setSaving(null)
-    if (res.ok) toast.success(`Tarification ${appId} sauvegardée`)
-    else toast.error('Erreur lors de la sauvegarde')
+    setSaving(false)
+    if (res.ok) toast.success('Tarifs sauvegardés')
+    else toast.error('Erreur')
   }
 
-  if (!data) return <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-zinc-600" /></div>
+  if (loading) return <Loader2 className="w-6 h-6 animate-spin mx-auto my-12" />
 
+  const PLAN_KEYS = ['starter', 'pro', 'agency', 'business', 'enterprise']
   return (
-    <div className="space-y-6">
-      {Object.entries(data).map(([appId, cfg]) => {
-        const appConfig = APP_PLANS[appId as keyof typeof APP_PLANS]
-        const paidPlans = Object.entries(cfg.effective).filter(([id]) => id !== 'trial')
-
-        return (
-          <div key={appId} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-              <div>
-                <h3 className="font-semibold text-white">{appConfig?.appName ?? appId}</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Prix des abonnements en DA/mois</p>
-              </div>
-              <Button size="sm" onClick={() => savePricing(appId)} disabled={saving === appId}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                {saving === appId ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-3.5 h-3.5 mr-1" />Sauvegarder</>}
-              </Button>
-            </div>
-            <div className="p-5">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {paidPlans.map(([planId, effectivePrice]) => {
-                  const planConfig = appConfig?.plans[planId as keyof typeof appConfig.plans] as { name: string; price: number } | undefined
-                  const defaultPrice = cfg.defaults[planId] ?? 0
-                  const currentEdit = edits[appId]?.[planId] ?? String(effectivePrice)
-                  const hasOverride = cfg.overrides[planId] !== undefined
-
-                  return (
-                    <div key={planId} className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-white text-sm">{planConfig?.name ?? planId}</span>
-                        {hasOverride && (
-                          <span className="text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded-full">Modifié</span>
-                        )}
-                      </div>
-                      <div>
-                        <label className="text-xs text-zinc-500 block mb-1.5">Prix DA/mois</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number" min="0"
-                            value={currentEdit}
-                            onChange={e => setEdits(prev => ({
-                              ...prev,
-                              [appId]: { ...(prev[appId] ?? {}), [planId]: e.target.value },
-                            }))}
-                            className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                          />
-                          <span className="text-zinc-600 text-xs shrink-0">DA</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-zinc-600">Défaut : {fmtDA(defaultPrice)}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+    <div className="space-y-4 max-w-2xl">
+      <div className="rounded-2xl border bg-card p-5 space-y-3">
+        <h3 className="font-bold text-foreground">Tarifs YelhaSubs</h3>
+        <p className="text-xs text-muted-foreground">Override les prix mensuels par défaut. Laisse vide pour garder le prix code.</p>
+        {PLAN_KEYS.map(p => (
+          <div key={p} className="flex items-center gap-3">
+            <label className="w-28 text-sm capitalize text-foreground">{p}</label>
+            <input
+              type="number"
+              value={pricing.plans?.[p] ?? ''}
+              onChange={e => setPricing({ ...pricing, plans: { ...pricing.plans, [p]: e.target.value ? Number(e.target.value) : 0 } })}
+              placeholder="DA / mois"
+              className="flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm"
+            />
           </div>
-        )
-      })}
+        ))}
+        <Button onClick={save} disabled={saving} className="w-full mt-3">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          Sauvegarder
+        </Button>
+      </div>
     </div>
   )
 }
 
-// ── Main ───────────────────────────────────────────────────────
-
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'stats',   label: 'Vue d\'ensemble', icon: BarChart3 },
-  { id: 'users',   label: 'Utilisateurs',    icon: Users },
-  { id: 'pricing', label: 'Tarification',    icon: DollarSign },
-]
+// ── Page wrapper ───────────────────────────────────────────────
 
 export default function AdminPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [tab, setTab] = useState<Tab>('stats')
 
-  if (!session) return null
+  if (status === 'loading') return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>
 
-  if (!session.user?.isSuperAdmin) {
+  if (!session?.user?.isSuperAdmin) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
-        <ShieldAlert className="h-12 w-12 text-red-500" />
-        <p className="text-white text-lg font-semibold">Accès réservé aux super-administrateurs</p>
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md text-center space-y-3">
+          <ShieldAlert className="w-12 h-12 mx-auto text-destructive" />
+          <h1 className="text-xl font-bold text-foreground">Accès refusé</h1>
+          <p className="text-sm text-muted-foreground">Cette page est réservée aux super administrateurs YelhaSubs.</p>
+        </div>
       </div>
     )
   }
 
+  const tabs: Array<{ id: Tab; label: string; icon: typeof BarChart3 }> = [
+    { id: 'stats',   label: 'Aperçu',     icon: BarChart3 },
+    { id: 'users',   label: 'Entreprises', icon: Users },
+    { id: 'pricing', label: 'Tarifs',     icon: DollarSign },
+  ]
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="border-b border-zinc-800 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-              <ShieldAlert className="w-4 h-4 text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="font-bold text-white">Administration</h1>
-              <p className="text-xs text-zinc-500">YelhaERP — Panneau de contrôle</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs text-zinc-400">{session.user.name}</span>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <ShieldAlert className="w-7 h-7 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Admin YelhaSubs</h1>
+            <p className="text-sm text-muted-foreground">Gestion globale de la plateforme</p>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-1 mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-1 w-fit">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.id
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
-                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
-              }`}>
-              <t.icon className="w-4 h-4" />
-              <span className="hidden sm:block">{t.label}</span>
-            </button>
-          ))}
+        <div className="flex gap-2 border-b border-border overflow-x-auto">
+          {tabs.map(t => {
+            const active = t.id === tab
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  active ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <t.icon className="h-4 w-4" />
+                {t.label}
+              </button>
+            )
+          })}
         </div>
 
-        {tab === 'stats'   && <StatsTab />}
-        {tab === 'users'   && <UsersTab />}
+        {tab === 'stats' && <StatsTab />}
+        {tab === 'users' && <UsersTab />}
         {tab === 'pricing' && <PricingTab />}
       </div>
     </div>

@@ -4,7 +4,7 @@ export const PLANS = {
     name: 'Essai gratuit',
     price: 0,
     maxUsers: 1,
-    description: 'Découvrez YelhaERP sans engagement',
+    description: 'Découvrez YelhaSubs sans engagement',
     durationDays: 30,
     freeApps: 3,
     limits: {

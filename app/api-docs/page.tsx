@@ -1,8 +1,8 @@
 import { PrintButton } from './_print-button'
 
-export const metadata = { title: 'Documentation API — YelhaERP' }
+export const metadata = { title: 'Documentation API — YelhaSubs' }
 
-const BASE = 'https://erp.yelha.net/api/v1'
+const BASE = 'https://subs.yelha.net/api/v1'
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
@@ -119,7 +119,7 @@ export default function ApiDocsPage() {
           <div className="w-7 h-7 bg-yelha-500 rounded-lg flex items-center justify-center">
             <span className="text-white text-xs font-bold">Y</span>
           </div>
-          <span className="font-bold text-slate-800">YelhaERP — Documentation API v1.1</span>
+          <span className="font-bold text-slate-800">YelhaSubs — Documentation API v1.1</span>
         </div>
         <div className="flex items-center gap-3 text-sm text-slate-500">
           <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">v1.1 stable</span>
@@ -137,11 +137,11 @@ export default function ApiDocsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Documentation API</h1>
-              <p className="text-slate-500">YelhaERP REST API — Version 1.1</p>
+              <p className="text-slate-500">YelhaSubs REST API — Version 1.1</p>
             </div>
           </div>
           <p className="text-slate-600 leading-relaxed">
-            L'API YelhaERP vous permet d'accéder programmatiquement à vos données ERP depuis vos applications.
+            L'API YelhaSubs vous permet d'accéder programmatiquement à vos données ERP depuis vos applications.
             Elle expose des endpoints de lecture et d'écriture pour les factures, clients, produits et devis,
             et notifie vos systèmes en temps réel via des webhooks signés.
           </p>
@@ -180,7 +180,7 @@ export default function ApiDocsPage() {
             {[
               {
                 step: '1', title: 'Obtenir une clé API',
-                desc: 'Allez dans Paramètres → Intégrations → API YelhaERP. Créez une clé avec les scopes nécessaires (read et/ou write).',
+                desc: 'Allez dans Paramètres → Intégrations → API YelhaSubs. Créez une clé avec les scopes nécessaires (read et/ou write).',
               },
               {
                 step: '2', title: 'Premier appel',
@@ -215,7 +215,7 @@ export default function ApiDocsPage() {
         <Section id="auth" title="2. Authentification">
           <p className="text-slate-600 mb-4 text-sm">
             Toutes les requêtes doivent inclure votre clé API dans l'en-tête <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono">Authorization</code>.
-            Créez vos clés depuis <strong>Paramètres → Intégrations → API YelhaERP</strong>.
+            Créez vos clés depuis <strong>Paramètres → Intégrations → API YelhaSubs</strong>.
           </p>
           <div className="bg-slate-900 rounded-xl p-4 mb-4">
             <pre className="text-green-400 text-sm font-mono">Authorization: Bearer yelha_live_votreclésecrete...</pre>
@@ -942,11 +942,11 @@ app.post('/hooks', express.raw({ type: 'application/json' }), (req, res) => {
         {/* Support */}
         <Section id="support" title="13. Support">
           <div className="bg-slate-50 rounded-xl p-6 text-sm text-slate-600 space-y-2">
-            <p><strong>Email :</strong> support@yelhaerp.dz</p>
+            <p><strong>Email :</strong> support@yelhasubs.dz</p>
             <p><strong>WhatsApp :</strong> +33 7 61 17 93 79</p>
             <p><strong>Version API :</strong> v1.1 — Stable</p>
             <p><strong>CHANGELOG :</strong> Voir <code className="font-mono text-xs">CHANGELOG.md</code> dans le dépôt</p>
-            <p className="text-xs text-slate-400 mt-4">© {new Date().getFullYear()} YelhaERP — Alger, Algérie. Tous droits réservés.</p>
+            <p className="text-xs text-slate-400 mt-4">© {new Date().getFullYear()} YelhaSubs — Alger, Algérie. Tous droits réservés.</p>
           </div>
         </Section>
       </div>

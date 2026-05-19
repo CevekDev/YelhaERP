@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     await sendEmail({
       to: 'cvkdev@outlook.fr',
-      subject: `[YelhaERP] Nouvelle demande d'abonnement CCP — ${company}`,
+      subject: `[YelhaSubs] Nouvelle demande d'abonnement CCP — ${company}`,
       html: `
         <div style="font-family:Inter,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
           <div style="background:linear-gradient(135deg,#1D9E75,#3ec79c);padding:28px 36px;">

@@ -4,10 +4,10 @@ import { apiError, apiSuccess } from '@/lib/security/api-response'
 import { sendEmail } from '@/lib/email/resend'
 import { getTemplate, type EmailLang, type EmailType, type TemplatesByLang } from '@/lib/subscriptions/email-templates'
 import { renderEmail, generateChargilyCheckout } from '@/lib/subscriptions/email-renderer'
-import { canAccessApp } from '@/lib/billing/check-app-access'
+import { canAccessSubs } from '@/lib/billing/check-access'
 import { verifyCronSecret } from '@/lib/security/cron-auth'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://erp.yelha.net'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subs.yelha.net'
 
 const INCLUDE = {
   client:  { select: { name: true, firstName: true } },
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
     ])
     const accessMap = new Map<string, boolean>()
     await Promise.all(Array.from(allCompanyIds).map(async (cid) => {
-      accessMap.set(cid, await canAccessApp(cid, 'subscriptions'))
+      accessMap.set(cid, await canAccessSubs(cid))
     }))
 
     let sent = 0

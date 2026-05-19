@@ -185,7 +185,7 @@ export async function requireAuth() {
 
 export async function requireRole(minRole: Role) {
   const session = await requireAuth()
-  const hierarchy: Record<Role, number> = { OWNER: 5, ADMIN: 4, ACCOUNTANT: 3, EMPLOYEE: 2, READONLY: 1 }
+  const hierarchy: Record<Role, number> = { OWNER: 5, ADMIN: 4, EMPLOYEE: 2, READONLY: 1 }
   if (hierarchy[session.user.role] < hierarchy[minRole]) throw new Error('FORBIDDEN')
   return session
 }

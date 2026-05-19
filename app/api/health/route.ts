@@ -18,7 +18,7 @@ interface HealthReport {
  * Public-but-light health check. Returns the status of every critical
  * dependency and env var so you can verify a prod deploy in one GET.
  *
- *   curl https://erp.yelha.net/api/health
+ *   curl https://subs.yelha.net/api/health
  *
  * Codes:
  *   200 healthy   — tout est OK

@@ -89,7 +89,7 @@ export default function RegisterPage() {
             <div className="w-10 h-10 bg-yelha-500 rounded-xl flex items-center justify-center shadow-lg shadow-yelha-500/40">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">YelhaERP</span>
+            <span className="text-2xl font-bold text-white">YelhaSubs</span>
           </div>
 
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
@@ -152,7 +152,7 @@ export default function RegisterPage() {
             <div className="w-8 h-8 bg-yelha-500 rounded-lg flex items-center justify-center shadow-sm">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-slate-900 lg:hidden">YelhaERP</span>
+            <span className="font-bold text-slate-900 lg:hidden">YelhaSubs</span>
           </Link>
           <LanguageSwitcher />
         </div>
@@ -264,7 +264,7 @@ export default function RegisterPage() {
             </p>
 
             <p className="text-center text-xs text-slate-400 mt-4">
-              © {new Date().getFullYear()} YelhaERP — Alger, Algérie
+              © {new Date().getFullYear()} YelhaSubs — Alger, Algérie
             </p>
           </div>
         </div>

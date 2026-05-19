@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { withSubApi, ok, apiError } from '@/lib/sub-api/auth'
 import { sendWelcomeEmail } from '@/lib/subscriptions/send-welcome'
-import { canAccessApp } from '@/lib/billing/check-app-access'
+import { canAccessSubs } from '@/lib/billing/check-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +35,7 @@ const SUB_SELECT = {
 
 export async function GET(req: NextRequest) {
   return withSubApi(req, async (ctx) => {
-    if (!await canAccessApp(ctx.companyId, 'subscriptions')) {
+    if (!await canAccessSubs(ctx.companyId)) {
       return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
     }
     const { searchParams } = new URL(req.url)
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return withSubApi(req, async (ctx) => {
-    if (!await canAccessApp(ctx.companyId, 'subscriptions')) {
+    if (!await canAccessSubs(ctx.companyId)) {
       return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
     }
     let body: unknown

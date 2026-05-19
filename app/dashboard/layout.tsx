@@ -3,13 +3,11 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { TopNav } from '@/components/layout/top-nav'
-import { ChatWidget } from '@/components/ai/chat-widget'
 import { KeyboardShortcuts } from '@/components/providers/keyboard-shortcuts'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session?.user) redirect('/login')
-  if (!session.user.businessType) redirect('/onboarding')
 
   const [sub, company] = session.user.companyId
     ? await Promise.all([
@@ -36,7 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Compte suspendu</h2>
             <p style={{ color: '#64748b', fontSize: 15, marginBottom: 24 }}>Votre compte a été suspendu. Contactez le support pour plus d&apos;informations.</p>
-            <a href="mailto:cvkdev@outlook.fr" style={{ display: 'inline-block', background: '#ef4444', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
+            <a href="mailto:contact@yelha.net" style={{ display: 'inline-block', background: '#ef4444', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
               Contacter le support →
             </a>
           </div>
@@ -49,7 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', maxWidth: 460, textAlign: 'center', boxShadow: '0 25px 50px rgba(0,0,0,.25)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Votre essai gratuit est terminé</h2>
-            <p style={{ color: '#64748b', fontSize: 15, marginBottom: 24 }}>Choisissez un plan pour continuer à utiliser YelhaERP.</p>
+            <p style={{ color: '#64748b', fontSize: 15, marginBottom: 24 }}>Choisissez un plan pour continuer à utiliser YelhaSubs.</p>
             <Link href="/pricing" style={{ display: 'inline-block', background: '#1D9E75', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
               Voir les plans →
             </Link>
@@ -58,13 +56,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       )}
 
-
       <TopNav hasBanner={false} />
       <KeyboardShortcuts />
       <main className="pt-14 md:pt-24 min-h-screen">
         {children}
       </main>
-      <ChatWidget />
     </div>
   )
 }

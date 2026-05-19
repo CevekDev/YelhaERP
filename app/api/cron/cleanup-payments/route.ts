@@ -10,16 +10,9 @@ export async function GET(req: NextRequest) {
 
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-  const [appResult, legacyResult] = await Promise.all([
-    prisma.appPayment.deleteMany({
-      where: { status: 'PENDING', createdAt: { lt: cutoff } },
-    }),
-    prisma.yelhaPayment.deleteMany({
-      where: { status: 'PENDING', createdAt: { lt: cutoff } },
-    }),
-  ])
-
-  return apiSuccess({
-    deleted: { appPayments: appResult.count, yelhaPayments: legacyResult.count },
+  const result = await prisma.yelhaPayment.deleteMany({
+    where: { status: 'PENDING', createdAt: { lt: cutoff } },
   })
+
+  return apiSuccess({ deleted: { yelhaPayments: result.count } })
 }
