@@ -37,22 +37,34 @@ puis ré-appelle `/api/health` pour confirmer.
 
 ---
 
-## 2. Configurer Sentry (15 min) — bloquant pour ouvrir
+## 2. Monitoring d'erreurs — optionnel
 
-Sans Sentry, tu es aveugle si un client crash. C'est **non-négociable** pour
-de la prod payante.
+Le code marche sans Sentry. Les erreurs sont alors loggées dans **Vercel
+Logs** (gratuit, inclus avec ton plan Vercel).
 
-1. Va sur https://sentry.io/signup/ — créer un compte gratuit (plan Developer = 5k events/mois, suffisant pour démarrer).
-2. Crée un projet **Next.js**.
-3. Copie le DSN affiché (format `https://abc123@oXXX.ingest.sentry.io/YYY`).
-4. Dans Vercel → Settings → Environment Variables, ajoute :
-   - `SENTRY_DSN` = le DSN
-   - `NEXT_PUBLIC_SENTRY_DSN` = même valeur (utilisé côté browser)
-5. Optionnel mais conseillé pour les source maps (debug clair) :
-   - Va sur sentry.io → Settings → Auth Tokens → créer un token avec scope `project:releases`
-   - Ajoute en Vercel : `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` (ton org slug), `SENTRY_PROJECT` (le slug du projet)
-6. Redéploie.
-7. Test : sur ton site déployé, déclenche une erreur volontaire (ex: appelle `/api/inexistant`) — l'erreur doit apparaître dans le dashboard Sentry sous 30s.
+### Workflow Vercel Logs (zéro setup, ce qu'on utilise par défaut)
+
+Quand un client signale un bug, ou quand un truc déconne :
+
+1. Vercel → ton projet → **Logs** (onglet en haut).
+2. Filtre par date / niveau (Error).
+3. Tu vois les stack traces serveur **et** les `console.error` du navigateur
+   (captés par Vercel via les logs runtime).
+
+**Limites** :
+- Pas de regroupement automatique (10 occurrences de la même erreur = 10 lignes)
+- Logs purgés après 1-3 jours selon plan Vercel
+- Pas d'alerte email "tel client a crash maintenant" — tu dois aller checker
+
+C'est suffisant pour 1-20 clients. Au-delà, considère brancher Sentry plus tard.
+
+### Si tu veux Sentry plus tard (5 min)
+
+Le code est déjà branché — il suffit d'ajouter les env vars :
+1. https://sentry.io/signup/ → projet Next.js → **plan Developer = gratuit à vie**, 5k erreurs/mois, **pas de carte requise**
+   (attention : Sentry te met sur un trial Business 14j par défaut — switch manuellement au plan Developer dans Settings → Subscription)
+2. Copie le DSN, ajoute dans Vercel : `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` (même valeur)
+3. Redéploie → vérifie `/api/health` : `sentryDsn.ok = true`
 
 ---
 
@@ -119,6 +131,14 @@ Si chaque étape marche, **tu peux ouvrir aux clients**.
 
 ---
 
+## Ce qui reste bloquant pour ouvrir
+
+- ✅ Toutes les env vars critiques en place (cf. étape 1, `/api/health` → healthy)
+- ✅ Resend domaine vérifié (étape 3) — sinon les emails partent en spam
+- ✅ Au moins **un** test E2E manuel réussi en prod (étape 6)
+
+Tout le reste (Sentry, i18n, withAuth, migrations versionnées) = sprints futurs.
+
 ## En cas de problème en prod
 
 | Symptôme | Réflexe |
@@ -132,3 +152,25 @@ Si chaque étape marche, **tu peux ouvrir aux clients**.
 ---
 
 **Quand tout est ✅** : tu peux commercialiser. 🚀
+
+---
+
+## Bonus : alertes minimales sans Sentry
+
+Si tu veux **être notifié** quand un truc casse en prod, sans Sentry :
+
+### Option A — UptimeRobot (gratuit, 2 min)
+1. https://uptimerobot.com/ → free account (50 monitors gratuits)
+2. Add Monitor → HTTP(s) → URL : `https://erp.yelha.net/api/health`
+3. Interval : 5 min
+4. Add alert contact (ton email / SMS / Discord webhook)
+5. Si `/api/health` retourne 503 → tu es alerté en ~5 min
+
+### Option B — Vercel Integrations
+Vercel a une intégration native vers Slack/Discord pour les "Deployment Failed".
+Settings → Integrations → Slack/Discord → install. Te notifie sur les build
+errors mais pas les runtime errors.
+
+### Option C — Discord webhook DIY
+Tu me dis et je te branche un capture-erreur léger qui post vers Discord
+(~10 min de code). Gratuit, illimité, zéro signup tiers.

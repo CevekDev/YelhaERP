@@ -69,7 +69,9 @@ export async function GET(_req: NextRequest) {
   // --- verdict ---
   const criticalKeys = ['databaseUrl', 'directUrl', 'nextauthSecret', 'cronSecret',
     'chargilySecret', 'chargilyWebhook', 'resendApiKey', 'database']
-  const warnKeys = ['upstashUrl', 'upstashToken', 'sentryDsn', 'googleOauth', 'deepseekApi']
+  // sentryDsn et googleOauth/deepseekApi : optionnels — leur absence ne
+  // dégrade pas le statut global. Affichés à titre informatif uniquement.
+  const warnKeys = ['upstashUrl', 'upstashToken']
 
   const criticalDown = criticalKeys.some(k => !checks[k]?.ok)
   const warnDown = warnKeys.some(k => !checks[k]?.ok)

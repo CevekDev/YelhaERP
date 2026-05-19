@@ -2,11 +2,20 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import * as Sentry from '@sentry/nextjs'
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    Sentry.captureException(error)
+    // Si Sentry est configuré (SENTRY_DSN set) on l'utilise — sinon
+    // console.error qui est capté automatiquement par les logs Vercel.
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      import('@sentry/nextjs').then(Sentry => Sentry.captureException(error)).catch(() => {
+        // eslint-disable-next-line no-console
+        console.error('[error-boundary]', error)
+      })
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('[error-boundary]', error)
+    }
   }, [error])
 
   return (
