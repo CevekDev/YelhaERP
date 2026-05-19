@@ -30,6 +30,11 @@ interface Stats {
   }>
 }
 
+// Helper - on parle d'utilisateurs (= companies en DB pour le multi-tenant).
+function labelUsers(n: number) {
+  return n === 1 ? '1 utilisateur' : `${n} utilisateurs`
+}
+
 interface Pricing { plans: Record<string, number>; apps: Record<string, number> }
 
 type Tab = 'stats' | 'users' | 'pricing'
@@ -59,32 +64,97 @@ function StatsTab() {
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
   if (!stats) return <p className="text-muted-foreground">Aucune donnée disponible.</p>
 
+  const totalActive = (stats.companies.byStatus.active ?? 0)
+  const totalTrial = (stats.companies.byStatus.trial ?? 0)
+  const totalChurned = (stats.companies.byStatus.cancelled ?? 0) + (stats.companies.byStatus.expired ?? 0)
+  const conversionRate = totalActive + totalTrial > 0
+    ? Math.round((totalActive / (totalActive + totalTrial + totalChurned)) * 100)
+    : 0
+  const arpu = totalActive > 0 ? Math.round(stats.revenue.mrr / totalActive) : 0
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Entreprises" value={stats.companies.total} sub={`+${stats.companies.newThisMonth} ce mois`} />
-        <KpiCard label="Utilisateurs" value={stats.users.total} />
-        <KpiCard label="MRR" value={fmtDA(stats.revenue.mrr)} />
-        <KpiCard label="Encaissé (mois)" value={fmtDA(stats.revenue.thisMonth)} sub={`${stats.revenue.paymentsThisMonth} paiements`} />
+      {/* KPI principaux */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard label="Utilisateurs" value={stats.companies.total} sub={`+${stats.companies.newThisMonth} ce mois`} />
+        <KpiCard label="MRR" value={fmtDA(stats.revenue.mrr)} sub={`${labelUsers(totalActive)} actifs`} />
+        <KpiCard label="ARPU" value={fmtDA(arpu)} sub="Revenu moyen / utilisateur" />
+        <KpiCard label="Encaissé ce mois" value={fmtDA(stats.revenue.thisMonth)} sub={`${stats.revenue.paymentsThisMonth} paiements`} />
       </div>
 
+      {/* Répartition statuts */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="rounded-2xl border bg-card p-5">
+          <h3 className="font-semibold text-foreground mb-4 text-sm">Répartition des comptes</h3>
+          <div className="space-y-3">
+            <StatusBar label="Actifs"    count={totalActive}                       total={stats.companies.total} color="bg-emerald-500" />
+            <StatusBar label="Essai"     count={totalTrial}                        total={stats.companies.total} color="bg-blue-500" />
+            <StatusBar label="En retard" count={stats.companies.byStatus.pastDue ?? 0} total={stats.companies.total} color="bg-amber-500" />
+            <StatusBar label="Pause"     count={stats.companies.byStatus.paused ?? 0}  total={stats.companies.total} color="bg-slate-400" />
+            <StatusBar label="Annulés"   count={stats.companies.byStatus.cancelled ?? 0} total={stats.companies.total} color="bg-rose-500" />
+            <StatusBar label="Expirés"   count={stats.companies.byStatus.expired ?? 0} total={stats.companies.total} color="bg-rose-700" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-5">
+          <h3 className="font-semibold text-foreground mb-4 text-sm">Indicateurs</h3>
+          <div className="space-y-3 text-sm">
+            <MetricRow label="Taux de conversion (Trial → Actif)" value={`${conversionRate}%`} />
+            <MetricRow label="Nouveaux comptes ce mois" value={String(stats.companies.newThisMonth)} />
+            <MetricRow label="Paiements PENDING" value={String(stats.revenue.pendingPayments ?? 0)} />
+            <MetricRow label="Total revenu cumulé" value={fmtDA(stats.revenue.thisMonth)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Paiements récents */}
       <div className="rounded-2xl border bg-card p-5">
-        <h3 className="font-bold text-foreground mb-3">Paiements récents</h3>
-        <div className="space-y-2">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-foreground text-sm">Paiements récents</h3>
+          <span className="text-xs text-muted-foreground">{stats.recentPayments.length} derniers</span>
+        </div>
+        <div className="divide-y divide-border/40">
+          {stats.recentPayments.length === 0 && (
+            <p className="text-sm text-muted-foreground py-6 text-center">Aucun paiement enregistré pour l&apos;instant.</p>
+          )}
           {stats.recentPayments.slice(0, 10).map(p => (
-            <div key={p.id} className="flex items-center justify-between border-b border-border/40 pb-2 last:border-0">
-              <div>
-                <p className="text-sm font-medium text-foreground">{p.subscription?.company.name ?? '—'}</p>
-                <p className="text-xs text-muted-foreground">{p.planId} · {p.method} · {fmtDate(p.paidAt ?? p.createdAt)}</p>
+            <div key={p.id} className="flex items-center justify-between py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">{p.subscription?.company.name ?? '—'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{p.planId} · {p.method} · {fmtDate(p.paidAt ?? p.createdAt)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-bold text-foreground">{fmtDA(p.amount)}</p>
-                <p className={`text-[11px] font-semibold ${p.status === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>{p.status}</p>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-foreground">{fmtDA(p.amount)}</p>
+                <p className={`text-[11px] font-medium ${p.status === 'PAID' || p.status === 'SUCCEEDED' ? 'text-emerald-500' : 'text-amber-500'}`}>{p.status}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+function StatusBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
+  const pct = total > 0 ? (count / total) * 100 : 0
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium text-foreground">{count}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function MetricRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-center py-2 border-b border-border/40 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold text-foreground">{value}</span>
     </div>
   )
 }
@@ -156,7 +226,7 @@ function UsersTab() {
             <div key={u.id} className="p-4 flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-foreground truncate">{u.company.name}</p>
+                  <p className="font-semibold text-foreground truncate">{u.name || u.email}</p>
                   {u.company.isBanned && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Banni</span>}
                   {u.company.isPartner && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full"><Star className="inline h-3 w-3" /> Partenaire</span>}
                 </div>
@@ -256,16 +326,16 @@ export default function AdminPage() {
         <div className="max-w-md text-center space-y-3">
           <ShieldAlert className="w-12 h-12 mx-auto text-destructive" />
           <h1 className="text-xl font-bold text-foreground">Accès refusé</h1>
-          <p className="text-sm text-muted-foreground">Cette page est réservée aux super administrateurs YelhaSubs.</p>
+          <p className="text-sm text-muted-foreground">Cette page est réservée aux super administrateurs.</p>
         </div>
       </div>
     )
   }
 
   const tabs: Array<{ id: Tab; label: string; icon: typeof BarChart3 }> = [
-    { id: 'stats',   label: 'Aperçu',     icon: BarChart3 },
-    { id: 'users',   label: 'Entreprises', icon: Users },
-    { id: 'pricing', label: 'Tarifs',     icon: DollarSign },
+    { id: 'stats',   label: 'Aperçu',      icon: BarChart3 },
+    { id: 'users',   label: 'Utilisateurs', icon: Users },
+    { id: 'pricing', label: 'Tarifs',      icon: DollarSign },
   ]
 
   return (

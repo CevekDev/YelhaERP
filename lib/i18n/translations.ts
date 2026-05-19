@@ -188,6 +188,11 @@ const fr = {
   },
   // ── Dashboard navigation ───────────────────────────────────
   sidebar: {
+    subscriptions: 'Abonnements',
+    notifications: 'Notifications',
+    settings: 'Paramètres',
+    logout: 'Se déconnecter',
+    // legacy keys (modules supprimés mais clés laissées pour compatibilité runtime)
     dashboard: 'Tableau de bord',
     invoices: 'Facturation',
     quotes: 'Devis',
@@ -200,10 +205,7 @@ const fr = {
     accounting: 'Comptabilité',
     tax: 'Fiscalité',
     integrations: 'Intégrations',
-    notifications: 'Notifications',
     ai: 'Assistant IA',
-    settings: 'Paramètres',
-    logout: 'Se déconnecter',
     plan: 'Plan',
   },
   // ── Communs ────────────────────────────────────────────────
@@ -579,6 +581,10 @@ const en: typeof fr = {
     pw_hint: 'Min. 8 characters, 1 uppercase, 1 number',
   },
   sidebar: {
+    subscriptions: 'Subscriptions',
+    notifications: 'Notifications',
+    settings: 'Settings',
+    logout: 'Log out',
     dashboard: 'Dashboard',
     invoices: 'Invoicing',
     quotes: 'Quotes',
@@ -591,10 +597,7 @@ const en: typeof fr = {
     accounting: 'Accounting',
     tax: 'Tax',
     integrations: 'Integrations',
-    notifications: 'Notifications',
     ai: 'AI Assistant',
-    settings: 'Settings',
-    logout: 'Sign out',
     plan: 'Plan',
   },
   common: {
@@ -965,6 +968,10 @@ const ar: typeof fr = {
     pw_hint: '8 أحرف على الأقل، حرف كبير واحد، رقم واحد',
   },
   sidebar: {
+    subscriptions: 'الاشتراكات',
+    notifications: 'الإشعارات',
+    settings: 'الإعدادات',
+    logout: 'تسجيل الخروج',
     dashboard: 'لوحة التحكم',
     invoices: 'الفوترة',
     quotes: 'العروض',
@@ -977,10 +984,7 @@ const ar: typeof fr = {
     accounting: 'المحاسبة',
     tax: 'الجباية',
     integrations: 'التكاملات',
-    notifications: 'الإشعارات',
     ai: 'مساعد الذكاء الاصطناعي',
-    settings: 'الإعدادات',
-    logout: 'تسجيل الخروج',
     plan: 'الخطة',
   },
   common: {
