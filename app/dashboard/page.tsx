@@ -5,5 +5,5 @@ import { redirect } from 'next/navigation'
  * on redirige directement vers le module subscriptions.
  */
 export default function DashboardHome() {
-  redirect('/dashboard/subscriptions')
+  redirect('/dashboard/subscriptions/overview')
 }

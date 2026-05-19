@@ -188,6 +188,7 @@ const fr = {
   },
   // ── Dashboard navigation ───────────────────────────────────
   sidebar: {
+    overview: 'Vue d\'ensemble',
     subscriptions: 'Abonnements',
     notifications: 'Notifications',
     settings: 'Paramètres',
@@ -581,6 +582,7 @@ const en: typeof fr = {
     pw_hint: 'Min. 8 characters, 1 uppercase, 1 number',
   },
   sidebar: {
+    overview: 'Overview',
     subscriptions: 'Subscriptions',
     notifications: 'Notifications',
     settings: 'Settings',
@@ -968,6 +970,7 @@ const ar: typeof fr = {
     pw_hint: '8 أحرف على الأقل، حرف كبير واحد، رقم واحد',
   },
   sidebar: {
+    overview: 'نظرة عامة',
     subscriptions: 'الاشتراكات',
     notifications: 'الإشعارات',
     settings: 'الإعدادات',

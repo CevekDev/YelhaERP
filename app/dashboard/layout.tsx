@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (sub?.status === 'TRIAL' && sub?.trialEndsAt && sub.trialEndsAt < new Date())
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen">
       {/* Compte banni — blocking modal */}
       {user?.isBanned && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -58,7 +58,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       <TopNav hasBanner={false} />
       <KeyboardShortcuts />
-      <main className="pt-14 md:pt-24 min-h-screen">
+      <main className="pt-14 min-h-screen">
         {children}
       </main>
     </div>

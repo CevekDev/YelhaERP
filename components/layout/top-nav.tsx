@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Settings, LogOut, User } from 'lucide-react'
+import { RefreshCw, Settings, LogOut, User, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -21,7 +21,8 @@ interface TopNavProps {
 }
 
 const NAV = [
-  { href: '/dashboard/subscriptions', labelKey: 'sidebar.subscriptions' },
+  { href: '/dashboard/subscriptions/overview', labelKey: 'sidebar.overview' },
+  { href: '/dashboard/subscriptions',          labelKey: 'sidebar.subscriptions' },
 ] as const
 
 export function TopNav({ hasBanner = false }: TopNavProps) {
@@ -30,17 +31,25 @@ export function TopNav({ hasBanner = false }: TopNavProps) {
   const { t } = useT()
   const user = session?.user
 
+  const isOverview = pathname === '/dashboard/subscriptions/overview'
+
   return (
-    <header className={cn('fixed left-0 right-0 z-30 bg-background border-b border-border', hasBanner ? 'top-10' : 'top-0')}>
+    <header className={cn(
+      'fixed left-0 right-0 z-30 border-b',
+      isOverview
+        ? 'bg-[#0a0a0b]/80 backdrop-blur-xl border-white/[0.06]'
+        : 'bg-background border-border',
+      hasBanner ? 'top-10' : 'top-0',
+    )}>
       <div className="px-4 md:px-6 h-14 flex items-center justify-between gap-3">
         {/* Left — logo + mobile menu */}
         <div className="flex items-center gap-2">
           <MobileSidebarTrigger />
-          <Link href="/dashboard/subscriptions" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <RefreshCw className="w-4 h-4 text-primary-foreground" />
+          <Link href="/dashboard/subscriptions/overview" className="flex items-center gap-2">
+            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', isOverview ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-primary')}>
+              <RefreshCw className="w-4 h-4 text-white" />
             </div>
-            <span className="hidden sm:inline font-bold text-foreground">YelhaSubs</span>
+            <span className={cn('hidden sm:inline font-bold', isOverview ? 'text-white' : 'text-foreground')}>YelhaSubs</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 ml-4">
@@ -52,7 +61,9 @@ export function TopNav({ hasBanner = false }: TopNavProps) {
                   href={item.href}
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                    active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    isOverview
+                      ? active ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
+                      : active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                   )}
                 >
                   {t(item.labelKey)}
