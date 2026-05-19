@@ -22,7 +22,7 @@ function SidebarContent({ companyName, onNavigate }: SidebarProps & { onNavigate
   const pathname = usePathname()
   const { t } = useT()
   const { data: session } = useSession()
-  const cn_ = session?.user?.companyName ?? companyName
+  const cn_ = session?.user?.name ?? companyName
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -82,7 +82,7 @@ export function Sidebar(props: SidebarProps) {
 export function MobileSidebarTrigger() {
   const [open, setOpen] = useState(false)
   const { data: session } = useSession()
-  const companyName = session?.user?.companyName ?? ''
+  const companyName = session?.user?.name ?? ''
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
