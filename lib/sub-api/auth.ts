@@ -7,7 +7,7 @@ import { canAccessSubs } from '@/lib/billing/check-access'
 const KEY_PREFIX = 'yelha_sub_'
 
 export interface SubApiContext {
-  companyId: string
+  userId: string
   keyId: string
 }
 
@@ -44,11 +44,11 @@ export async function withSubApi(
   req: NextRequest,
   handler: (ctx: SubApiContext) => Promise<NextResponse>,
 ): Promise<NextResponse> {
-  const auth = req.headers.get('authorization')
-  if (!auth || !auth.startsWith('Bearer ')) {
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return errorRes('Clé API manquante. Utilisez le header Authorization: Bearer <clé>.', 401, 'UNAUTHENTICATED')
   }
-  const rawKey = auth.slice('Bearer '.length).trim()
+  const rawKey = authHeader.slice('Bearer '.length).trim()
   if (!rawKey.startsWith(KEY_PREFIX)) {
     return errorRes('Format de clé invalide.', 401, 'INVALID_KEY_FORMAT')
   }
@@ -71,7 +71,7 @@ export async function withSubApi(
   }
 
   // Vérifier que l'abonnement YelhaSubs est toujours actif
-  const hasAccess = await canAccessSubs(key.companyId)
+  const hasAccess = await canAccessSubs(key.userId)
   if (!hasAccess) {
     return errorRes(
       'Votre abonnement YelhaSubs a expiré. Renouvelez sur subs.yelha.net/dashboard/settings/billing',
@@ -84,7 +84,7 @@ export async function withSubApi(
   prisma.subApiKey.update({ where: { id: key.id }, data: { lastUsedAt: new Date() } })
     .catch(() => { /* ignore */ })
 
-  const response = await handler({ companyId: key.companyId, keyId: key.id })
+  const response = await handler({ userId: key.userId, keyId: key.id })
   response.headers.set('X-RateLimit-Limit', String(SUB_API_RATE_LIMIT.limit))
   response.headers.set('X-RateLimit-Remaining', String(rl.remaining))
   response.headers.set('X-RateLimit-Reset', String(rl.reset))

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.paid') {
     const payment = await prisma.yelhaPayment.findFirst({
       where: { chargilyId },
-      include: { subscription: { include: { company: true } } },
+      include: { subscription: { include: { user: true } } },
     })
 
     if (!payment || payment.status === 'PAID') {
@@ -102,21 +102,21 @@ export async function POST(req: NextRequest) {
         },
       })
       if (validPlanEnums.includes(planEnum)) {
-        await tx.company.update({
-          where: { id: payment.subscription.company.id },
+        await tx.user.update({
+          where: { id: payment.subscription.user.id },
           data: { plan: planEnum },
         })
       }
     })
 
-    const company = payment.subscription.company
+    const user = payment.subscription.user
     const periodEndStr = periodEnd.toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
     await sendEmail({
       to: 'cvkdev@outlook.fr',
-      subject: `[YelhaSubs] Paiement reçu — ${company.name} — Plan ${payment.planId}`,
+      subject: `[YelhaSubs] Paiement reçu — ${user.name} — Plan ${payment.planId}`,
       html: `
         <h2>Paiement YelhaSubs reçu ✅</h2>
-        <p><strong>Entreprise :</strong> ${company.name} (${company.id})</p>
+        <p><strong>Utilisateur :</strong> ${user.name} (${user.id})</p>
         <p><strong>Plan :</strong> ${payment.planId}</p>
         <p><strong>Cycle :</strong> ${payment.billingCycle}</p>
         <p><strong>Montant :</strong> ${payment.amount} DA</p>

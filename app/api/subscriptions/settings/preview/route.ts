@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return apiError('Données invalides', 400)
 
-  const settings = await prisma.subscriptionSettings.findUnique({ where: { companyId: ctx.companyId } })
-  const company = await prisma.company.findUnique({ where: { id: ctx.companyId }, select: { name: true } })
+  const settings = await prisma.subscriptionSettings.findUnique({ where: { userId: ctx.userId } })
+  const user = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { name: true } })
 
   const template: EmailTemplate = { subject: parsed.data.subject, body: parsed.data.body }
   const lang = parsed.data.lang as EmailLang
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
   const sampleExpiry = new Date()
   sampleExpiry.setDate(sampleExpiry.getDate() + 1)
 
-  // Welcome n'affiche pas les options de paiement
   const isWelcome = parsed.data.type === 'welcome'
 
   const { subject, html } = renderEmail({
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
     data: {
       clientName:  'Ahmed Benali',
       planName:    'Premium',
-      companyName: company?.name ?? 'Mon entreprise',
+      companyName: user?.name ?? 'Mon compte',
       amount:      2500,
       expiresAt:   sampleExpiry,
     },

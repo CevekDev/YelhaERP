@@ -8,7 +8,6 @@ export const registerSchema = z.object({
     .max(128)
     .regex(/[A-Z]/, 'Doit contenir une majuscule')
     .regex(/[0-9]/, 'Doit contenir un chiffre'),
-  companyName: z.string().min(2).max(200).trim(),
   phone:       z.string().min(9).max(20).regex(/^0[5-7]\d{8}$/, 'Numéro algérien invalide (ex: 0555123456)'),
   birthDate:   z.string().refine(d => {
     const date = new Date(d)

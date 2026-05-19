@@ -9,14 +9,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await auth()
   if (!session?.user) redirect('/login')
 
-  const [sub, company] = session.user.companyId
+  const [sub, user] = session.user.id
     ? await Promise.all([
         prisma.yelhaSubscription.findUnique({
-          where: { companyId: session.user.companyId },
+          where: { userId: session.user.id },
           select: { status: true, trialEndsAt: true },
         }),
-        prisma.company.findUnique({
-          where: { id: session.user.companyId },
+        prisma.user.findUnique({
+          where: { id: session.user.id },
           select: { isBanned: true },
         }),
       ])
@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Compte banni — blocking modal */}
-      {company?.isBanned && (
+      {user?.isBanned && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', maxWidth: 460, textAlign: 'center', boxShadow: '0 25px 50px rgba(0,0,0,.3)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       )}
 
       {/* Trial expired — blocking modal */}
-      {!company?.isBanned && isExpired && (
+      {!user?.isBanned && isExpired && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', maxWidth: 460, textAlign: 'center', boxShadow: '0 25px 50px rgba(0,0,0,.25)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>

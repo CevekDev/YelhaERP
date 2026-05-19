@@ -33,11 +33,11 @@ function maskChargilyKey(key: string | null | undefined): string | null {
   return `${key.slice(0, 4)}${'•'.repeat(key.length - 8)}${key.slice(-4)}`
 }
 
-async function ensureSettings(companyId: string) {
-  let s = await prisma.subscriptionSettings.findUnique({ where: { companyId } })
+async function ensureSettings(userId: string) {
+  let s = await prisma.subscriptionSettings.findUnique({ where: { userId } })
   if (!s) {
     s = await prisma.subscriptionSettings.create({
-      data: { companyId, emailLanguage: 'fr', emailTemplates: EMPTY_TEMPLATES },
+      data: { userId, emailLanguage: 'fr', emailTemplates: EMPTY_TEMPLATES },
     })
   }
   return s
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   if (!success) return rateLimitResponse(reset)
   try {
     const ctx = await getTenantContext()
-    const s = await ensureSettings(ctx.companyId)
+    const s = await ensureSettings(ctx.userId)
     return apiSuccess({
       ...s,
       chargilyKey: maskChargilyKey(s.chargilyKey),
@@ -71,7 +71,7 @@ export async function PUT(req: NextRequest) {
     const parsed = putSchema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 400)
 
-    await ensureSettings(ctx.companyId)
+    await ensureSettings(ctx.userId)
 
     const data: Record<string, unknown> = {}
     if (parsed.data.whatsapp !== undefined)       data.whatsapp = parsed.data.whatsapp || null
@@ -81,7 +81,7 @@ export async function PUT(req: NextRequest) {
     if (parsed.data.emailTemplates !== undefined) data.emailTemplates = parsed.data.emailTemplates
 
     const updated = await prisma.subscriptionSettings.update({
-      where: { companyId: ctx.companyId },
+      where: { userId: ctx.userId },
       data,
     })
 

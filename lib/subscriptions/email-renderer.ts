@@ -226,7 +226,7 @@ export async function generateChargilyCheckout(
   amountDA: number,
   planName: string,
   successUrl = 'https://subs.yelha.net',
-  metadata?: { subscriptionId: string; companyId: string },
+  metadata?: { subscriptionId: string; userId: string },
 ): Promise<string | null> {
   try {
     const res = await fetch('https://pay.chargily.net/api/v2/checkouts', {

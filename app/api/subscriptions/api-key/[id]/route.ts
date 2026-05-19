@@ -8,7 +8,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!ctx) return apiError('Non autorisé', 401)
 
   const key = await prisma.subApiKey.findFirst({
-    where: { id: params.id, companyId: ctx.companyId },
+    where: { id: params.id, userId: ctx.userId },
   })
   if (!key) return apiError('Clé introuvable', 404)
 

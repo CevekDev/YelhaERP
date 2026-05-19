@@ -12,9 +12,9 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
     const sub = await prisma.subscription.findUnique({
       where: { id: subscriptionId },
       include: {
-        client:  { select: { name: true, firstName: true, email: true } },
-        plan:    { select: { name: true, price: true } },
-        company: { select: { name: true, subscriptionSettings: true } },
+        client: { select: { name: true, firstName: true, email: true } },
+        plan:   { select: { name: true, price: true } },
+        user:   { select: { name: true, subscriptionSettings: true } },
       },
     })
     if (!sub) {
@@ -28,7 +28,7 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
       return
     }
 
-    const settings = sub.company.subscriptionSettings
+    const settings = sub.user.subscriptionSettings
     const lang = (settings?.emailLanguage ?? 'fr') as EmailLang
 
     const template = getTemplate(
@@ -48,7 +48,7 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
         Number(sub.plan.price),
         sub.plan.name,
         'https://subs.yelha.net/dashboard/subscriptions',
-        { subscriptionId: sub.id, companyId: sub.company.name },
+        { subscriptionId: sub.id, userId: sub.userId },
       )
     }
 
@@ -58,7 +58,7 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
       data: {
         clientName,
         planName:    sub.plan.name,
-        companyName: sub.company.name,
+        companyName: sub.user.name,
         amount:      Number(sub.plan.price),
         expiresAt:   sub.nextBilling ?? sub.startDate,
       },

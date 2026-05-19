@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const ctx = await getTenantContext()
 
     const sub = await prisma.subscription.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
       include: { client: true, plan: true },
     })
     if (!sub) return apiError('Abonnement introuvable', 404)
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!hasRole(ctx.role, 'ADMIN')) return apiError('Permissions insuffisantes', 403)
 
     const sub = await prisma.subscription.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
       include: { plan: true },
     })
     if (!sub) return apiError('Abonnement introuvable', 404)
@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     let newPlan = sub.plan
     if (parsed.data.planId && parsed.data.planId !== sub.planId) {
       const found = await prisma.subscriptionPlan.findFirst({
-        where: { id: parsed.data.planId, companyId: ctx.companyId },
+        where: { id: parsed.data.planId, userId: ctx.userId },
       })
       if (!found) return apiError('Plan introuvable', 422)
       newPlan = found
@@ -121,7 +121,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!hasRole(ctx.role, 'ADMIN')) return apiError('Permissions insuffisantes', 403)
 
     const sub = await prisma.subscription.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
     })
     if (!sub) return apiError('Abonnement introuvable', 404)
 

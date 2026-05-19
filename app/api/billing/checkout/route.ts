@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const rl = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
     if (!rl.success) return rateLimitResponse(rl.reset)
 
-    const { companyId } = await getTenantContext()
+    const { userId } = await getTenantContext()
 
     const body = await req.json()
     const parsed = schema.safeParse(body)
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const monthlyAmount = isAnnual ? Math.round(subtotal * (1 - ANNUAL_DISCOUNT)) : subtotal
     const totalDA = isAnnual ? monthlyAmount * 12 : monthlyAmount
 
-    const sub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
+    const sub = await prisma.yelhaSubscription.findUnique({ where: { userId } })
     if (!sub) return apiError('Abonnement introuvable', 404)
 
     const now = new Date()
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
             planId,
             extraApps: extraApps.join(','),
             billingCycle,
-            companyId,
+            userId,
           },
         }),
       })

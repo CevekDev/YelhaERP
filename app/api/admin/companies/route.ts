@@ -6,7 +6,7 @@ import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 
 const updatePlanSchema = z.object({
-  companyId: z.string().cuid(),
+  userId: z.string().cuid(),
   plan: z.enum(['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']),
   trialEndsAt: z.string().datetime().optional(),
 })
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const statusFilter = searchParams.get('status') ?? ''
     const limit = 25
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { isSuperAdmin: false }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -32,13 +32,13 @@ export async function GET(req: NextRequest) {
     }
     if (statusFilter) where.yelhaSubscription = { status: statusFilter }
 
-    const [companies, total] = await Promise.all([
-      prisma.company.findMany({
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
         where,
         select: {
-          id: true, name: true, plan: true, trialEndsAt: true, createdAt: true,
-          email: true, isBanned: true, isPartner: true,
-          _count: { select: { users: true, subscriptions: true } },
+          id: true, name: true, email: true, plan: true, trialEndsAt: true,
+          createdAt: true, isBanned: true, isPartner: true,
+          _count: { select: { subscriptions: true } },
           yelhaSubscription: {
             select: {
               id: true, status: true, planId: true, monthlyAmount: true,
@@ -51,10 +51,10 @@ export async function GET(req: NextRequest) {
         take: limit,
         skip: (page - 1) * limit,
       }),
-      prisma.company.count({ where }),
+      prisma.user.count({ where }),
     ])
 
-    return apiSuccess({ companies, total, page, limit })
+    return apiSuccess({ companies: users, total, page, limit })
   } catch (e: unknown) {
     if (e instanceof Error) {
       if (e.message === 'UNAUTHORIZED') return apiError('Non authentifié', 401)
@@ -75,9 +75,9 @@ export async function PATCH(req: NextRequest) {
     const parsed = updatePlanSchema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 422)
 
-    const { companyId, plan, trialEndsAt } = parsed.data
-    const updated = await prisma.company.update({
-      where: { id: companyId },
+    const { userId, plan, trialEndsAt } = parsed.data
+    const updated = await prisma.user.update({
+      where: { id: userId },
       data: { plan, ...(trialEndsAt && { trialEndsAt: new Date(trialEndsAt) }) },
     })
     return apiSuccess(updated)

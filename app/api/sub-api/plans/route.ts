@@ -26,11 +26,11 @@ export async function GET(req: NextRequest) {
 
     const [plans, total] = await Promise.all([
       prisma.subscriptionPlan.findMany({
-        where: { companyId: ctx.companyId },
+        where: { userId: ctx.userId },
         orderBy: { price: 'asc' },
         skip, take: limit,
       }),
-      prisma.subscriptionPlan.count({ where: { companyId: ctx.companyId } }),
+      prisma.subscriptionPlan.count({ where: { userId: ctx.userId } }),
     ])
     return ok({ data: plans, meta: { total, page, limit } })
   })
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return apiError('Données invalides', 422, 'VALIDATION_ERROR')
 
     const plan = await prisma.subscriptionPlan.create({
-      data: { companyId: ctx.companyId, ...parsed.data },
+      data: { userId: ctx.userId, ...parsed.data },
     })
     return ok({ data: plan }, 201)
   })

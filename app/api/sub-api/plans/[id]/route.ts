@@ -20,7 +20,7 @@ const patchSchema = z.object({
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
     const plan = await prisma.subscriptionPlan.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
     })
     if (!plan) return apiError('Plan introuvable', 404, 'NOT_FOUND')
     return ok({ data: plan })
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
     const exists = await prisma.subscriptionPlan.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
     })
     if (!exists) return apiError('Plan introuvable', 404, 'NOT_FOUND')
 
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
     const plan = await prisma.subscriptionPlan.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
     })
     if (!plan) return apiError('Plan introuvable', 404, 'NOT_FOUND')
 

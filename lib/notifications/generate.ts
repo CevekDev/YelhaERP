@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NotificationType } from '@prisma/client'
 
 interface NotifInput {
-  companyId: string
+  userId: string
   type: NotificationType
   title: string
   message: string
@@ -13,7 +13,7 @@ interface NotifInput {
 async function createIfNotDuplicate(n: NotifInput) {
   const existing = await prisma.notification.findFirst({
     where: {
-      companyId: n.companyId,
+      userId: n.userId,
       type: n.type,
       createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
     },
@@ -24,9 +24,8 @@ async function createIfNotDuplicate(n: NotifInput) {
 
 /**
  * YelhaSubs notifications — focusées sur les abonnements clients.
- * (Les modules ERP — factures/devis/stock — ont été supprimés.)
  */
-export async function generateNotificationsForCompany(companyId: string) {
+export async function generateNotificationsForUser(userId: string) {
   const now = new Date()
   const generated: string[] = []
 
@@ -34,14 +33,14 @@ export async function generateNotificationsForCompany(companyId: string) {
   const in3days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
   const expiringSubs = await prisma.subscription.count({
     where: {
-      companyId,
+      userId,
       status: { in: ['ACTIVE', 'TRIAL'] },
       nextBilling: { lte: in3days, gte: now },
     },
   })
   if (expiringSubs > 0) {
     const n = await createIfNotDuplicate({
-      companyId,
+      userId,
       type: NotificationType.SUBSCRIPTION_EXPIRING,
       title: `${expiringSubs} abonnement${expiringSubs > 1 ? 's' : ''} à renouveler`,
       message: `${expiringSubs} de vos clients ont un abonnement qui expire dans moins de 3 jours.`,
@@ -53,11 +52,11 @@ export async function generateNotificationsForCompany(companyId: string) {
 
   // Abonnements EXPIRED (paiement en retard)
   const pastDue = await prisma.subscription.count({
-    where: { companyId, status: 'EXPIRED' },
+    where: { userId, status: 'EXPIRED' },
   })
   if (pastDue > 0) {
     const n = await createIfNotDuplicate({
-      companyId,
+      userId,
       type: NotificationType.SUBSCRIPTION_EXPIRED,
       title: `${pastDue} abonnement${pastDue > 1 ? 's' : ''} en retard de paiement`,
       message: `${pastDue} abonnement${pastDue > 1 ? 's clients ont' : ' client a'} un paiement en retard.`,

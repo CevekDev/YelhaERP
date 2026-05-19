@@ -22,7 +22,7 @@ const SUB_INCLUDE = {
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
     const sub = await prisma.subscription.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
       include: SUB_INCLUDE,
     })
     if (!sub) return apiError('Abonnement introuvable', 404, 'NOT_FOUND')
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
-    const sub = await prisma.subscription.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
+    const sub = await prisma.subscription.findFirst({ where: { id: params.id, userId: ctx.userId } })
     if (!sub) return apiError('Abonnement introuvable', 404, 'NOT_FOUND')
 
     let body: unknown
@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     if (parsed.data.planId) {
       const plan = await prisma.subscriptionPlan.findFirst({
-        where: { id: parsed.data.planId, companyId: ctx.companyId },
+        where: { id: parsed.data.planId, userId: ctx.userId },
       })
       if (!plan) return apiError('Plan introuvable', 422, 'PLAN_NOT_FOUND')
     }
@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
-    const sub = await prisma.subscription.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
+    const sub = await prisma.subscription.findFirst({ where: { id: params.id, userId: ctx.userId } })
     if (!sub) return apiError('Abonnement introuvable', 404, 'NOT_FOUND')
 
     await prisma.subscription.delete({ where: { id: params.id } })

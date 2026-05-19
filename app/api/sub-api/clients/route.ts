@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '50'))
     const search = searchParams.get('search')?.trim()
 
-    const where: Record<string, unknown> = { companyId: ctx.companyId }
+    const where: Record<string, unknown> = { userId: ctx.userId }
     if (search) {
       where.OR = [
         { name:      { contains: search, mode: 'insensitive' } },
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return apiError('Données invalides', 422, 'VALIDATION_ERROR')
 
     const client = await prisma.client.create({
-      data: { companyId: ctx.companyId, ...parsed.data },
+      data: { userId: ctx.userId, ...parsed.data },
       select: { id: true, name: true, firstName: true, phone: true, email: true, wilaya: true, address: true, clientType: true, createdAt: true },
     })
     return ok({ data: client }, 201)

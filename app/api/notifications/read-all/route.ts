@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const ctx = await getTenantContext()
 
     await prisma.notification.updateMany({
-      where: { companyId: ctx.companyId, isRead: false },
+      where: { userId: ctx.userId, isRead: false },
       data: { isRead: true },
     })
 

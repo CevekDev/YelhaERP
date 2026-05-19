@@ -20,7 +20,7 @@ const SELECT = { id: true, name: true, firstName: true, phone: true, email: true
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
     const c = await prisma.client.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
       select: SELECT,
     })
     if (!c) return apiError('Client introuvable', 404, 'NOT_FOUND')
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
-    const c = await prisma.client.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
+    const c = await prisma.client.findFirst({ where: { id: params.id, userId: ctx.userId } })
     if (!c) return apiError('Client introuvable', 404, 'NOT_FOUND')
 
     let body: unknown
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
-    const c = await prisma.client.findFirst({ where: { id: params.id, companyId: ctx.companyId } })
+    const c = await prisma.client.findFirst({ where: { id: params.id, userId: ctx.userId } })
     if (!c) return apiError('Client introuvable', 404, 'NOT_FOUND')
 
     const subCount = await prisma.subscription.count({

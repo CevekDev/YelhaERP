@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const ctx = await getTenantContext()
 
     const notif = await prisma.notification.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
+      where: { id: params.id, userId: ctx.userId },
     })
     if (!notif) return apiError('Notification introuvable', 404)
 

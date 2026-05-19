@@ -10,10 +10,7 @@ declare module 'next-auth' {
       name: string
       role: Role
       isSuperAdmin: boolean
-      companyId: string
-      companyName: string
       plan: string
-      businessType: string
     }
   }
 }
@@ -23,9 +20,6 @@ declare module 'next-auth/jwt' {
     id: string
     role: Role
     isSuperAdmin: boolean
-    companyId: string
-    companyName: string
     plan: string
-    businessType: string
   }
 }

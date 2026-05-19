@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const notifications = await prisma.notification.findMany({
       where: {
-        companyId: ctx.companyId,
+        userId: ctx.userId,
         ...(onlyUnread ? { isRead: false } : {}),
       },
       orderBy: { createdAt: 'desc' },
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     })
 
     const unreadCount = await prisma.notification.count({
-      where: { companyId: ctx.companyId, isRead: false },
+      where: { userId: ctx.userId, isRead: false },
     })
 
     return apiSuccess({ notifications, unreadCount })

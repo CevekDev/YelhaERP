@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   const { type, lang } = parsed.data
 
-  const s = await prisma.subscriptionSettings.findUnique({ where: { companyId: ctx.companyId } })
+  const s = await prisma.subscriptionSettings.findUnique({ where: { userId: ctx.userId } })
   if (!s) return apiError('Paramètres introuvables', 404)
 
   const templates = (s.emailTemplates as Record<string, Record<string, unknown>>) ?? {}
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const updated = await prisma.subscriptionSettings.update({
-    where: { companyId: ctx.companyId },
+    where: { userId: ctx.userId },
     data: { emailTemplates: templates as Prisma.InputJsonValue },
   })
 

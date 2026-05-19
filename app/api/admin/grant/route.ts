@@ -11,13 +11,13 @@ const grantSchema = z.union([
   z.object({
     type: z.literal('confirm_ccp'),
     paymentId: z.string(),
-    companyId: z.string().optional(),
+    userId: z.string().optional(),
     planId: z.string().optional(),
     months: z.number().optional(),
   }),
   z.object({
     type: z.enum(['free', 'activate']),
-    companyId: z.string().cuid(),
+    userId: z.string().cuid(),
     planId: z.string().optional(),
     months: z.number().int().min(1).max(24).optional().default(1),
     paymentId: z.string().optional(),
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return apiError('Données invalides', 422)
 
     const { type } = parsed.data
-    const companyId = 'companyId' in parsed.data ? parsed.data.companyId : undefined
+    const userId = 'userId' in parsed.data ? parsed.data.userId : undefined
     const planId = parsed.data.planId
     const months = 'months' in parsed.data ? (parsed.data.months ?? 1) : 1
     const paymentId = parsed.data.paymentId
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       if (!paymentId) return apiError('paymentId requis', 422)
       const payment = await prisma.yelhaPayment.findUnique({
         where: { id: paymentId },
-        include: { subscription: { include: { company: true } } },
+        include: { subscription: { include: { user: true } } },
       })
       if (!payment) return apiError('Paiement introuvable', 404)
       if (payment.status !== 'PENDING') return apiError('Ce paiement n\'est pas en attente', 409)
@@ -82,14 +82,14 @@ export async function POST(req: NextRequest) {
           },
         }),
         ...(validPlansForCcp.includes(ccpPlanEnum)
-          ? [prisma.company.update({ where: { id: payment.subscription.company.id }, data: { plan: ccpPlanEnum } })]
+          ? [prisma.user.update({ where: { id: payment.subscription.user.id }, data: { plan: ccpPlanEnum } })]
           : []),
       ])
       return apiSuccess({ confirmed: true })
     }
 
-    if (!companyId) return apiError('companyId requis', 422)
-    const sub = await prisma.yelhaSubscription.findUnique({ where: { companyId } })
+    if (!userId) return apiError('userId requis', 422)
+    const sub = await prisma.yelhaSubscription.findUnique({ where: { userId } })
     if (!sub) return apiError('Abonnement introuvable', 404)
 
     const now = new Date()
@@ -117,9 +117,9 @@ export async function POST(req: NextRequest) {
     const validPlans = ['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
 
     await prisma.$transaction([
-      prisma.yelhaSubscription.update({ where: { companyId }, data: updateData }),
+      prisma.yelhaSubscription.update({ where: { userId }, data: updateData }),
       ...(validPlans.includes(planEnum)
-        ? [prisma.company.update({ where: { id: companyId }, data: { plan: planEnum } })]
+        ? [prisma.user.update({ where: { id: userId }, data: { plan: planEnum } })]
         : []),
       prisma.yelhaPayment.create({
         data: {
