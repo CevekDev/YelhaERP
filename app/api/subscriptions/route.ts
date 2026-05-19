@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     const limit   = 20
     const skip    = (page - 1) * limit
 
-    const where: Record<string, unknown> = { companyId: ctx.companyId }
+    const where: Record<string, unknown> = { userId: ctx.userId }
     if (status && status !== 'ALL') where.status = status
 
     const [subscriptions, total] = await Promise.all([
@@ -81,18 +81,18 @@ export async function POST(req: NextRequest) {
     const { planId, clientId, newClient, status, startDate, endDate, nextBilling, notes, clientEmail } = parsed.data
 
     const plan = await prisma.subscriptionPlan.findFirst({
-      where: { id: planId, companyId: ctx.companyId, isActive: true },
+      where: { id: planId, userId: ctx.userId, isActive: true },
     })
     if (!plan) return apiError('Plan introuvable ou inactif', 422)
 
     let resolvedClientId: string
     if (clientId) {
-      const cl = await prisma.client.findFirst({ where: { id: clientId, companyId: ctx.companyId } })
+      const cl = await prisma.client.findFirst({ where: { id: clientId, userId: ctx.userId } })
       if (!cl) return apiError('Client introuvable', 422)
       resolvedClientId = cl.id
     } else if (newClient) {
       const created = await prisma.client.create({
-        data: { companyId: ctx.companyId, ...newClient },
+        data: { userId: ctx.userId, ...newClient },
       })
       resolvedClientId = created.id
     } else {
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
 
     const subscription = await prisma.subscription.create({
       data: {
-        companyId:   ctx.companyId,
+        userId:      ctx.userId,
         clientId:    resolvedClientId,
         planId,
         status,

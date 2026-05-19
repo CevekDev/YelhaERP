@@ -1,5 +1,5 @@
 // YelhaSubs — Schéma Prisma minimal
-// Multi-tenant : chaque table filtre par companyId
+// Pas de multi-tenant : chaque User est son propre tenant (userId = clé d'isolation)
 
 generator client {
   provider = "prisma-client-js"
@@ -9,41 +9,6 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
-}
-
-// ============================================================
-// ENTREPRISES (tenant root)
-// ============================================================
-model Company {
-  id           String       @id @default(cuid())
-  name         String
-  businessType BusinessType @default(NONE)
-  phone        String?
-  email        String?
-  plan         Plan         @default(TRIAL)
-  trialEndsAt  DateTime?
-  isBanned     Boolean      @default(false)
-  bannedAt     DateTime?
-  isPartner    Boolean      @default(false)
-  partnerSince DateTime?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  users                User[]
-  clients              Client[]
-  notifications        Notification[]
-  subApiKeys           SubApiKey[]
-  webhooks             Webhook[]
-  subscriptionPlans    SubscriptionPlan[]
-  subscriptions        Subscription[]
-  subscriptionSettings SubscriptionSettings?
-  yelhaSubscription    YelhaSubscription?
-}
-
-enum BusinessType {
-  RC
-  AE
-  NONE
 }
 
 enum Plan {
@@ -70,7 +35,7 @@ enum BillingCycle {
 }
 
 // ============================================================
-// AUTH (NextAuth)
+// AUTH (NextAuth) + profil utilisateur + plan YelhaSubs
 // ============================================================
 model User {
   id                 String    @id @default(cuid())
@@ -84,15 +49,27 @@ model User {
   verificationExpiry DateTime?
   role               Role      @default(OWNER)
   isSuperAdmin       Boolean   @default(false)
-  companyId          String
-  company            Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Plan YelhaSubs (dénormalisé pour accès rapide)
+  plan               Plan      @default(TRIAL)
+  trialEndsAt        DateTime?
+  // Admin flags
+  isBanned           Boolean   @default(false)
+  bannedAt           DateTime?
+  isPartner          Boolean   @default(false)
+  partnerSince       DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-
-  @@index([companyId])
+  accounts             Account[]
+  sessions             Session[]
+  clients              Client[]
+  notifications        Notification[]
+  subApiKeys           SubApiKey[]
+  webhooks             Webhook[]
+  subscriptionPlans    SubscriptionPlan[]
+  subscriptions        Subscription[]
+  subscriptionSettings SubscriptionSettings?
+  yelhaSubscription    YelhaSubscription?
 }
 
 enum Role {
@@ -145,7 +122,7 @@ model VerificationToken {
 // ============================================================
 model Client {
   id          String     @id @default(cuid())
-  companyId   String
+  userId      String
   clientType  ClientType @default(INDIVIDUAL)
   name        String
   firstName   String?
@@ -160,11 +137,11 @@ model Client {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptions Subscription[]
 
-  @@index([companyId])
-  @@index([companyId, name])
+  @@index([userId])
+  @@index([userId, name])
 }
 
 enum ClientType {
@@ -177,7 +154,7 @@ enum ClientType {
 // ============================================================
 model Notification {
   id        String           @id @default(cuid())
-  companyId String
+  userId    String
   type      NotificationType
   title     String
   message   String
@@ -186,10 +163,10 @@ model Notification {
   actionUrl String?
   createdAt DateTime         @default(now())
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([companyId, isRead])
-  @@index([companyId, createdAt])
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }
 
 enum NotificationType {
@@ -203,7 +180,7 @@ enum NotificationType {
 // ============================================================
 model SubApiKey {
   id         String    @id @default(cuid())
-  companyId  String
+  userId     String
   name       String?
   keyHash    String    @unique
   keyPrefix  String
@@ -211,9 +188,9 @@ model SubApiKey {
   isActive   Boolean   @default(true)
   createdAt  DateTime  @default(now())
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([companyId])
+  @@index([userId])
 }
 
 // ============================================================
@@ -221,7 +198,7 @@ model SubApiKey {
 // ============================================================
 model Webhook {
   id              String    @id @default(cuid())
-  companyId       String
+  userId          String
   url             String
   events          String[]
   secret          String
@@ -231,10 +208,10 @@ model Webhook {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([companyId])
-  @@index([companyId, isActive])
+  @@index([userId])
+  @@index([userId, isActive])
 }
 
 // ============================================================
@@ -242,7 +219,7 @@ model Webhook {
 // ============================================================
 model SubscriptionPlan {
   id            String      @id @default(cuid())
-  companyId     String
+  userId        String
   name          String
   description   String?     @db.Text
   price         Decimal     @db.Decimal(10, 2)
@@ -255,15 +232,15 @@ model SubscriptionPlan {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptions Subscription[]
 
-  @@index([companyId])
+  @@index([userId])
 }
 
 model Subscription {
   id          String    @id @default(cuid())
-  companyId   String
+  userId      String
   clientId    String
   planId      String
   status      SubStatus @default(ACTIVE)
@@ -281,18 +258,18 @@ model Subscription {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  client  Client           @relation(fields: [clientId], references: [id])
-  plan    SubscriptionPlan @relation(fields: [planId], references: [id])
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client Client           @relation(fields: [clientId], references: [id])
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
 
-  @@index([companyId])
-  @@index([companyId, status])
+  @@index([userId])
+  @@index([userId, status])
   @@index([clientId])
 }
 
 model SubscriptionSettings {
   id             String   @id @default(cuid())
-  companyId      String   @unique
+  userId         String   @unique
   // Paiement (affichés dans les emails de rappel)
   whatsapp       String?
   ccpNumber      String?
@@ -303,7 +280,7 @@ model SubscriptionSettings {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum SubInterval {
@@ -328,7 +305,7 @@ enum SubStatus {
 // ============================================================
 model YelhaSubscription {
   id                 String         @id @default(cuid())
-  companyId          String         @unique
+  userId             String         @unique
   planId             String         @default("trial")
   status             YelhaSubStatus @default(TRIAL)
   billingCycle       BillingCycle   @default(MONTHLY)
@@ -356,7 +333,7 @@ model YelhaSubscription {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
-  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments YelhaPayment[]
 }
 

@@ -21,10 +21,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { action } = parsed.data
     const isBanned = action === 'ban'
 
-    const company = await prisma.company.findUnique({ where: { id: params.id } })
-    if (!company) return apiError('Entreprise introuvable', 404)
+    const user = await prisma.user.findUnique({ where: { id: params.id } })
+    if (!user) return apiError('Utilisateur introuvable', 404)
 
-    await prisma.company.update({
+    await prisma.user.update({
       where: { id: params.id },
       data: { isBanned, bannedAt: isBanned ? new Date() : null },
     })

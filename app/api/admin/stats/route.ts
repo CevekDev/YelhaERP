@@ -15,17 +15,15 @@ export async function GET(req: NextRequest) {
     startOfMonth.setHours(0, 0, 0, 0)
 
     const [
-      totalCompanies,
-      newCompaniesThisMonth,
       totalUsers,
+      newUsersThisMonth,
       subByStatus,
       mrr,
       recentPayments,
       paidThisMonth,
     ] = await Promise.all([
-      prisma.company.count(),
-      prisma.company.count({ where: { createdAt: { gte: startOfMonth } } }),
-      prisma.user.count(),
+      prisma.user.count({ where: { isSuperAdmin: false } }),
+      prisma.user.count({ where: { isSuperAdmin: false, createdAt: { gte: startOfMonth } } }),
       prisma.yelhaSubscription.groupBy({ by: ['status'], _count: { id: true } }),
       prisma.yelhaSubscription.aggregate({ where: { status: 'ACTIVE' }, _sum: { monthlyAmount: true } }),
       prisma.yelhaPayment.findMany({
@@ -35,7 +33,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, amount: true, planId: true, method: true, status: true,
           paidAt: true, createdAt: true,
-          subscription: { select: { company: { select: { id: true, name: true } } } },
+          subscription: { select: { user: { select: { id: true, name: true } } } },
         },
       }),
       prisma.yelhaPayment.aggregate({
@@ -50,8 +48,8 @@ export async function GET(req: NextRequest) {
 
     return apiSuccess({
       companies: {
-        total: totalCompanies,
-        newThisMonth: newCompaniesThisMonth,
+        total: totalUsers,
+        newThisMonth: newUsersThisMonth,
         byStatus: {
           trial: statusMap['TRIAL'] ?? 0,
           active: statusMap['ACTIVE'] ?? 0,

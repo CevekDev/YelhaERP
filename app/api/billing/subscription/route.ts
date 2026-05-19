@@ -9,10 +9,10 @@ export async function GET(req: NextRequest) {
     const rl = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
     if (!rl.success) return rateLimitResponse(rl.reset)
 
-    const { companyId } = await getTenantContext()
+    const { userId } = await getTenantContext()
 
     let sub = await prisma.yelhaSubscription.findUnique({
-      where: { companyId },
+      where: { userId },
       include: { payments: { orderBy: { createdAt: 'desc' }, take: 10 } },
     })
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       sub = await prisma.yelhaSubscription.create({
         data: {
-          companyId,
+          userId,
           planId: 'trial',
           status: 'TRIAL',
           billingCycle: 'MONTHLY',

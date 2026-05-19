@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     if (!hasRole(ctx.role, 'ADMIN')) return apiError('Permissions insuffisantes', 403)
 
     const keys = await prisma.subApiKey.findMany({
-      where: { companyId: ctx.companyId, isActive: true },
+      where: { userId: ctx.userId, isActive: true },
       select: { id: true, name: true, keyPrefix: true, lastUsedAt: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     })
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return apiError('Données invalides', 400)
 
     const activeCount = await prisma.subApiKey.count({
-      where: { companyId: ctx.companyId, isActive: true },
+      where: { userId: ctx.userId, isActive: true },
     })
     if (activeCount >= 5) {
       return apiError('Limite atteinte : 5 clés actives maximum. Révoquez une clé existante.', 409)
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     const created = await prisma.subApiKey.create({
       data: {
-        companyId: ctx.companyId,
+        userId: ctx.userId,
         name:      parsed.data.name || null,
         keyHash,
         keyPrefix,

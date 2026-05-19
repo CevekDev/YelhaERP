@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!ctx) return apiError('Non autorisé', 401)
 
   const plan = await prisma.subscriptionPlan.findFirst({
-    where: { id: params.id, companyId: ctx.companyId },
+    where: { id: params.id, userId: ctx.userId },
   })
   if (!plan) return apiError('Plan introuvable', 404)
 
@@ -42,7 +42,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!ctx) return apiError('Non autorisé', 401)
 
   const plan = await prisma.subscriptionPlan.findFirst({
-    where: { id: params.id, companyId: ctx.companyId },
+    where: { id: params.id, userId: ctx.userId },
   })
   if (!plan) return apiError('Plan introuvable', 404)
 

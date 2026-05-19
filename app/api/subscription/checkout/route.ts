@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       locale,
       metadata: {
         type:       'subscription',
-        company_id: ctx.companyId,
+        user_id: ctx.userId,
         plan,
         months,
       },

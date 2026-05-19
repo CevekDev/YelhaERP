@@ -35,7 +35,7 @@ const SUB_SELECT = {
 
 export async function GET(req: NextRequest) {
   return withSubApi(req, async (ctx) => {
-    if (!await canAccessSubs(ctx.companyId)) {
+    if (!await canAccessSubs(ctx.userId)) {
       return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
     }
     const { searchParams } = new URL(req.url)
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     const clientId = searchParams.get('clientId')
     const planId = searchParams.get('planId')
 
-    const where: Record<string, unknown> = { companyId: ctx.companyId }
+    const where: Record<string, unknown> = { userId: ctx.userId }
     if (status) where.status = status
     if (clientId) where.clientId = clientId
     if (planId) where.planId = planId
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return withSubApi(req, async (ctx) => {
-    if (!await canAccessSubs(ctx.companyId)) {
+    if (!await canAccessSubs(ctx.userId)) {
       return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
     }
     let body: unknown
@@ -81,17 +81,17 @@ export async function POST(req: NextRequest) {
     const { planId, clientId, newClient, clientEmail, status, startDate, endDate, nextBilling, notes } = parsed.data
 
     const plan = await prisma.subscriptionPlan.findFirst({
-      where: { id: planId, companyId: ctx.companyId, isActive: true },
+      where: { id: planId, userId: ctx.userId, isActive: true },
     })
     if (!plan) return apiError('Plan introuvable ou inactif', 422, 'PLAN_NOT_FOUND')
 
     let resolvedClientId: string
     if (clientId) {
-      const cl = await prisma.client.findFirst({ where: { id: clientId, companyId: ctx.companyId } })
+      const cl = await prisma.client.findFirst({ where: { id: clientId, userId: ctx.userId } })
       if (!cl) return apiError('Client introuvable', 422, 'CLIENT_NOT_FOUND')
       resolvedClientId = cl.id
     } else if (newClient) {
-      const created = await prisma.client.create({ data: { companyId: ctx.companyId, ...newClient } })
+      const created = await prisma.client.create({ data: { userId: ctx.userId, ...newClient } })
       resolvedClientId = created.id
     } else {
       return apiError('clientId ou newClient requis', 422, 'CLIENT_REQUIRED')
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
 
     const sub = await prisma.subscription.create({
       data: {
-        companyId:   ctx.companyId,
+        userId:      ctx.userId,
         clientId:    resolvedClientId,
         planId,
         status,

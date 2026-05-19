@@ -13,12 +13,11 @@ import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 
 const schema = z.object({
-  name:        z.string().min(2),
-  email:       z.string().email(),
-  password:    z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/),
-  companyName: z.string().min(2),
-  phone:       z.string().min(9).regex(/^0[5-7]\d{8}$/),
-  birthDate:   z.string().min(1),
+  name:      z.string().min(2),
+  email:     z.string().email(),
+  password:  z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/),
+  phone:     z.string().min(9).regex(/^0[5-7]\d{8}$/),
+  birthDate: z.string().min(1),
 })
 type FormData = z.infer<typeof schema>
 
@@ -187,18 +186,11 @@ export default function RegisterPage() {
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
 
-                {/* Name + Company */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="name" className={labelCls}>{t('auth.field_name')}</label>
-                    <input id="name" type="text" placeholder="Ahmed Benali" autoComplete="name" className={inputCls} {...register('name')} />
-                    {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="companyName" className={labelCls}>{t('auth.field_company')}</label>
-                    <input id="companyName" type="text" placeholder={t('auth.field_company_placeholder')} autoComplete="organization" className={inputCls} {...register('companyName')} />
-                    {errors.companyName && <p className="text-xs text-red-500 mt-1">{errors.companyName.message}</p>}
-                  </div>
+                {/* Name */}
+                <div>
+                  <label htmlFor="name" className={labelCls}>{t('auth.field_name')}</label>
+                  <input id="name" type="text" placeholder="Ahmed Benali" autoComplete="name" className={inputCls} {...register('name')} />
+                  {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
                 </div>
 
                 {/* Email */}

@@ -12,11 +12,8 @@ import { toast } from 'sonner'
 // ── Types ────────────────────────────────────────────────────
 
 interface UserRow {
-  id: string; name: string; email: string; role: string; createdAt: string
-  company: {
-    id: string; name: string; plan: string; isBanned: boolean; isPartner: boolean
-    yelhaSubscription: { status: string; monthlyAmount: number } | null
-  }
+  id: string; name: string; email: string; plan: string; isBanned: boolean; isPartner: boolean; createdAt: string
+  yelhaSubscription: { status: string; monthlyAmount: number } | null
 }
 
 interface Stats {
@@ -26,7 +23,7 @@ interface Stats {
   recentPayments: Array<{
     id: string; amount: number; planId: string; method: string; status: string
     paidAt: string | null; createdAt: string
-    subscription: { company: { id: string; name: string } } | null
+    subscription: { user: { id: string; name: string } } | null
   }>
 }
 
@@ -120,7 +117,7 @@ function StatsTab() {
           {stats.recentPayments.slice(0, 10).map(p => (
             <div key={p.id} className="flex items-center justify-between py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">{p.subscription?.company.name ?? '—'}</p>
+                <p className="text-sm font-medium text-foreground truncate">{p.subscription?.user.name ?? '—'}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{p.planId} · {p.method} · {fmtDate(p.paidAt ?? p.createdAt)}</p>
               </div>
               <div className="text-right shrink-0">
@@ -182,7 +179,7 @@ function UsersTab() {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), search })
     fetch(`/api/admin/companies?${params}`).then(r => r.json()).then(d => {
-      setUsers(d.data?.users ?? d.users ?? [])
+      setUsers(d.data?.companies ?? d.companies ?? [])
       setTotal(d.data?.total ?? d.total ?? 0)
       setLoading(false)
     }).catch(() => setLoading(false))
@@ -190,20 +187,20 @@ function UsersTab() {
 
   useEffect(() => { load() }, [load])
 
-  async function grant(companyId: string, planId: string) {
+  async function grant(userId: string, planId: string) {
     const res = await fetch('/api/admin/grant', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ companyId, action: 'free', planId, months: 12 }),
+      body: JSON.stringify({ type: 'free', userId, planId, months: 12 }),
     })
     if (res.ok) { toast.success('Plan offert'); load() } else toast.error('Erreur')
   }
 
-  async function ban(companyId: string, isBanned: boolean) {
-    const res = await fetch('/api/admin/companies', {
-      method: 'PATCH',
+  async function ban(userId: string, isBanned: boolean) {
+    const res = await fetch(`/api/admin/companies/${userId}/ban`, {
+      method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ companyId, action: isBanned ? 'unban' : 'ban' }),
+      body: JSON.stringify({ action: isBanned ? 'unban' : 'ban' }),
     })
     if (res.ok) { toast.success(isBanned ? 'Compte réactivé' : 'Compte banni'); load() } else toast.error('Erreur')
   }
@@ -227,16 +224,16 @@ function UsersTab() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-foreground truncate">{u.name || u.email}</p>
-                  {u.company.isBanned && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Banni</span>}
-                  {u.company.isPartner && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full"><Star className="inline h-3 w-3" /> Partenaire</span>}
+                  {u.isBanned && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Banni</span>}
+                  {u.isPartner && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full"><Star className="inline h-3 w-3" /> Partenaire</span>}
                 </div>
-                <p className="text-xs text-muted-foreground">{u.email} · {u.company.plan} · inscrit {fmtDate(u.createdAt)}</p>
+                <p className="text-xs text-muted-foreground">{u.email} · {u.plan} · inscrit {fmtDate(u.createdAt)}</p>
               </div>
               <div className="flex items-center gap-1.5">
-                <Button size="sm" variant="outline" onClick={() => grant(u.company.id, 'starter')}>
+                <Button size="sm" variant="outline" onClick={() => grant(u.id, 'starter')}>
                   <Gift className="h-3.5 w-3.5 mr-1" /> Offrir 12 mois
                 </Button>
-                <Button size="sm" variant="ghost" className={u.company.isBanned ? 'text-green-500' : 'text-destructive'} onClick={() => ban(u.company.id, u.company.isBanned)}>
+                <Button size="sm" variant="ghost" className={u.isBanned ? 'text-green-500' : 'text-destructive'} onClick={() => ban(u.id, u.isBanned)}>
                   <Ban className="h-3.5 w-3.5" />
                 </Button>
               </div>

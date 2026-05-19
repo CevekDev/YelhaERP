@@ -13,7 +13,7 @@ interface ChargilyPayload {
     metadata?: {
       type?: string
       subscriptionId?: string
-      companyId?: string
+      userId?: string
     }
   }
 }
@@ -69,22 +69,22 @@ export async function POST(req: NextRequest) {
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const meta = payload.data?.metadata
-  if (!meta || meta.type !== 'sub_renewal' || !meta.subscriptionId || !meta.companyId) {
+  if (!meta || meta.type !== 'sub_renewal' || !meta.subscriptionId || !meta.userId) {
     // Pas pour nous, on ignore proprement
     return NextResponse.json({ ignored: true }, { status: 200 })
   }
 
   const sub = await prisma.subscription.findFirst({
-    where: { id: meta.subscriptionId, companyId: meta.companyId },
+    where: { id: meta.subscriptionId, userId: meta.userId },
     include: {
       plan: true,
-      company: { include: { subscriptionSettings: true } },
+      user: { include: { subscriptionSettings: true } },
     },
   })
   if (!sub) return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
 
-  // Vérification signature avec la clé secrète de la company
-  const secret = sub.company.subscriptionSettings?.chargilyKey
+  // Vérification signature avec la clé secrète de l'utilisateur
+  const secret = sub.user.subscriptionSettings?.chargilyKey
   if (!secret) return NextResponse.json({ error: 'No Chargily secret configured' }, { status: 400 })
 
   const signature = req.headers.get('signature')

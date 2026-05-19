@@ -211,7 +211,7 @@ Ces actions restent réservées à l'interface dashboard :
 \`\`\`json
 {
   "id": "clx123...",
-  "companyId": "clx456...",
+  "userId": "clx456...",
   "name": "Premium",
   "description": "Plan mensuel premium",
   "price": "2500",
@@ -298,7 +298,7 @@ Content-Type: application/json
 {
   "data": {
     "id": "clx789...",
-    "companyId": "clx456...",
+    "userId": "clx456...",
     "name": "Premium",
     "description": "Plan mensuel premium",
     "price": "2500",
@@ -764,7 +764,7 @@ Pour que les paiements en ligne activent automatiquement les abonnements, config
     "metadata": {
       "type": "sub_renewal",
       "subscriptionId": "clx123...",
-      "companyId": "clx456..."
+      "userId": "clx456..."
     }
   }
 }

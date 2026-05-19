@@ -10,9 +10,9 @@ import { verifyCronSecret } from '@/lib/security/cron-auth'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subs.yelha.net'
 
 const INCLUDE = {
-  client:  { select: { name: true, firstName: true } },
-  plan:    { select: { name: true, price: true } },
-  company: { select: { id: true, name: true, subscriptionSettings: true } },
+  client: { select: { name: true, firstName: true } },
+  plan:   { select: { name: true, price: true } },
+  user:   { select: { id: true, name: true, subscriptionSettings: true } },
 } as const
 
 export async function GET(req: NextRequest) {
@@ -54,20 +54,19 @@ export async function GET(req: NextRequest) {
       include: INCLUDE,
     })
 
-    // ── canAccessApp groupé par company (évite N appels si même company) ───────
-    const allCompanyIds = new Set([
-      ...expiring3.map(s => s.company.id),
-      ...expiring1.map(s => s.company.id),
+    // ── canAccessSubs groupé par userId ───────────────────────────────────────
+    const allUserIds = new Set([
+      ...expiring3.map(s => s.user.id),
+      ...expiring1.map(s => s.user.id),
     ])
     const accessMap = new Map<string, boolean>()
-    await Promise.all(Array.from(allCompanyIds).map(async (cid) => {
-      accessMap.set(cid, await canAccessSubs(cid))
+    await Promise.all(Array.from(allUserIds).map(async (uid) => {
+      accessMap.set(uid, await canAccessSubs(uid))
     }))
 
     let sent = 0
     let skipped = 0
 
-    // ── Envoi d'un email de rappel ─────────────────────────────────────────────
     const sendReminder = async (
       sub: (typeof expiring3)[0],
       isTrial: boolean,
@@ -75,16 +74,14 @@ export async function GET(req: NextRequest) {
     ) => {
       if (!sub.clientEmail || !sub.nextBilling) return
 
-      // Arrêter si l'AppSubscription de la company a expiré
-      if (!accessMap.get(sub.company.id)) { skipped++; return }
+      if (!accessMap.get(sub.user.id)) { skipped++; return }
 
-      // Anti-spam J-1 (J-3 déjà filtré par la requête Prisma)
       if (reminderType === '1day') {
         const lastSentAt = isTrial ? sub.lastTrialEndReminderAt : sub.lastRenewalReminderAt
         if (lastSentAt && lastSentAt > last25h) { skipped++; return }
       }
 
-      const settings = sub.company.subscriptionSettings
+      const settings = sub.user.subscriptionSettings
       const lang     = (settings?.emailLanguage ?? 'fr') as EmailLang
       const type: EmailType = isTrial ? 'trialEnd' : 'renewal'
       const template = getTemplate(
@@ -103,7 +100,7 @@ export async function GET(req: NextRequest) {
           amount,
           sub.plan.name,
           APP_URL,
-          { subscriptionId: sub.id, companyId: sub.company.id },
+          { subscriptionId: sub.id, userId: sub.user.id },
         )
       }
 
@@ -113,7 +110,7 @@ export async function GET(req: NextRequest) {
         data: {
           clientName,
           planName:    sub.plan.name,
-          companyName: sub.company.name,
+          companyName: sub.user.name,
           amount,
           expiresAt:   sub.nextBilling,
         },
@@ -143,14 +140,12 @@ export async function GET(req: NextRequest) {
     for (const sub of expiring1) await sendReminder(sub, sub.status === 'TRIAL', '1day')
 
     // ── Expiration automatique ─────────────────────────────────────────────────
-    // ACTIVE sans renouvellement depuis plus de 7 jours → EXPIRED
     const overdueLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const expiredActive = await prisma.subscription.updateMany({
       where: { status: 'ACTIVE', nextBilling: { lt: overdueLimit } },
       data: { status: 'EXPIRED' },
     })
 
-    // TRIAL dont la période d'essai est terminée → EXPIRED
     const expiredTrial = await prisma.subscription.updateMany({
       where: { status: 'TRIAL', nextBilling: { lt: now } },
       data: { status: 'EXPIRED' },
@@ -162,7 +157,6 @@ export async function GET(req: NextRequest) {
       markedExpired: expiredActive.count + expiredTrial.count,
     })
   } catch (e) {
-    console.error('subscriptions-reminders cron error:', e)
-    return apiError('Erreur serveur', 500)
+    return apiError('Erreur serveur', 500, e)
   }
 }

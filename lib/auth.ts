@@ -13,7 +13,7 @@ const loginSchema = z.object({
   password: z.string().min(1).max(128),
 })
 
-// Override createUser to create Company for new Google/OAuth users
+// Override createUser to create YelhaSubscription for new Google/OAuth users
 function createCustomAdapter(): Adapter {
   const base = PrismaAdapter(prisma) as Adapter
   return {
@@ -22,14 +22,6 @@ function createCustomAdapter(): Adapter {
       const trialEndsAt = new Date()
       trialEndsAt.setDate(trialEndsAt.getDate() + 30)
 
-      const company = await prisma.company.create({
-        data: {
-          name: user.name ? `Entreprise de ${user.name.split(' ')[0]}` : 'Mon Entreprise',
-          plan: 'TRIAL',
-          trialEndsAt,
-        },
-      })
-
       const newUser = await prisma.user.create({
         data: {
           email:         user.email,
@@ -37,16 +29,17 @@ function createCustomAdapter(): Adapter {
           password:      null,
           emailVerified: user.emailVerified ?? new Date(),
           role:          'OWNER',
-          companyId:     company.id,
+          plan:          'TRIAL',
+          trialEndsAt,
         },
       })
 
-      // Create YelhaSubscription (essai 30j) — identique au flow email/password
+      // Create YelhaSubscription (essai 30j)
       await prisma.yelhaSubscription.create({
         data: {
-          companyId:        company.id,
-          planId:           'trial',
-          status:           'TRIAL',
+          userId:             newUser.id,
+          planId:             'trial',
+          status:             'TRIAL',
           trialEndsAt,
           currentPeriodStart: new Date(),
           currentPeriodEnd:   trialEndsAt,
@@ -74,9 +67,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId:     process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // allowDangerousEmailAccountLinking volontairement désactivé : risque de
-      // hijack si un compte Google non vérifié partage l'email d'un compte
-      // existant. Google force la vérification email mais le flag reste risqué.
     }),
     Credentials({
       async authorize(credentials) {
@@ -84,8 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null
 
         const user = await prisma.user.findUnique({
-          where:   { email: parsed.data.email },
-          include: { company: { select: { id: true, name: true, plan: true, businessType: true } } },
+          where: { email: parsed.data.email },
         })
 
         if (!user || !user.password) return null
@@ -96,66 +85,54 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user.emailVerified) throw new Error('EMAIL_NOT_VERIFIED')
 
         return {
-          id:           user.id,
-          email:        user.email,
-          name:         user.name,
-          role:         user.role,
-          companyId:    user.companyId,
-          companyName:  user.company.name,
-          plan:         user.company.plan,
-          businessType: user.company.businessType,
+          id:          user.id,
+          email:       user.email,
+          name:        user.name,
+          role:        user.role,
+          plan:        user.plan,
+          isSuperAdmin: user.isSuperAdmin,
         }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user, account, trigger, session }) {
-      // Handle session.update() calls from client — refresh businessType, companyName, plan
       if (trigger === 'update' && session) {
-        if (session.businessType) token.businessType = session.businessType
-        if (session.companyName)  token.companyName  = session.companyName
-        if (session.plan)         token.plan         = session.plan
+        if (session.plan) token.plan = session.plan
         return token
       }
       if (user) {
         token.id = user.id as string
 
-        // For Google/OAuth: fetch company info from DB
         if (account?.provider === 'google') {
           const dbUser = await prisma.user.findUnique({
-            where:   { id: user.id as string },
-            include: { company: true },
+            where: { id: user.id as string },
           })
           if (dbUser) {
             token.role         = dbUser.role
             token.isSuperAdmin = dbUser.isSuperAdmin
-            token.companyId    = dbUser.companyId
-            token.companyName  = dbUser.company.name
-            token.plan         = dbUser.company.plan
-            token.businessType = dbUser.company.businessType
+            token.plan         = dbUser.plan
           }
         } else {
           token.role         = (user as { role: Role }).role
           token.isSuperAdmin = (user as { isSuperAdmin: boolean }).isSuperAdmin ?? false
-          token.companyId    = (user as { companyId: string }).companyId
-          token.companyName  = (user as { companyName: string }).companyName
           token.plan         = (user as { plan: string }).plan
-          token.businessType = (user as { businessType: string }).businessType
         }
         token.roleRefreshedAt = Date.now()
       }
 
-      // Rafraîchir rôle + isSuperAdmin depuis la DB toutes les 5 minutes
+      // Rafraîchir rôle + plan depuis la DB toutes les 5 minutes
       const FIVE_MIN = 5 * 60 * 1000
       const lastRefresh = (token.roleRefreshedAt as number | undefined) ?? 0
       if (token.id && Date.now() - lastRefresh > FIVE_MIN) {
         const dbUser = await prisma.user.findUnique({
           where:  { id: token.id as string },
-          select: { role: true, isSuperAdmin: true },
+          select: { role: true, isSuperAdmin: true, plan: true },
         })
         if (dbUser) {
           token.role         = dbUser.role
           token.isSuperAdmin = dbUser.isSuperAdmin
+          token.plan         = dbUser.plan
         }
         token.roleRefreshedAt = Date.now()
       }
@@ -167,10 +144,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id           = token.id as string
         session.user.role         = token.role as Role
         session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
-        session.user.companyId    = token.companyId as string
-        session.user.companyName  = token.companyName as string
         session.user.plan         = token.plan as string
-        session.user.businessType = token.businessType as string
       }
       return session
     },

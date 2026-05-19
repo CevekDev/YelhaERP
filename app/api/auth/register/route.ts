@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const parsed = registerSchema.safeParse(body)
   if (!parsed.success) return apiError('Données invalides', 422, parsed.error.flatten())
 
-  const { name, email, password, companyName, phone, birthDate } = parsed.data
+  const { name, email, password, phone, birthDate } = parsed.data
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) return apiError('Un compte avec cet email existe déjà', 409)
@@ -30,24 +30,22 @@ export async function POST(req: NextRequest) {
   const expiry = new Date(Date.now() + 15 * 60 * 1000) // 15 min
 
   const trialEndsAt = new Date()
-  trialEndsAt.setDate(trialEndsAt.getDate() + 10)
+  trialEndsAt.setDate(trialEndsAt.getDate() + 30)
 
   await prisma.$transaction(async (tx) => {
-    const company = await tx.company.create({
-      data: { name: companyName, plan: 'TRIAL', trialEndsAt },
-    })
-    await tx.user.create({
+    const user = await tx.user.create({
       data: {
         name, email, password: hash, role: 'OWNER',
         phone, birthDate: new Date(birthDate),
-        companyId: company.id,
+        plan: 'TRIAL',
+        trialEndsAt,
         verificationToken: code, verificationExpiry: expiry,
       },
     })
     const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     await tx.yelhaSubscription.create({
       data: {
-        companyId: company.id,
+        userId: user.id,
         planId: 'trial',
         status: 'TRIAL',
         billingCycle: 'MONTHLY',

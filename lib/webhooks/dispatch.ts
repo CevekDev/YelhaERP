@@ -1,17 +1,15 @@
 /**
  * Webhook dispatcher — sends signed HTTP POST to all registered webhook URLs
- * for a given company + event. Includes HMAC-SHA256 signature in X-Yelha-Signature.
+ * for a given user + event. Includes HMAC-SHA256 signature in X-Yelha-Signature.
  */
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 
 export type WebhookEvent =
-  | 'invoice.created'
-  | 'invoice.updated'
-  | 'invoice.paid'
-  | 'quote.accepted'
-  | 'quote.rejected'
-  | 'quote.converted'
+  | 'subscription.created'
+  | 'subscription.updated'
+  | 'subscription.cancelled'
+  | 'subscription.expired'
   | 'client.created'
   | 'client.updated'
 
@@ -21,26 +19,22 @@ export interface WebhookPayload {
   data: Record<string, unknown>
 }
 
-/**
- * Create the HMAC-SHA256 signature for the raw body string.
- * Receivers should verify: HMAC-SHA256(secret, body) === signature
- */
 export function signPayload(secret: string, body: string): string {
   return crypto.createHmac('sha256', secret).update(body).digest('hex')
 }
 
 /**
- * Dispatch a webhook event to all active subscribers for the given company.
- * Fire-and-forget (non-blocking) — errors are logged but never thrown.
+ * Dispatch a webhook event to all active subscribers for the given user.
+ * Fire-and-forget (non-blocking) — errors are never thrown.
  */
 export async function dispatchWebhook(
-  companyId: string,
+  userId: string,
   event: WebhookEvent,
   data: Record<string, unknown>
 ): Promise<void> {
   try {
     const webhooks = await prisma.webhook.findMany({
-      where: { companyId, isActive: true, events: { has: event } },
+      where: { userId, isActive: true, events: { has: event } },
       select: { id: true, url: true, secret: true },
     })
 
@@ -66,9 +60,8 @@ export async function dispatchWebhook(
               'X-Yelha-Delivery': crypto.randomUUID(),
             },
             body,
-            signal: AbortSignal.timeout(10_000), // 10s timeout
+            signal: AbortSignal.timeout(10_000),
           })
-          // Update lastTriggeredAt non-blocking
           prisma.webhook.update({
             where: { id: wh.id },
             data: { lastTriggeredAt: new Date() },

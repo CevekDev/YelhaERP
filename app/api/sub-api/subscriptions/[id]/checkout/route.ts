@@ -15,8 +15,8 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subs.yelha.net'
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   return withSubApi(req, async (ctx) => {
     const sub = await prisma.subscription.findFirst({
-      where: { id: params.id, companyId: ctx.companyId },
-      include: { plan: true, company: { include: { subscriptionSettings: true } } },
+      where: { id: params.id, userId: ctx.userId },
+      include: { plan: true, user: { include: { subscriptionSettings: true } } },
     })
     if (!sub) return apiError('Abonnement introuvable', 404, 'NOT_FOUND')
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       )
     }
 
-    const settings = sub.company.subscriptionSettings
+    const settings = sub.user.subscriptionSettings
     if (!settings?.chargilyKey) {
       return apiError(
         'Clé Chargily non configurée. Configurez-la dans Paramètres > Paiement.',
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           metadata: {
             type: 'sub_renewal',
             subscriptionId: sub.id,
-            companyId: ctx.companyId,
+            userId: ctx.userId,
           },
         }),
       })
@@ -70,8 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const url = data.checkout_url ?? data.url
       if (!url) return apiError('Réponse Chargily invalide', 502, 'CHARGILY_ERROR')
       return ok({ data: { checkoutUrl: url, amount, currency: 'DZD' } })
-    } catch (e) {
-      console.error('Chargily checkout error:', e)
+    } catch {
       return apiError('Erreur Chargily', 502, 'CHARGILY_ERROR')
     }
   })

@@ -21,7 +21,7 @@ export async function GET() {
   if (!ctx) return apiError('Non autorisé', 401)
 
   const plans = await prisma.subscriptionPlan.findMany({
-    where: { companyId: ctx.companyId },
+    where: { userId: ctx.userId },
     orderBy: { price: 'asc' },
     include: {
       _count: { select: { subscriptions: true } },
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError('Données invalides', 400)
 
   const plan = await prisma.subscriptionPlan.create({
-    data: { companyId: ctx.companyId, ...parsed.data },
+    data: { userId: ctx.userId, ...parsed.data },
   })
   return apiSuccess(plan, 201)
 }

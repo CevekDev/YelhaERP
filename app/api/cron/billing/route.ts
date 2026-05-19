@@ -7,10 +7,6 @@ import { PLANS, type PlanId } from '@/lib/pricing/config'
 
 export const dynamic = 'force-dynamic'
 
-function daysDiff(a: Date, b: Date): number {
-  return Math.round((a.getTime() - b.getTime()) / 86400000)
-}
-
 export async function GET(req: NextRequest) {
   if (!verifyCronSecret(req)) return apiError('Non autorisé', 401)
 
@@ -20,17 +16,14 @@ export async function GET(req: NextRequest) {
   // 1. Mark expired trials
   const expiredTrials = await prisma.yelhaSubscription.findMany({
     where: { status: 'TRIAL', trialEndsAt: { lt: now } },
-    include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+    include: { user: true },
   })
   for (const sub of expiredTrials) {
     await prisma.yelhaSubscription.update({
       where: { id: sub.id },
       data: { status: 'EXPIRED' },
     })
-    const owner = sub.company.users[0]
-    if (owner) {
-      await sendTrialExpired({ to: owner.email, name: owner.name }).catch(() => {})
-    }
+    await sendTrialExpired({ to: sub.user.email, name: sub.user.name }).catch(() => {})
     counts.expired++
   }
 
@@ -43,14 +36,11 @@ export async function GET(req: NextRequest) {
 
     const subs = await prisma.yelhaSubscription.findMany({
       where: { status: 'TRIAL', trialEndsAt: { gte: dayStart, lte: dayEnd } },
-      include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+      include: { user: true },
     })
     for (const sub of subs) {
-      const owner = sub.company.users[0]
-      if (owner) {
-        await sendTrialReminder({ to: owner.email, name: owner.name, daysLeft }).catch(() => {})
-        counts.reminders++
-      }
+      await sendTrialReminder({ to: sub.user.email, name: sub.user.name, daysLeft }).catch(() => {})
+      counts.reminders++
     }
   }
 
@@ -85,18 +75,16 @@ export async function GET(req: NextRequest) {
           { [reminderField]: { lt: new Date(now.getTime() - 25 * 86400000) } },
         ],
       },
-      include: { company: { include: { users: { where: { role: 'OWNER' }, take: 1 } } } },
+      include: { user: true },
     })
 
     for (const sub of activeSubs) {
-      const owner = sub.company.users[0]
-      if (!owner) continue
       const plan = PLANS[sub.planId as PlanId]
       if (!plan) continue
 
       await sendYelhaRenewalReminder({
-        to: owner.email,
-        name: owner.name ?? owner.email,
+        to: sub.user.email,
+        name: sub.user.name ?? sub.user.email,
         planName: plan.name,
         amount: sub.monthlyAmount,
         expiresAt: sub.currentPeriodEnd,
