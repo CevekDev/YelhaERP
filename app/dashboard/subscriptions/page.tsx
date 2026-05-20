@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDA } from '@/lib/algerian/format'
-import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap, Trash2, AlertTriangle, CheckCircle, LayoutDashboard } from 'lucide-react'
+import { Plus, RefreshCw, Pause, XCircle, Users, Mail, Settings as SettingsIcon, MailCheck, MailX, Zap, Trash2, AlertTriangle, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -235,11 +235,6 @@ export default function SubscriptionsPage() {
               ))}
             </div>
             <div className="flex-1" />
-            <Link href="/dashboard/subscriptions/overview" title="Vue d'ensemble">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                <LayoutDashboard className="h-4 w-4" />
-              </Button>
-            </Link>
             <Link href="/dashboard/subscriptions/integration" title="Intégration API">
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <Zap className="h-4 w-4" />
