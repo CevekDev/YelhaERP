@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (sub?.status === 'TRIAL' && sub?.trialEndsAt && sub.trialEndsAt < new Date())
 
   return (
-    <div className="min-h-screen">
+    <div className="dark min-h-screen bg-[#0d0d0f]">
       {/* Compte banni — blocking modal */}
       {user?.isBanned && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

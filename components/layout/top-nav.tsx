@@ -35,10 +35,7 @@ export function TopNav({ hasBanner = false }: TopNavProps) {
 
   return (
     <header className={cn(
-      'fixed left-0 right-0 z-30 border-b',
-      isOverview
-        ? 'bg-[#0a0a0b]/80 backdrop-blur-xl border-white/[0.06]'
-        : 'bg-background border-border',
+      'fixed left-0 right-0 z-30 border-b bg-[#0d0d0f]/90 backdrop-blur-xl border-white/[0.07]',
       hasBanner ? 'top-10' : 'top-0',
     )}>
       <div className="px-4 md:px-6 h-14 flex items-center justify-between gap-3">
@@ -46,10 +43,10 @@ export function TopNav({ hasBanner = false }: TopNavProps) {
         <div className="flex items-center gap-2">
           <MobileSidebarTrigger />
           <Link href="/dashboard/subscriptions/overview" className="flex items-center gap-2">
-            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', isOverview ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-primary')}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
               <RefreshCw className="w-4 h-4 text-white" />
             </div>
-            <span className={cn('hidden sm:inline font-bold', isOverview ? 'text-white' : 'text-foreground')}>YelhaSubs</span>
+            <span className="hidden sm:inline font-bold text-white">YelhaSubs</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 ml-4">
@@ -61,9 +58,9 @@ export function TopNav({ hasBanner = false }: TopNavProps) {
                   href={item.href}
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                    isOverview
-                      ? active ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
-                      : active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    active
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/50 hover:text-white hover:bg-white/[0.06]',
                   )}
                 >
                   {t(item.labelKey)}
