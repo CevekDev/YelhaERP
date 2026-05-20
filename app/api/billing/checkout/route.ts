@@ -4,18 +4,10 @@ import { prisma } from '@/lib/prisma'
 import { getTenantContext } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
-import {
-  PLANS,
-  APPS,
-  type AppId,
-  type PlanId,
-  isAppIncluded,
-  ANNUAL_DISCOUNT,
-} from '@/lib/pricing/config'
+import { PLANS, type PlanId, ANNUAL_DISCOUNT } from '@/lib/pricing/config'
 
 const schema = z.object({
   planId:       z.enum(Object.keys(PLANS) as [PlanId, ...PlanId[]]),
-  extraApps:    z.array(z.enum(Object.keys(APPS) as [AppId, ...AppId[]])).default([]),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']),
   method:       z.enum(['CHARGILY', 'CCP']),
 })
@@ -31,20 +23,15 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 422, parsed.error.flatten())
 
-    const { planId, extraApps, billingCycle, method } = parsed.data
+    const { planId, billingCycle, method } = parsed.data
     const isAnnual = billingCycle === 'ANNUAL'
 
     const pricingConfig = await prisma.systemConfig.findUnique({ where: { key: 'pricing' } })
-    const pricingOverrides = (pricingConfig?.value as { plans?: Record<string, number>; apps?: Record<string, number> } | null) ?? {}
+    const pricingOverrides = (pricingConfig?.value as { plans?: Record<string, number> } | null) ?? {}
     const planOverrides = pricingOverrides.plans ?? {}
-    const appOverrides = pricingOverrides.apps ?? {}
 
     const basePlanPrice = planOverrides[planId] ?? PLANS[planId].price
-    const extrasPrice = extraApps
-      .filter(a => !isAppIncluded(planId, a))
-      .reduce((s, a) => s + (appOverrides[a] ?? APPS[a].price), 0)
-    const subtotal = basePlanPrice + extrasPrice
-    const monthlyAmount = isAnnual ? Math.round(subtotal * (1 - ANNUAL_DISCOUNT)) : subtotal
+    const monthlyAmount = isAnnual ? Math.round(basePlanPrice * (1 - ANNUAL_DISCOUNT)) : basePlanPrice
     const totalDA = isAnnual ? monthlyAmount * 12 : monthlyAmount
 
     const sub = await prisma.yelhaSubscription.findUnique({ where: { userId } })
@@ -54,7 +41,6 @@ export async function POST(req: NextRequest) {
     const daysUntilEnd = sub.currentPeriodEnd
       ? (sub.currentPeriodEnd.getTime() - now.getTime()) / 86400000
       : -1
-    // Early renewal within 3 days: new period starts at current period end (days preserved)
     const periodStart = sub.status === 'ACTIVE' && daysUntilEnd >= 0 && daysUntilEnd <= 3
       ? sub.currentPeriodEnd
       : now
@@ -84,12 +70,7 @@ export async function POST(req: NextRequest) {
           success_url: `${appUrl}/dashboard/settings/billing?paid=1&${ctxQs}`,
           failure_url: `${appUrl}/dashboard/settings/billing?failed=1&${ctxQs}`,
           locale: 'fr',
-          metadata: {
-            planId,
-            extraApps: extraApps.join(','),
-            billingCycle,
-            userId,
-          },
+          metadata: { planId, billingCycle, userId },
         }),
       })
 
@@ -105,7 +86,7 @@ export async function POST(req: NextRequest) {
           subscriptionId: sub.id,
           amount: totalDA,
           planId,
-          billingCycle: billingCycle === 'ANNUAL' ? 'ANNUAL' : 'MONTHLY',
+          billingCycle: isAnnual ? 'ANNUAL' : 'MONTHLY',
           method: 'CHARGILY',
           status: 'PENDING',
           chargilyId: chargilyData.id ?? null,
@@ -124,7 +105,7 @@ export async function POST(req: NextRequest) {
         subscriptionId: sub.id,
         amount: totalDA,
         planId,
-        billingCycle: billingCycle === 'ANNUAL' ? 'ANNUAL' : 'MONTHLY',
+        billingCycle: isAnnual ? 'ANNUAL' : 'MONTHLY',
         method: 'CCP',
         status: 'PENDING',
         periodStart,
@@ -133,11 +114,7 @@ export async function POST(req: NextRequest) {
     })
 
     const ccpRef = 'YELHA-' + payment.id.slice(0, 8).toUpperCase()
-
-    await prisma.yelhaPayment.update({
-      where: { id: payment.id },
-      data: { ccpRef },
-    })
+    await prisma.yelhaPayment.update({ where: { id: payment.id }, data: { ccpRef } })
 
     return apiSuccess({
       ccpRef,
