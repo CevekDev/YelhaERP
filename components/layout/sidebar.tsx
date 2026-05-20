@@ -5,17 +5,20 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Bell, LogOut, Menu, LayoutDashboard, User, CreditCard } from 'lucide-react'
+import { RefreshCw, Bell, LogOut, Menu, LayoutDashboard, User, CreditCard, Zap, Users, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useT } from '@/lib/i18n'
 
 const NAV = [
-  { href: '/dashboard/subscriptions/overview', labelKey: 'sidebar.overview',       icon: LayoutDashboard },
-  { href: '/dashboard/subscriptions',          labelKey: 'sidebar.subscriptions',   icon: RefreshCw },
-  { href: '/dashboard/notifications',          labelKey: 'sidebar.notifications',   icon: Bell },
-  { href: '/dashboard/settings/profile',       labelKey: 'sidebar.profile',         icon: User },
-  { href: '/dashboard/settings/billing',       labelKey: 'sidebar.payment',         icon: CreditCard },
+  { href: '/dashboard/subscriptions/overview',    labelKey: 'sidebar.overview',       icon: LayoutDashboard },
+  { href: '/dashboard/subscriptions',             labelKey: 'sidebar.subscriptions',  icon: RefreshCw },
+  { href: '/dashboard/subscriptions/plans',       labelKey: 'sidebar.plans',          icon: Users },
+  { href: '/dashboard/subscriptions/integration', labelKey: 'sidebar.integration',    icon: Zap },
+  { href: '/dashboard/subscriptions/settings',    labelKey: 'sidebar.emailSettings',  icon: Settings },
+  { href: '/dashboard/notifications',             labelKey: 'sidebar.notifications',  icon: Bell },
+  { href: '/dashboard/settings/profile',          labelKey: 'sidebar.profile',        icon: User },
+  { href: '/dashboard/settings/billing',          labelKey: 'sidebar.payment',        icon: CreditCard },
 ] as const
 
 export function SidebarContent({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
@@ -40,7 +43,7 @@ export function SidebarContent({ collapsed, onNavigate }: { collapsed?: boolean;
       <nav className="flex-1 py-3 px-2 space-y-0.5">
         {NAV.map(item => {
           const active = item.href === '/dashboard/subscriptions'
-            ? pathname === item.href || (pathname.startsWith(item.href + '/') && !pathname.startsWith('/dashboard/subscriptions/overview') && !pathname.startsWith('/dashboard/subscriptions/settings'))
+            ? pathname === item.href
             : pathname === item.href || pathname.startsWith(item.href + '/')
           const Icon = item.icon
           return (

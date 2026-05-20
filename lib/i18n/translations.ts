@@ -190,6 +190,9 @@ const fr = {
   sidebar: {
     overview: 'Vue d\'ensemble',
     subscriptions: 'Abonnements',
+    plans: 'Plans',
+    integration: 'Intégration API',
+    emailSettings: 'Emails',
     notifications: 'Notifications',
     profile: 'Profil',
     payment: 'Paiement',
@@ -585,6 +588,9 @@ const en: typeof fr = {
   sidebar: {
     overview: 'Overview',
     subscriptions: 'Subscriptions',
+    plans: 'Plans',
+    integration: 'API Integration',
+    emailSettings: 'Emails',
     notifications: 'Notifications',
     profile: 'Profile',
     payment: 'Payment',
@@ -974,6 +980,9 @@ const ar: typeof fr = {
   sidebar: {
     overview: 'نظرة عامة',
     subscriptions: 'الاشتراكات',
+    plans: 'الخطط',
+    integration: 'تكامل API',
+    emailSettings: 'البريد الإلكتروني',
     notifications: 'الإشعارات',
     profile: 'الملف الشخصي',
     payment: 'الدفع',
