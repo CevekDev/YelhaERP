@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Settings, Bell, LogOut, Menu, LayoutDashboard } from 'lucide-react'
+import { RefreshCw, Bell, LogOut, Menu, LayoutDashboard, User, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useT } from '@/lib/i18n'
@@ -14,7 +14,8 @@ const NAV = [
   { href: '/dashboard/subscriptions/overview', labelKey: 'sidebar.overview',       icon: LayoutDashboard },
   { href: '/dashboard/subscriptions',          labelKey: 'sidebar.subscriptions',   icon: RefreshCw },
   { href: '/dashboard/notifications',          labelKey: 'sidebar.notifications',   icon: Bell },
-  { href: '/dashboard/subscriptions/settings', labelKey: 'sidebar.settings',        icon: Settings },
+  { href: '/dashboard/settings/profile',       labelKey: 'sidebar.profile',         icon: User },
+  { href: '/dashboard/settings/billing',       labelKey: 'sidebar.payment',         icon: CreditCard },
 ] as const
 
 export function SidebarContent({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
