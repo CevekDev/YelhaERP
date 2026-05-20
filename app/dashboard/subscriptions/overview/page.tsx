@@ -2,327 +2,234 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Header } from '@/components/layout/header'
+import { usePathname } from 'next/navigation'
+import { signOut, useSession } from 'next-auth/react'
 import { formatDA } from '@/lib/algerian/format'
-import {
-  TrendingUp, Users, Clock, AlertCircle, Plus,
-  ArrowRight, RefreshCw, CheckCircle2, PauseCircle, XCircle,
-} from 'lucide-react'
+import { Plus, RefreshCw, Users, Settings, LogOut, LayoutDashboard, TrendingDown } from 'lucide-react'
 
+/* ── Types ── */
 interface StatsData {
   byStatus: { active: number; trial: number; paused: number; cancelled: number; expired: number; pending: number }
-  total: number
-  mrr: number
-  arpu: number
-  newThisMonth: number
-  cancelledThisMonth: number
+  total: number; mrr: number; arpu: number; newThisMonth: number; cancelledThisMonth: number
   upcomingRenewals: UpcomingSub[]
   trialExpiring: UpcomingSub[]
   recentSubs: RecentSub[]
 }
+interface UpcomingSub { id: string; clientName: string; planName: string; price: number; nextBilling: string; status: string }
+interface RecentSub   { id: string; clientName: string; planName: string; price: number; status: string; createdAt: string }
 
-interface UpcomingSub {
-  id: string; clientName: string; planName: string; price: number; nextBilling: string; status: string
-}
-interface RecentSub {
-  id: string; clientName: string; planName: string; price: number; status: string; createdAt: string
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: 'bg-emerald-500',
-  TRIAL: 'bg-blue-500',
-  PAUSED: 'bg-amber-500',
-  CANCELLED: 'bg-rose-500',
-  EXPIRED: 'bg-slate-400',
-  PENDING: 'bg-purple-500',
-}
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Actif', TRIAL: 'Essai', PAUSED: 'Pausé',
-  CANCELLED: 'Annulé', EXPIRED: 'Expiré', PENDING: 'En attente',
+function daysUntil(d: string) { return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000) }
+function initials(n: string)  { return n.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) }
+function daysLabel(days: number) {
+  if (days <= 0) return "aujourd'hui"
+  if (days === 1) return 'demain'
+  if (days < 7)  return `dans ${days} jours`
+  return `dans ${Math.round(days / 7)} sem.`
 }
 
-function daysUntil(dateStr: string): number {
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000)
-}
+/* ── Nav items ── */
+const NAV = [
+  { href: '/dashboard/subscriptions/overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
+  { href: '/dashboard/subscriptions',          label: 'Abonnements',     icon: RefreshCw },
+  { href: '/dashboard/subscriptions/plans',    label: 'Plans',           icon: Users },
+  { href: '/dashboard/subscriptions/settings', label: 'Paramètres',      icon: Settings },
+]
 
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'short' })
-}
-
-function initials(name: string) {
-  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
-}
-
+/* ── Page ── */
 export default function OverviewPage() {
   const [data, setData] = useState<StatsData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
+  const { data: session } = useSession()
 
   useEffect(() => {
     fetch('/api/subscriptions/stats')
       .then(r => r.json())
-      .then(d => { setData(d.data ?? d); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(d => setData(d.data ?? d))
   }, [])
 
+  /* Renouvellements à afficher : upcoming (actifs) + essais expirant */
+  const rows = data ? [...(data.upcomingRenewals ?? []), ...(data.trialExpiring ?? [])].slice(0, 8) : []
+  const churnRate = data && data.total > 0
+    ? ((data.cancelledThisMonth / data.total) * 100).toFixed(1)
+    : '0.0'
+
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white">
-      <Header title="Vue d'ensemble" />
+    /* Plein écran par-dessus le top-nav */
+    <div className="fixed inset-0 z-50 flex bg-[#0d0d0f] text-white overflow-hidden">
 
-      <div className="pt-14 md:pt-0 px-4 md:px-8 py-8 max-w-7xl mx-auto space-y-8">
+      {/* ── Sidebar ── */}
+      <aside className="w-56 flex-shrink-0 border-r border-white/[0.07] flex flex-col bg-[#111114]">
 
-        {/* ── Top bar ── */}
-        <div className="flex items-center justify-between pt-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
-            <p className="text-sm text-white/40 mt-0.5">Toutes vos statistiques en un coup d&apos;œil</p>
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-5 h-14 border-b border-white/[0.07]">
+          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-[#0d0d0f] text-sm">
+            Y
           </div>
-          <Link
-            href="/dashboard/subscriptions/new"
-            className="inline-flex items-center gap-2 bg-white text-[#0a0a0b] hover:bg-white/90 font-medium px-4 py-2 rounded-lg text-sm transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Nouvel abonnement
-          </Link>
+          <span className="font-semibold tracking-tight text-sm">YelhaSubs</span>
         </div>
 
-        {loading ? <LoadingSkeleton /> : data ? <Content data={data} /> : (
-          <p className="text-white/40 text-sm">Impossible de charger les statistiques.</p>
-        )}
-      </div>
+        {/* Nav */}
+        <nav className="flex-1 py-3 px-2 space-y-0.5">
+          {NAV.map(item => {
+            const active = pathname === item.href
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                  active
+                    ? 'bg-white/[0.08] text-white'
+                    : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* User + logout */}
+        <div className="p-3 border-t border-white/[0.07]">
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            Se déconnecter
+          </button>
+          {session?.user && (
+            <p className="px-3 pt-2 text-[11px] text-white/20 truncate">{session.user.email}</p>
+          )}
+        </div>
+      </aside>
+
+      {/* ── Main ── */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-8 py-8 space-y-6">
+
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight">Abonnements</h1>
+              <p className="text-sm text-white/40 mt-0.5">
+                {data
+                  ? `${data.byStatus.active} actifs · ${data.upcomingRenewals.length} à renouveler cette semaine`
+                  : 'Chargement…'}
+              </p>
+            </div>
+            <Link
+              href="/dashboard/subscriptions/new"
+              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Nouveau
+            </Link>
+          </div>
+
+          {/* KPI row */}
+          <div className="grid grid-cols-3 gap-4">
+            <KpiCard
+              label="MRR"
+              value={data ? formatDA(data.mrr) : '—'}
+              trend={data ? `+${data.newThisMonth} ce mois` : ''}
+              trendUp
+            />
+            <KpiCard
+              label="Actifs"
+              value={data ? String(data.byStatus.active) : '—'}
+              trend={data ? `+${data.newThisMonth}` : ''}
+              trendUp
+            />
+            <KpiCard
+              label="Churn"
+              value={data ? `${churnRate}%` : '—'}
+              trend={data ? `-${data.cancelledThisMonth} ce mois` : ''}
+              trendUp={false}
+            />
+          </div>
+
+          {/* List */}
+          <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+            {rows.length === 0 && !data && (
+              <div className="py-16 text-center">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin mx-auto" />
+              </div>
+            )}
+            {rows.length === 0 && data && (
+              <div className="py-16 text-center text-sm text-white/30">
+                Aucun renouvellement à venir cette semaine
+              </div>
+            )}
+            {rows.map((s, i) => {
+              const days = s.nextBilling ? daysUntil(s.nextBilling) : null
+              return (
+                <Link
+                  key={s.id}
+                  href="/dashboard/subscriptions"
+                  className={`flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors ${i !== 0 ? 'border-t border-white/[0.05]' : ''}`}
+                >
+                  {/* Avatar */}
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0 text-white/60">
+                    {initials(s.clientName)}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white/90 truncate">{s.clientName}</p>
+                    <p className="text-[12px] text-white/35 truncate">{s.planName}</p>
+                  </div>
+
+                  {/* Amount + date */}
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold">{formatDA(s.price)}</p>
+                    {days !== null && (
+                      <p className={`text-[11px] ${days <= 1 ? 'text-rose-400' : 'text-white/35'}`}>
+                        {daysLabel(days)}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Secondary stats row */}
+          {data && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatPill label="En essai"    value={data.byStatus.trial}     color="text-blue-400" />
+              <StatPill label="Pausés"      value={data.byStatus.paused}    color="text-amber-400" />
+              <StatPill label="Expirés"     value={data.byStatus.expired}   color="text-white/30" />
+              <StatPill label="Total"       value={data.total}              color="text-white/60" />
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
 
-function Content({ data }: { data: StatsData }) {
-  const total = data.total || 1
+/* ── Sub-components ── */
 
+function KpiCard({ label, value, trend, trendUp }: { label: string; value: string; trend: string; trendUp: boolean }) {
   return (
-    <div className="space-y-6">
-      {/* ── KPI row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
-          label="MRR"
-          value={formatDA(data.mrr)}
-          sub={`ARPU ${formatDA(data.arpu)}`}
-          accent="emerald"
-        />
-        <KpiCard
-          icon={<CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-          label="Actifs"
-          value={String(data.byStatus.active)}
-          sub={`+${data.newThisMonth} ce mois`}
-          accent="emerald"
-        />
-        <KpiCard
-          icon={<Clock className="w-4 h-4 text-blue-400" />}
-          label="En essai"
-          value={String(data.byStatus.trial)}
-          sub="périodes d'essai"
-          accent="blue"
-        />
-        <KpiCard
-          icon={<AlertCircle className="w-4 h-4 text-amber-400" />}
-          label="À renouveler"
-          value={String(data.upcomingRenewals.length + data.trialExpiring.length)}
-          sub="dans les 7 jours"
-          accent="amber"
-        />
-      </div>
-
-      {/* ── Middle row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Répartition */}
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5 space-y-4">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Répartition</p>
-          <div className="space-y-2.5">
-            {[
-              { key: 'active',    label: 'Actifs',         count: data.byStatus.active },
-              { key: 'trial',     label: 'En essai',       count: data.byStatus.trial },
-              { key: 'paused',    label: 'Pausés',         count: data.byStatus.paused },
-              { key: 'pending',   label: 'En attente',     count: data.byStatus.pending },
-              { key: 'cancelled', label: 'Annulés',        count: data.byStatus.cancelled },
-              { key: 'expired',   label: 'Expirés',        count: data.byStatus.expired },
-            ].filter(s => s.count > 0).map(s => (
-              <div key={s.key}>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-white/60">{s.label}</span>
-                  <span className="font-medium">{s.count}</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                  <div
-                    className={`h-full ${STATUS_COLORS[s.key.toUpperCase()] ?? 'bg-slate-400'} transition-all`}
-                    style={{ width: `${Math.round((s.count / total) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="pt-2 border-t border-white/[0.06] flex justify-between text-xs text-white/40">
-            <span>Total</span>
-            <span className="font-semibold text-white">{data.total}</span>
-          </div>
-        </div>
-
-        {/* Renouvellements à venir */}
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Renouvellements · 7j</p>
-            <span className="text-xs text-emerald-400 font-medium">{data.upcomingRenewals.length}</span>
-          </div>
-          {data.upcomingRenewals.length === 0 ? (
-            <p className="text-xs text-white/30 py-4 text-center">Aucun dans les 7 prochains jours</p>
-          ) : (
-            <div className="space-y-2">
-              {data.upcomingRenewals.map(s => (
-                <SubRow key={s.id} sub={s} />
-              ))}
-            </div>
-          )}
-          {data.upcomingRenewals.length > 0 && (
-            <Link href="/dashboard/subscriptions?status=ACTIVE" className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors pt-1">
-              Voir tous <ArrowRight className="w-3 h-3" />
-            </Link>
-          )}
-        </div>
-
-        {/* Essais expirant */}
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Essais expirant · 7j</p>
-            <span className="text-xs text-blue-400 font-medium">{data.trialExpiring.length}</span>
-          </div>
-          {data.trialExpiring.length === 0 ? (
-            <p className="text-xs text-white/30 py-4 text-center">Aucun essai n&apos;expire cette semaine</p>
-          ) : (
-            <div className="space-y-2">
-              {data.trialExpiring.map(s => (
-                <SubRow key={s.id} sub={s} accent="blue" />
-              ))}
-            </div>
-          )}
-          {data.trialExpiring.length > 0 && (
-            <Link href="/dashboard/subscriptions?status=TRIAL" className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors pt-1">
-              Voir tous <ArrowRight className="w-3 h-3" />
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* ── Recent ── */}
-      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Derniers abonnements</p>
-          <Link href="/dashboard/subscriptions" className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors">
-            Tous voir <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-        <div className="divide-y divide-white/[0.04]">
-          {data.recentSubs.length === 0 ? (
-            <p className="text-xs text-white/30 py-8 text-center">Aucun abonnement encore</p>
-          ) : data.recentSubs.map(s => (
-            <Link key={s.id} href={`/dashboard/subscriptions`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">
-                {initials(s.clientName)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{s.clientName}</p>
-                <p className="text-xs text-white/40 truncate">{s.planName} · {fmtDate(s.createdAt)}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold">{formatDA(s.price)}</p>
-                <StatusBadge status={s.status} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Quick actions ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pb-8">
-        {[
-          { href: '/dashboard/subscriptions/new',     label: 'Nouvel abonnement',  icon: Plus },
-          { href: '/dashboard/subscriptions/plans',   label: 'Gérer les plans',    icon: Users },
-          { href: '/dashboard/subscriptions',         label: 'Tous les abonnements', icon: RefreshCw },
-          { href: '/dashboard/subscriptions/settings', label: 'Paramètres emails',  icon: AlertCircle },
-        ].map(a => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="flex flex-col items-center gap-2 p-4 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-white/60 hover:bg-white/[0.06] hover:text-white transition-all text-center"
-          >
-            <a.icon className="w-5 h-5" />
-            {a.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function KpiCard({ icon, label, value, sub, accent }: {
-  icon: React.ReactNode; label: string; value: string; sub: string
-  accent: 'emerald' | 'blue' | 'amber'
-}) {
-  const glows = { emerald: 'bg-emerald-500/10', blue: 'bg-blue-500/10', amber: 'bg-amber-500/10' }
-  return (
-    <div className={`relative overflow-hidden rounded-xl border border-white/[0.06] p-5 ${glows[accent]}`}>
-      <div className="flex items-center gap-2 mb-3">
-        {icon}
-        <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">{label}</p>
-      </div>
+    <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-5">
+      <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">{label}</p>
       <p className="text-2xl font-bold tracking-tight">{value}</p>
-      <p className="text-xs text-white/40 mt-1">{sub}</p>
+      {trend && (
+        <p className={`text-[12px] mt-1.5 font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+          {trend}
+        </p>
+      )}
     </div>
   )
 }
 
-function SubRow({ sub, accent = 'emerald' }: { sub: UpcomingSub; accent?: string }) {
-  const days = sub.nextBilling ? daysUntil(sub.nextBilling) : null
-  const urgent = days !== null && days <= 1
+function StatPill({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-semibold shrink-0">
-        {initials(sub.clientName)}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">{sub.clientName}</p>
-        <p className="text-[10px] text-white/40 truncate">{sub.planName}</p>
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-xs font-semibold">{formatDA(sub.price)}</p>
-        {days !== null && (
-          <p className={`text-[10px] ${urgent ? 'text-rose-400' : 'text-white/40'}`}>
-            {days === 0 ? "aujourd'hui" : `J-${days}`}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    ACTIVE: 'text-emerald-400', TRIAL: 'text-blue-400', PAUSED: 'text-amber-400',
-    CANCELLED: 'text-rose-400', EXPIRED: 'text-white/30', PENDING: 'text-purple-400',
-  }
-  return <p className={`text-[10px] font-medium ${colors[status] ?? 'text-white/40'}`}>{STATUS_LABELS[status] ?? status}</p>
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-white/[0.04] rounded-xl" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-48 bg-white/[0.04] rounded-xl" />
-        ))}
-      </div>
-      <div className="h-64 bg-white/[0.04] rounded-xl" />
+    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3">
+      <p className={`text-xl font-bold ${color}`}>{value}</p>
+      <p className="text-[11px] text-white/30 mt-0.5">{label}</p>
     </div>
   )
 }
