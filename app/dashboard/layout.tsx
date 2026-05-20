@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { TopNav } from '@/components/layout/top-nav'
+import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { KeyboardShortcuts } from '@/components/providers/keyboard-shortcuts'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (sub?.status === 'TRIAL' && sub?.trialEndsAt && sub.trialEndsAt < new Date())
 
   return (
-    <div className="dark min-h-screen bg-[#0d0d0f]">
+    <div className="dark min-h-screen bg-[#0d0d0f] text-white">
       {/* Compte banni — blocking modal */}
       {user?.isBanned && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -56,11 +56,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       )}
 
-      <TopNav hasBanner={false} />
-      <KeyboardShortcuts />
-      <main className="pt-14 min-h-screen">
+      <DashboardShell>
+        <KeyboardShortcuts />
         {children}
-      </main>
+      </DashboardShell>
     </div>
   )
 }

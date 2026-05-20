@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { signOut, useSession } from 'next-auth/react'
 import { formatDA } from '@/lib/algerian/format'
-import { Plus, RefreshCw, Users, Settings, LogOut, LayoutDashboard, TrendingDown } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 /* ── Types ── */
 interface StatsData {
@@ -27,19 +25,8 @@ function daysLabel(days: number) {
   return `dans ${Math.round(days / 7)} sem.`
 }
 
-/* ── Nav items ── */
-const NAV = [
-  { href: '/dashboard/subscriptions/overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
-  { href: '/dashboard/subscriptions',          label: 'Abonnements',     icon: RefreshCw },
-  { href: '/dashboard/subscriptions/plans',    label: 'Plans',           icon: Users },
-  { href: '/dashboard/subscriptions/settings', label: 'Paramètres',      icon: Settings },
-]
-
-/* ── Page ── */
 export default function OverviewPage() {
   const [data, setData] = useState<StatsData | null>(null)
-  const pathname = usePathname()
-  const { data: session } = useSession()
 
   useEffect(() => {
     fetch('/api/subscriptions/stats')
@@ -47,175 +34,111 @@ export default function OverviewPage() {
       .then(d => setData(d.data ?? d))
   }, [])
 
-  /* Renouvellements à afficher : upcoming (actifs) + essais expirant */
   const rows = data ? [...(data.upcomingRenewals ?? []), ...(data.trialExpiring ?? [])].slice(0, 8) : []
   const churnRate = data && data.total > 0
     ? ((data.cancelledThisMonth / data.total) * 100).toFixed(1)
     : '0.0'
 
   return (
-    /* Plein écran par-dessus le top-nav */
-    <div className="fixed inset-0 z-50 flex bg-[#0d0d0f] text-white overflow-hidden">
+    <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-white">Abonnements</h1>
+          <p className="text-sm text-white/40 mt-0.5">
+            {data
+              ? `${data.byStatus.active} actifs · ${data.upcomingRenewals.length} à renouveler cette semaine`
+              : 'Chargement…'}
+          </p>
+        </div>
+        <Link
+          href="/dashboard/subscriptions/new"
+          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+        >
+          <Plus className="w-4 h-4" /> Nouveau
+        </Link>
+      </div>
 
-      {/* ── Sidebar ── */}
-      <aside className="w-56 flex-shrink-0 border-r border-white/[0.07] flex flex-col bg-[#111114]">
+      {/* KPI row */}
+      <div className="grid grid-cols-3 gap-4">
+        <KpiCard
+          label="MRR"
+          value={data ? formatDA(data.mrr) : '—'}
+          trend={data ? `+${data.newThisMonth} ce mois` : ''}
+          trendUp
+        />
+        <KpiCard
+          label="Actifs"
+          value={data ? String(data.byStatus.active) : '—'}
+          trend={data ? `+${data.newThisMonth}` : ''}
+          trendUp
+        />
+        <KpiCard
+          label="Churn"
+          value={data ? `${churnRate}%` : '—'}
+          trend={data ? `-${data.cancelledThisMonth} ce mois` : ''}
+          trendUp={false}
+        />
+      </div>
 
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 h-14 border-b border-white/[0.07]">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-[#0d0d0f] text-sm">
-            Y
+      {/* Upcoming renewals list */}
+      <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+        {rows.length === 0 && !data && (
+          <div className="py-16 text-center">
+            <div className="w-8 h-8 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin mx-auto" />
           </div>
-          <span className="font-semibold tracking-tight text-sm">YelhaSubs</span>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 py-3 px-2 space-y-0.5">
-          {NAV.map(item => {
-            const active = pathname === item.href
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                  active
-                    ? 'bg-white/[0.08] text-white'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* User + logout */}
-        <div className="p-3 border-t border-white/[0.07]">
-          <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            Se déconnecter
-          </button>
-          {session?.user && (
-            <p className="px-3 pt-2 text-[11px] text-white/20 truncate">{session.user.email}</p>
-          )}
-        </div>
-      </aside>
-
-      {/* ── Main ── */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-8 space-y-6">
-
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">Abonnements</h1>
-              <p className="text-sm text-white/40 mt-0.5">
-                {data
-                  ? `${data.byStatus.active} actifs · ${data.upcomingRenewals.length} à renouveler cette semaine`
-                  : 'Chargement…'}
-              </p>
-            </div>
+        )}
+        {rows.length === 0 && data && (
+          <div className="py-16 text-center text-sm text-white/30">
+            Aucun renouvellement à venir cette semaine
+          </div>
+        )}
+        {rows.map((s, i) => {
+          const days = s.nextBilling ? daysUntil(s.nextBilling) : null
+          return (
             <Link
-              href="/dashboard/subscriptions/new"
-              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+              key={s.id}
+              href="/dashboard/subscriptions"
+              className={`flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors ${i !== 0 ? 'border-t border-white/[0.05]' : ''}`}
             >
-              <Plus className="w-4 h-4" /> Nouveau
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0 text-white/60">
+                {initials(s.clientName)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white/90 truncate">{s.clientName}</p>
+                <p className="text-[12px] text-white/35 truncate">{s.planName}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-white">{formatDA(s.price)}</p>
+                {days !== null && (
+                  <p className={`text-[11px] ${days <= 1 ? 'text-rose-400' : 'text-white/35'}`}>
+                    {daysLabel(days)}
+                  </p>
+                )}
+              </div>
             </Link>
-          </div>
+          )
+        })}
+      </div>
 
-          {/* KPI row */}
-          <div className="grid grid-cols-3 gap-4">
-            <KpiCard
-              label="MRR"
-              value={data ? formatDA(data.mrr) : '—'}
-              trend={data ? `+${data.newThisMonth} ce mois` : ''}
-              trendUp
-            />
-            <KpiCard
-              label="Actifs"
-              value={data ? String(data.byStatus.active) : '—'}
-              trend={data ? `+${data.newThisMonth}` : ''}
-              trendUp
-            />
-            <KpiCard
-              label="Churn"
-              value={data ? `${churnRate}%` : '—'}
-              trend={data ? `-${data.cancelledThisMonth} ce mois` : ''}
-              trendUp={false}
-            />
-          </div>
-
-          {/* List */}
-          <div className="rounded-xl border border-white/[0.07] overflow-hidden">
-            {rows.length === 0 && !data && (
-              <div className="py-16 text-center">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-emerald-400 rounded-full animate-spin mx-auto" />
-              </div>
-            )}
-            {rows.length === 0 && data && (
-              <div className="py-16 text-center text-sm text-white/30">
-                Aucun renouvellement à venir cette semaine
-              </div>
-            )}
-            {rows.map((s, i) => {
-              const days = s.nextBilling ? daysUntil(s.nextBilling) : null
-              return (
-                <Link
-                  key={s.id}
-                  href="/dashboard/subscriptions"
-                  className={`flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors ${i !== 0 ? 'border-t border-white/[0.05]' : ''}`}
-                >
-                  {/* Avatar */}
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0 text-white/60">
-                    {initials(s.clientName)}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white/90 truncate">{s.clientName}</p>
-                    <p className="text-[12px] text-white/35 truncate">{s.planName}</p>
-                  </div>
-
-                  {/* Amount + date */}
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold">{formatDA(s.price)}</p>
-                    {days !== null && (
-                      <p className={`text-[11px] ${days <= 1 ? 'text-rose-400' : 'text-white/35'}`}>
-                        {daysLabel(days)}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Secondary stats row */}
-          {data && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatPill label="En essai"    value={data.byStatus.trial}     color="text-blue-400" />
-              <StatPill label="Pausés"      value={data.byStatus.paused}    color="text-amber-400" />
-              <StatPill label="Expirés"     value={data.byStatus.expired}   color="text-white/30" />
-              <StatPill label="Total"       value={data.total}              color="text-white/60" />
-            </div>
-          )}
+      {/* Secondary stats */}
+      {data && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatPill label="En essai"  value={data.byStatus.trial}   color="text-blue-400" />
+          <StatPill label="Pausés"    value={data.byStatus.paused}  color="text-amber-400" />
+          <StatPill label="Expirés"   value={data.byStatus.expired} color="text-white/30" />
+          <StatPill label="Total"     value={data.total}            color="text-white/60" />
         </div>
-      </main>
+      )}
     </div>
   )
 }
-
-/* ── Sub-components ── */
 
 function KpiCard({ label, value, trend, trendUp }: { label: string; value: string; trend: string; trendUp: boolean }) {
   return (
     <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-5">
       <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">{label}</p>
-      <p className="text-2xl font-bold tracking-tight">{value}</p>
+      <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
       {trend && (
         <p className={`text-[12px] mt-1.5 font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
           {trend}

@@ -5,94 +5,98 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Settings, Bell, LogOut, Menu } from 'lucide-react'
+import { RefreshCw, Settings, Bell, LogOut, Menu, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useT } from '@/lib/i18n'
 
-interface SidebarProps { companyName: string }
-
 const NAV = [
-  { href: '/dashboard/subscriptions', labelKey: 'sidebar.subscriptions', icon: RefreshCw },
-  { href: '/dashboard/notifications', labelKey: 'sidebar.notifications', icon: Bell },
-  { href: '/dashboard/settings',      labelKey: 'sidebar.settings',      icon: Settings },
+  { href: '/dashboard/subscriptions/overview', labelKey: 'sidebar.overview',       icon: LayoutDashboard },
+  { href: '/dashboard/subscriptions',          labelKey: 'sidebar.subscriptions',   icon: RefreshCw },
+  { href: '/dashboard/notifications',          labelKey: 'sidebar.notifications',   icon: Bell },
+  { href: '/dashboard/subscriptions/settings', labelKey: 'sidebar.settings',        icon: Settings },
 ] as const
 
-function SidebarContent({ companyName, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
+export function SidebarContent({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname()
   const { t } = useT()
   const { data: session } = useSession()
-  const cn_ = session?.user?.name ?? companyName
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div className="px-4 h-16 flex items-center gap-3 shrink-0 bg-primary">
-        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center shrink-0 border border-white/30">
-          <RefreshCw className="w-4 h-4 text-white" />
+    <div className="flex flex-col h-full bg-[#111114]">
+      {/* Logo */}
+      <div className={cn(
+        'flex items-center gap-2.5 h-14 border-b border-white/[0.07] shrink-0',
+        collapsed ? 'justify-center px-0' : 'px-5',
+      )}>
+        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-[#0d0d0f] text-sm shrink-0">
+          Y
         </div>
-        <div className="overflow-hidden">
-          <p className="font-bold text-sm text-white leading-none truncate">YelhaSubs</p>
-          <p className="text-xs text-white/70 truncate mt-0.5">{cn_}</p>
-        </div>
+        {!collapsed && <span className="font-semibold tracking-tight text-sm text-white">YelhaSubs</span>}
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+      {/* Nav */}
+      <nav className="flex-1 py-3 px-2 space-y-0.5">
         {NAV.map(item => {
-          const active = pathname === item.href || pathname.startsWith(item.href + '/')
+          const active = item.href === '/dashboard/subscriptions'
+            ? pathname === item.href || (pathname.startsWith(item.href + '/') && !pathname.startsWith('/dashboard/subscriptions/overview') && !pathname.startsWith('/dashboard/subscriptions/settings'))
+            : pathname === item.href || pathname.startsWith(item.href + '/')
+          const Icon = item.icon
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={onNavigate}
+              title={collapsed ? t(item.labelKey) : undefined}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+                'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors',
+                collapsed && 'justify-center',
                 active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]',
               )}
             >
-              <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
-              <span className="flex-1 truncate">{t(item.labelKey)}</span>
+              <Icon className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
             </Link>
           )
         })}
       </nav>
 
-      <div className="p-3 border-t border-border">
+      {/* Bottom */}
+      <div className="p-3 border-t border-white/[0.07]">
         <button
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
           onClick={() => signOut({ callbackUrl: '/login' })}
+          title={collapsed ? t('sidebar.logout') : undefined}
+          className={cn(
+            'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors',
+            collapsed && 'justify-center',
+          )}
         >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {t('sidebar.logout')}
+          <LogOut className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>{t('sidebar.logout')}</span>}
         </button>
+        {!collapsed && session?.user?.email && (
+          <p className="px-3 pt-2 text-[11px] text-white/20 truncate">{session.user.email}</p>
+        )}
       </div>
     </div>
   )
 }
 
-export function Sidebar(props: SidebarProps) {
-  return (
-    <aside className="hidden md:flex fixed top-0 h-screen w-[240px] flex-col bg-background border-r border-border z-40 left-0">
-      <SidebarContent {...props} />
-    </aside>
-  )
-}
 
 export function MobileSidebarTrigger() {
   const [open, setOpen] = useState(false)
-  const { data: session } = useSession()
-  const companyName = session?.user?.name ?? ''
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
+        <Button variant="ghost" size="icon" className="md:hidden text-white/70 hover:text-white hover:bg-white/[0.06]">
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-[240px]">
-        <SidebarContent companyName={companyName} onNavigate={() => setOpen(false)} />
+      <SheetContent side="left" className="p-0 w-56 bg-[#111114] border-r border-white/[0.07]">
+        <SidebarContent onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   )

@@ -250,11 +250,11 @@ export default function BillingPage() {
   const newSubMap = new Map(appSubs.map(s => [s.appId, s]))
 
   const oldEntries: AppEntry[] = [
-    ...sub.extraApps
+    ...(sub.extraApps ?? [])
       .filter(id => APPS[id as AppId] && !APPS[id as AppId].core)
       .map(id => ({ appId: id as AppId, status: 'active' as AppStatus })),
-    ...sub.trialApps
-      .filter(id => APPS[id as AppId] && !sub.extraApps.includes(id))
+    ...(sub.trialApps ?? [])
+      .filter(id => APPS[id as AppId] && !(sub.extraApps ?? []).includes(id))
       .map(id => {
         const endDate = appTrialsEndsAt[id]
         const left = endDate ? daysLeft(endDate) : 0
