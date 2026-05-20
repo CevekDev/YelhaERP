@@ -22,36 +22,47 @@ const PLANS: Plan[] = [
     desc: 'Idéal pour démarrer',
     feats: [
       "Jusqu'à 50 abonnements actifs",
-      'Emails de rappel automatiques',
+      'Rappels emails automatiques',
       'Paiement CCP avec référence',
       'Multilingue FR/EN/AR',
       '1 utilisateur',
     ],
   },
   {
+    id: 'premium',
+    name: 'Premium',
+    price: 1990,
+    desc: 'Pour les petites équipes',
+    feats: [
+      "Jusqu'à 200 abonnements actifs",
+      'Rappels emails + WhatsApp',
+      'Chargily Pay (Edahabia/CIB) + CCP',
+      'Statistiques avancées',
+      '2 utilisateurs',
+    ],
+  },
+  {
     id: 'pro',
     name: 'Pro',
-    price: 2490,
+    price: 2990,
     popular: true,
     desc: 'Pour les entreprises qui scalent',
     feats: [
       "Jusqu'à 500 abonnements actifs",
-      'Rappels WhatsApp',
-      'Chargily Pay (Edahabia/CIB)',
       'API publique',
-      'Templates email custom',
-      '3 utilisateurs',
+      'Templates email personnalisés',
+      'Webhooks sortants',
+      '5 utilisateurs',
     ],
   },
   {
     id: 'agency',
     name: 'Agency',
-    price: 4900,
+    price: 4990,
     desc: 'Pour les agences et grands volumes',
     feats: [
       'Abonnements illimités',
       'White-label des emails',
-      'Webhooks sortants',
       'Support prioritaire WhatsApp',
       'Utilisateurs illimités',
       'Onboarding personnalisé',
@@ -114,11 +125,11 @@ export default function PricingPage() {
       </section>
 
       <section className="px-6 pb-20 max-w-6xl mx-auto">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {PLANS.map(p => {
             const price = annual ? Math.round(p.price * (1 - discount)) : p.price
             return (
-              <div key={p.id} className={`rounded-2xl p-6 border-2 ${p.popular ? 'border-[#1D9E75] bg-[#1D9E75]/5 relative' : 'border-slate-200 bg-white'}`}>
+              <div key={p.id} className={`rounded-2xl p-6 border-2 relative ${p.popular ? 'border-[#1D9E75] bg-[#1D9E75]/5' : 'border-slate-200 bg-white'}`}>
                 {p.popular && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1D9E75] text-white text-[10px] font-bold px-3 py-0.5 rounded-full">
                     POPULAIRE
@@ -126,7 +137,7 @@ export default function PricingPage() {
                 )}
                 <h3 className="font-bold text-xl">{p.name}</h3>
                 <p className="text-sm text-slate-500 mt-0.5">{p.desc}</p>
-                <p className="text-4xl font-black mt-5">
+                <p className="text-3xl font-black mt-5">
                   {fDA(price)} <span className="text-sm font-medium text-slate-500">/mois</span>
                 </p>
                 {annual && <p className="text-xs text-[#1D9E75] mt-1">Facturé {fDA(price * 12)} / an</p>}
@@ -143,7 +154,7 @@ export default function PricingPage() {
                     p.popular ? 'bg-[#1D9E75] hover:bg-[#178a64] text-white' : 'bg-white border border-slate-200 hover:border-slate-300 text-slate-900'
                   }`}
                 >
-                  {session?.user ? 'Choisir ce plan' : 'Démarrer l\'essai gratuit'} <ArrowRight className="w-4 h-4" />
+                  {session?.user ? 'Choisir ce plan' : "Démarrer l'essai gratuit"} <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             )

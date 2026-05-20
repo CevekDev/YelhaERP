@@ -282,27 +282,38 @@ function PricingTab() {
 
   if (loading) return <Loader2 className="w-6 h-6 animate-spin mx-auto my-12" />
 
-  const PLAN_KEYS = ['starter', 'pro', 'agency', 'business', 'enterprise']
+  const PLAN_KEYS: { id: string; name: string; default: number }[] = [
+    { id: 'starter', name: 'Starter',  default: 990  },
+    { id: 'premium', name: 'Premium',  default: 1990 },
+    { id: 'pro',     name: 'Pro',      default: 2990 },
+    { id: 'agency',  name: 'Agency',   default: 4990 },
+  ]
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="rounded-2xl border bg-card p-5 space-y-3">
-        <h3 className="font-bold text-foreground">Tarifs YelhaSubs</h3>
-        <p className="text-xs text-muted-foreground">Override les prix mensuels par défaut. Laisse vide pour garder le prix code.</p>
+      <div className="rounded-2xl border bg-card p-5 space-y-4">
+        <div>
+          <h3 className="font-bold text-foreground">Tarifs YelhaSubs</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Modifie les prix mensuels. Laisse vide pour utiliser le prix par défaut.</p>
+        </div>
         {PLAN_KEYS.map(p => (
-          <div key={p} className="flex items-center gap-3">
-            <label className="w-28 text-sm capitalize text-foreground">{p}</label>
+          <div key={p.id} className="flex items-center gap-3">
+            <div className="w-32 shrink-0">
+              <p className="text-sm font-medium text-foreground">{p.name}</p>
+              <p className="text-xs text-muted-foreground">Défaut : {p.default.toLocaleString('fr-DZ')} DA</p>
+            </div>
             <input
               type="number"
-              value={pricing.plans?.[p] ?? ''}
-              onChange={e => setPricing({ ...pricing, plans: { ...pricing.plans, [p]: e.target.value ? Number(e.target.value) : 0 } })}
-              placeholder="DA / mois"
-              className="flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              value={pricing.plans?.[p.id] ?? ''}
+              onChange={e => setPricing({ ...pricing, plans: { ...pricing.plans, [p.id]: e.target.value ? Number(e.target.value) : 0 } })}
+              placeholder={`${p.default} DA / mois`}
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
+            <span className="text-xs text-muted-foreground shrink-0">DA/mois</span>
           </div>
         ))}
-        <Button onClick={save} disabled={saving} className="w-full mt-3">
+        <Button onClick={save} disabled={saving} className="w-full">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-          Sauvegarder
+          Sauvegarder les tarifs
         </Button>
       </div>
     </div>

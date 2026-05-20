@@ -38,11 +38,11 @@ const METHOD_LABELS: Record<string, string> = {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  trial: 'Essai gratuit', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise',
+  trial: 'Essai gratuit', starter: 'Starter', premium: 'Premium', pro: 'Pro', agency: 'Agency',
 }
 
 const PLAN_PRICES: Record<string, number> = {
-  trial: 0, starter: 990, pro: 1990, enterprise: 4990,
+  trial: 0, starter: 990, premium: 1990, pro: 2990, agency: 4990,
 }
 
 function daysLeft(iso: string) {
@@ -178,8 +178,8 @@ export default function BillingPage() {
       {(isTrial || isExpired) && (
         <div className="space-y-3">
           <p className="text-sm font-medium text-white/60">Plans disponibles</p>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {(['starter', 'pro', 'enterprise'] as const).map(planId => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {(['starter', 'premium', 'pro', 'agency'] as const).map(planId => (
               <div key={planId} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-2">
                 <p className="font-semibold text-white text-sm">{PLAN_LABELS[planId]}</p>
                 <p className="text-xl font-bold text-white">{formatDA(PLAN_PRICES[planId])}<span className="text-xs text-white/40 font-normal">/mois</span></p>

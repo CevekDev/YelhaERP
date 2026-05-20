@@ -4,13 +4,12 @@ import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/security/tenant'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
-import { PLANS, APPS } from '@/lib/pricing/config'
+import { PLANS } from '@/lib/pricing/config'
 
 const PRICING_CONFIG_KEY = 'pricing'
 
 const pricingSchema = z.object({
   plans: z.record(z.number().int().min(0)),
-  apps: z.record(z.number().int().min(0)),
 })
 
 export async function GET(req: NextRequest) {
@@ -25,19 +24,15 @@ export async function GET(req: NextRequest) {
       plans: Object.fromEntries(
         Object.entries(PLANS).filter(([id]) => id !== 'trial').map(([id, p]) => [id, p.price])
       ),
-      apps: Object.fromEntries(
-        Object.entries(APPS).filter(([, a]) => !a.core).map(([id, a]) => [id, a.price])
-      ),
     }
 
-    const overrides = config?.value as { plans?: Record<string, number>; apps?: Record<string, number> } ?? {}
+    const overrides = config?.value as { plans?: Record<string, number> } ?? {}
 
     return apiSuccess({
       defaults,
-      overrides: { plans: overrides.plans ?? {}, apps: overrides.apps ?? {} },
+      overrides: { plans: overrides.plans ?? {} },
       effective: {
         plans: { ...defaults.plans, ...(overrides.plans ?? {}) },
-        apps: { ...defaults.apps, ...(overrides.apps ?? {}) },
       },
     })
   } catch (e: unknown) {
