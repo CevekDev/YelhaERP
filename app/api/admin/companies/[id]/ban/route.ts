@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }

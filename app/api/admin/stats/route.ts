@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     const startOfMonth = new Date()
     startOfMonth.setDate(1)

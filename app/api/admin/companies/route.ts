@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     const { searchParams } = req.nextUrl
     const page = Math.max(1, Number(searchParams.get('page') ?? 1))
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }
