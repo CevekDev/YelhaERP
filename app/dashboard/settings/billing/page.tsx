@@ -41,10 +41,6 @@ const PLAN_LABELS: Record<string, string> = {
   trial: 'Essai gratuit', starter: 'Starter', premium: 'Premium', pro: 'Pro', agency: 'Agency',
 }
 
-const PLAN_PRICES: Record<string, number> = {
-  trial: 0, starter: 990, premium: 1990, pro: 2990, agency: 4990,
-}
-
 function daysLeft(iso: string) {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000))
 }
@@ -55,17 +51,27 @@ function fmtDate(iso: string) {
 
 export default function BillingPage() {
   const [sub, setSub] = useState<Sub | null>(null)
+  const [planPrices, setPlanPrices] = useState<Record<string, number>>({
+    starter: 990, premium: 1990, pro: 2990, agency: 4990,
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch('/api/billing/subscription')
-      .then(r => r.json())
-      .then(d => {
-        if (d.subscription) setSub(d.subscription)
-        else setError("Impossible de charger l'abonnement.")
-      })
-      .catch(() => setError('Erreur réseau.'))
+    Promise.all([
+      fetch('/api/billing/subscription').then(r => r.json()),
+      fetch('/api/billing/plans').then(r => r.json()),
+    ]).then(([subData, plansData]) => {
+      if (subData.subscription) setSub(subData.subscription)
+      else setError("Impossible de charger l'abonnement.")
+      if (plansData.plans) {
+        const prices: Record<string, number> = {}
+        for (const [id, p] of Object.entries(plansData.plans as Record<string, { price: number }>)) {
+          prices[id] = p.price
+        }
+        setPlanPrices(prices)
+      }
+    }).catch(() => setError('Erreur réseau.'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -182,7 +188,7 @@ export default function BillingPage() {
             {(['starter', 'premium', 'pro', 'agency'] as const).map(planId => (
               <div key={planId} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-2">
                 <p className="font-semibold text-white text-sm">{PLAN_LABELS[planId]}</p>
-                <p className="text-xl font-bold text-white">{formatDA(PLAN_PRICES[planId])}<span className="text-xs text-white/40 font-normal">/mois</span></p>
+                <p className="text-xl font-bold text-white">{formatDA(planPrices[planId] ?? 0)}<span className="text-xs text-white/40 font-normal">/mois</span></p>
                 <Link href="/pricing">
                   <Button size="sm" variant="outline" className="w-full mt-1 border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.06] text-xs">
                     Choisir

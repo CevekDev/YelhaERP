@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { RefreshCw, Check, ArrowRight } from 'lucide-react'
@@ -77,7 +77,15 @@ function fDA(n: number): string {
 export default function PricingPage() {
   const { data: session } = useSession()
   const [annual, setAnnual] = useState(false)
+  const [plans, setPlans] = useState(PLANS)
   const discount = 0.2
+
+  useEffect(() => {
+    fetch('/api/billing/plans').then(r => r.json()).then(d => {
+      if (!d.plans) return
+      setPlans(PLANS.map(p => ({ ...p, price: d.plans[p.id]?.price ?? p.price })))
+    }).catch(() => {})
+  }, [])
 
   const ctaHref = session?.user ? '/dashboard/settings/billing' : '/register'
 
@@ -126,7 +134,7 @@ export default function PricingPage() {
 
       <section className="px-6 pb-20 max-w-6xl mx-auto">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {PLANS.map(p => {
+          {plans.map(p => {
             const price = annual ? Math.round(p.price * (1 - discount)) : p.price
             return (
               <div key={p.id} className={`rounded-2xl p-6 border-2 relative ${p.popular ? 'border-[#1D9E75] bg-[#1D9E75]/5' : 'border-slate-200 bg-white'}`}>
