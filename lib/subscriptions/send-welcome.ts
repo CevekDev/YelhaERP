@@ -28,21 +28,22 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
       return
     }
 
-    const settings = sub.user.subscriptionSettings
-    const lang = (settings?.emailLanguage ?? 'fr') as EmailLang
+    const settings  = sub.user.subscriptionSettings
+    const lang      = (settings?.emailLanguage ?? 'fr') as EmailLang
+    const isTrial   = sub.status === 'TRIAL'
 
     const template = getTemplate(
       (settings?.emailTemplates ?? null) as TemplatesByLang | null,
-      'welcome',
+      isTrial ? 'trialWelcome' : 'welcome',
       lang,
     )
 
     const clientName =
       [sub.client.firstName, sub.client.name].filter(Boolean).join(' ') || sub.client.name
 
-    // Generate Chargily checkout link if key configured
+    // Chargily checkout uniquement pour les abonnements actifs (pas pendant l'essai)
     let chargilyCheckoutUrl: string | null = null
-    if (settings?.chargilyKey) {
+    if (!isTrial && settings?.chargilyKey) {
       chargilyCheckoutUrl = await generateChargilyCheckout(
         settings.chargilyKey,
         Number(sub.plan.price),
@@ -63,12 +64,13 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
         expiresAt:   sub.nextBilling ?? sub.startDate,
       },
       settings: {
-        whatsapp:           settings?.whatsapp ?? null,
-        ccpNumber:          settings?.ccpNumber ?? null,
+        whatsapp:           isTrial ? null : (settings?.whatsapp ?? null),
+        ccpNumber:          isTrial ? null : (settings?.ccpNumber ?? null),
         chargilyCheckoutUrl,
         isNew:              true,
       },
-      whiteLabel: isWhiteLabel(sub.user.plan),
+      whiteLabel:       isWhiteLabel(sub.user.plan),
+      skipPaymentBlock: isTrial,
     })
 
     await sendEmail({ to, subject, html })

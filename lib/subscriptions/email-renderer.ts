@@ -177,8 +177,9 @@ export function renderEmail(params: {
   data: RenderData
   settings: PaymentSettings
   whiteLabel?: boolean
+  skipPaymentBlock?: boolean
 }): { subject: string; html: string } {
-  const { template, lang, data, settings, whiteLabel = false } = params
+  const { template, lang, data, settings, whiteLabel = false, skipPaymentBlock = false } = params
 
   const values: Record<string, string> = {
     clientName:  escapeHtml(data.clientName),
@@ -196,7 +197,7 @@ export function renderEmail(params: {
   })
 
   const bodyHtml = replacePlaceholders(renderBodyHtml(template.body), values)
-  const paymentHtml = buildPaymentBlocks(lang, data.planName, data.amount, settings)
+  const paymentHtml = skipPaymentBlock ? '' : buildPaymentBlocks(lang, data.planName, data.amount, settings)
   const isRtl = lang === 'ar'
 
   const html = `<!DOCTYPE html>
