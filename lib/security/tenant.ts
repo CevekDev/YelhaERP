@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import type { NextRequest } from 'next/server'
 import { verifyAdminToken, ADMIN_COOKIE } from '@/lib/admin-auth'
 import type { Role } from '@prisma/client'
 
@@ -31,8 +31,8 @@ export async function getTenantContext(): Promise<TenantContext> {
   }
 }
 
-export async function requireSuperAdmin(): Promise<void> {
-  const token = cookies().get(ADMIN_COOKIE)?.value
+export async function requireSuperAdmin(req: NextRequest): Promise<void> {
+  const token = req.cookies.get(ADMIN_COOKIE)?.value
   if (!token) throw new Error('UNAUTHORIZED')
   if (!verifyAdminToken(token)) throw new Error('FORBIDDEN')
 }
