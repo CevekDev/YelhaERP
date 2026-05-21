@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-response'
 import { rateLimit, rateLimitByKey, AUTH_RATE_LIMIT } from '@/lib/security/ratelimit'
-import { sendWelcomeEmail } from '@/lib/email/resend'
+import { sendTrialWelcome } from '@/lib/email/resend'
 
 function pickLang(req: NextRequest): 'fr' | 'en' | 'ar' {
   const al = req.headers.get('accept-language') ?? ''
@@ -53,7 +53,9 @@ export async function POST(req: NextRequest) {
   })
 
   try {
-    await sendWelcomeEmail(emailNorm, user.name, pickLang(req))
+    const sub = await prisma.yelhaSubscription.findUnique({ where: { userId: user.id } })
+    const trialEndsAt = sub?.trialEndsAt ?? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+    await sendTrialWelcome({ to: emailNorm, name: user.name, trialEndsAt })
   } catch {
     // non-blocking
   }

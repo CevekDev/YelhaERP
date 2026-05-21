@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/security/api-response'
 import { verifyCronSecret } from '@/lib/security/cron-auth'
 import { sendTrialExpired, sendTrialReminder, sendYelhaRenewalReminder } from '@/lib/email/resend'
+import type { BillingCycle } from '@prisma/client'
 import { PLANS, type PlanId } from '@/lib/pricing/config'
 
 export const dynamic = 'force-dynamic'
@@ -27,8 +28,8 @@ export async function GET(req: NextRequest) {
     counts.expired++
   }
 
-  // 2. Trial reminders (7 days and 3 days before expiry)
-  for (const daysLeft of [7, 3]) {
+  // 2. Trial reminders (7 days, 3 days and 1 day before expiry)
+  for (const daysLeft of [7, 3, 1]) {
     const targetDate = new Date(now)
     targetDate.setDate(targetDate.getDate() + daysLeft)
     const dayStart = new Date(targetDate); dayStart.setHours(0, 0, 0, 0)
@@ -39,7 +40,12 @@ export async function GET(req: NextRequest) {
       include: { user: true },
     })
     for (const sub of subs) {
-      await sendTrialReminder({ to: sub.user.email, name: sub.user.name, daysLeft }).catch(() => {})
+      await sendTrialReminder({
+        to: sub.user.email,
+        name: sub.user.name,
+        daysLeft,
+        trialEndsAt: sub.trialEndsAt ?? new Date(),
+      }).catch(() => {})
       counts.reminders++
     }
   }
@@ -87,6 +93,7 @@ export async function GET(req: NextRequest) {
         name: sub.user.name ?? sub.user.email,
         planName: plan.name,
         amount: sub.monthlyAmount,
+        billingCycle: sub.billingCycle as BillingCycle,
         expiresAt: sub.currentPeriodEnd,
         daysLeft,
       }).catch(() => {})

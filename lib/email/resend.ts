@@ -209,43 +209,127 @@ export async function sendWelcomeEmail(email: string, name: string, locale = 'fr
   })
 }
 
-// ── Billing emails ────────────────────────────────────────────
+// ── Billing helpers ───────────────────────────────────────────
 
-export async function sendTrialWelcome({ to, name }: { to: string; name: string }) {
-  const content = `
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">🎁 Bonjour ${name} !</h1>
-    <p style="margin:0 0 20px;color:#64748b;font-size:15px;line-height:1.6;">Votre essai gratuit de <strong>15 jours</strong> vient de commencer.</p>
-    <div style="background:#E1F5EE;border:1px solid #1D9E75;border-radius:12px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0;color:#0F6E56;font-size:14px;">✅ Gérez vos abonnements clients, configurez vos plans et automatisez vos rappels de paiement.</p>
-    </div>
-    <div style="text-align:center;margin:28px 0;">
-      <a href="https://subs.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Accéder à mon tableau de bord →</a>
-    </div>`
-  await getResend().emails.send({ from: FROM, to, subject: 'Bienvenue sur YelhaSubs — votre essai de 15 jours commence', html: wrap('fr', content) }).catch(() => {})
+function planComparisonTable(): string {
+  const plans = [
+    { name: 'Starter',  price: '990',   limit: '20 abonnements',    wl: false },
+    { name: 'Premium',  price: '1 990', limit: '50 abonnements',    wl: false },
+    { name: 'Pro',      price: '2 990', limit: '220 abonnements',   wl: true  },
+    { name: 'Agency',   price: '4 990', limit: 'Illimité',           wl: true  },
+  ]
+  const rows = plans.map(p => `
+    <tr>
+      <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;color:#0f172a;">${p.name}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;text-align:center;"><strong>${p.price} DA</strong><span style="color:#94a3b8;font-size:12px;">/mois</span></td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#64748b;text-align:center;">${p.limit}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px;color:${p.wl ? '#1D9E75' : '#94a3b8'};text-align:center;">${p.wl ? '✅ Emails à votre nom' : '—'}</td>
+    </tr>`).join('')
+
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:8px;">
+    <tr style="background:#f8fafc;">
+      <th style="padding:10px 14px;font-size:12px;color:#94a3b8;text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Plan</th>
+      <th style="padding:10px 14px;font-size:12px;color:#94a3b8;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Prix</th>
+      <th style="padding:10px 14px;font-size:12px;color:#94a3b8;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Limite</th>
+      <th style="padding:10px 14px;font-size:12px;color:#94a3b8;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">White-label</th>
+    </tr>
+    ${rows}
+  </table>
+  <p style="margin:0 0 4px;color:#94a3b8;font-size:11px;text-align:center;">15 jours d'essai gratuit · Sans carte bancaire · Annulable à tout moment</p>`
 }
 
-export async function sendTrialReminder({ to, name, daysLeft }: { to: string; name: string; daysLeft: number }) {
-  const urgent = daysLeft <= 3
+function ccpBlock(): string {
+  return `
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-top:12px;">
+    <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f172a;">🏦 Instructions virement CCP :</p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Compte CCP</td><td style="padding:4px 0;font-weight:700;font-size:13px;text-align:right;font-family:monospace;color:#0f172a;">00799999004399346548</td></tr>
+      <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Titulaire</td><td style="padding:4px 0;font-weight:600;font-size:13px;text-align:right;">Yelha Technologies</td></tr>
+    </table>
+    <p style="margin:10px 0 0;color:#92400e;font-size:12px;line-height:1.5;">Après le virement, envoyez votre reçu sur WhatsApp au <strong>+33 7 61 17 93 79</strong> ou à <a href="mailto:cvkdev@outlook.fr" style="color:#1D9E75;">cvkdev@outlook.fr</a> — activation sous 24h.</p>
+  </div>`
+}
+
+// ── Billing emails ────────────────────────────────────────────
+
+export async function sendTrialWelcome({ to, name, trialEndsAt }: { to: string; name: string; trialEndsAt: Date }) {
+  const endStr = trialEndsAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const content = `
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">⏰ Votre essai expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}</h1>
-    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, continuez avec le plan <strong>Starter à 990 DA/mois</strong>.</p>
-    <div style="background:${urgent ? '#FEF2F2' : '#FFF7ED'};border:1px solid ${urgent ? '#FCA5A5' : '#FCD34D'};border-radius:12px;padding:16px 20px;margin-bottom:24px;">
-      <p style="margin:0;color:${urgent ? '#991B1B' : '#92400E'};font-size:14px;font-weight:600;">${urgent ? '🚨' : '⏳'} Il vous reste ${daysLeft} jour${daysLeft > 1 ? 's' : ''}.</p>
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">🎁 Bienvenue, ${name} !</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;line-height:1.6;">Votre essai gratuit de <strong>15 jours</strong> vient de commencer. Aucune carte bancaire requise.</p>
+    <div style="background:#f0fdf8;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0 0 6px;font-weight:700;color:#166534;font-size:14px;">📅 Votre essai est actif jusqu'au :</p>
+      <p style="margin:0;font-size:18px;font-weight:800;color:#15803d;">${endStr}</p>
     </div>
+    <p style="margin:0 0 12px;color:#64748b;font-size:14px;">Pendant votre essai, vous pouvez :</p>
+    <ul style="margin:0 0 24px;padding-left:20px;color:#64748b;font-size:14px;line-height:1.8;">
+      <li>Créer jusqu'à <strong>5 abonnements clients</strong></li>
+      <li>Configurer vos plans et tarifs</li>
+      <li>Envoyer des rappels de paiement automatiques</li>
+      <li>Tester les paiements Chargily et CCP</li>
+    </ul>
     <div style="text-align:center;margin:28px 0;">
-      <a href="https://subs.yelha.net/pricing" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Choisir un plan →</a>
-    </div>`
-  await getResend().emails.send({ from: FROM, to, subject: `Votre essai YelhaSubs expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`, html: wrap('fr', content) }).catch(() => {})
+      <a href="https://subs.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Accéder à mon tableau de bord →</a>
+    </div>
+    <p style="margin:0;color:#94a3b8;font-size:13px;text-align:center;">À la fin de l'essai, choisissez un plan pour continuer sans interruption.</p>`
+  await getResend().emails.send({ from: FROM, to, subject: `🎁 Votre essai YelhaSubs de 15 jours a commencé — expire le ${endStr}`, html: wrap('fr', content) }).catch(() => {})
+}
+
+export async function sendTrialReminder({ to, name, daysLeft, trialEndsAt }: { to: string; name: string; daysLeft: number; trialEndsAt: Date }) {
+  const urgent = daysLeft <= 1
+  const endStr = trialEndsAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const billingUrl = 'https://subs.yelha.net/dashboard/settings/billing'
+  const waMsg = encodeURIComponent(`Bonjour, mon essai YelhaSubs expire le ${endStr}. Je souhaite choisir un plan et payer.`)
+  const waUrl = `https://wa.me/33761179379?text=${waMsg}`
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">
+      ${urgent ? '🚨 Votre essai expire demain !' : `⏰ Votre essai expire dans ${daysLeft} jours`}
+    </h1>
+    <p style="margin:0 0 4px;color:#64748b;font-size:15px;">Bonjour ${name}, votre essai YelhaSubs se termine le <strong>${endStr}</strong>.</p>
+    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Choisissez un plan maintenant pour continuer sans interruption.</p>
+
+    ${planComparisonTable()}
+
+    <p style="margin:20px 0 12px;font-size:14px;font-weight:700;color:#0f172a;">Comment payer :</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:0 6px 0 0;" width="50%">
+          <a href="${billingUrl}" style="display:block;background:#1D9E75;color:#fff;font-size:14px;font-weight:600;padding:13px 16px;border-radius:12px;text-decoration:none;text-align:center;">💳 Payer par Chargily<br><span style="font-size:11px;font-weight:400;opacity:.9;">Edahabia / CIB — immédiat</span></a>
+        </td>
+        <td style="padding:0 0 0 6px;" width="50%">
+          <a href="${waUrl}" style="display:block;background:#25D366;color:#fff;font-size:14px;font-weight:600;padding:13px 16px;border-radius:12px;text-decoration:none;text-align:center;">📱 WhatsApp<br><span style="font-size:11px;font-weight:400;opacity:.9;">+33 7 61 17 93 79</span></a>
+        </td>
+      </tr>
+    </table>
+    ${ccpBlock()}`
+  await getResend().emails.send({ from: FROM, to, subject: urgent ? `🚨 Votre essai YelhaSubs expire demain — choisissez un plan` : `⏰ Votre essai YelhaSubs expire dans ${daysLeft} jours`, html: wrap('fr', content) }).catch(() => {})
 }
 
 export async function sendTrialExpired({ to, name }: { to: string; name: string }) {
+  const billingUrl = 'https://subs.yelha.net/dashboard/settings/billing'
+  const waMsg = encodeURIComponent(`Bonjour, mon essai gratuit YelhaSubs est terminé. Je souhaite choisir un plan et payer.`)
+  const waUrl = `https://wa.me/33761179379?text=${waMsg}`
   const content = `
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Votre essai YelhaSubs est terminé</h1>
-    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, vos données sont conservées pendant 15 jours supplémentaires.</p>
-    <div style="text-align:center;margin:28px 0;">
-      <a href="https://subs.yelha.net/pricing" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Voir les plans →</a>
-    </div>`
-  await getResend().emails.send({ from: FROM, to, subject: 'Votre essai YelhaSubs est terminé — vos données sont conservées 15 jours', html: wrap('fr', content) }).catch(() => {})
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">⏰ Votre essai YelhaSubs est terminé</h1>
+    <p style="margin:0 0 4px;color:#64748b;font-size:15px;">Bonjour ${name}, votre période d'essai gratuit a expiré.</p>
+    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Vos données sont conservées pendant <strong>15 jours</strong>. Choisissez un plan maintenant pour les conserver et reprendre sans interruption.</p>
+
+    ${planComparisonTable()}
+
+    <p style="margin:20px 0 12px;font-size:14px;font-weight:700;color:#0f172a;">Comment activer votre abonnement :</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+      <tr>
+        <td style="padding:0 6px 0 0;" width="50%">
+          <a href="${billingUrl}" style="display:block;background:#1D9E75;color:#fff;font-size:14px;font-weight:600;padding:13px 16px;border-radius:12px;text-decoration:none;text-align:center;">💳 Payer par Chargily<br><span style="font-size:11px;font-weight:400;opacity:.9;">Edahabia / CIB — immédiat</span></a>
+        </td>
+        <td style="padding:0 0 0 6px;" width="50%">
+          <a href="${waUrl}" style="display:block;background:#25D366;color:#fff;font-size:14px;font-weight:600;padding:13px 16px;border-radius:12px;text-decoration:none;text-align:center;">📱 WhatsApp<br><span style="font-size:11px;font-weight:400;opacity:.9;">+33 7 61 17 93 79</span></a>
+        </td>
+      </tr>
+    </table>
+    ${ccpBlock()}`
+  await getResend().emails.send({ from: FROM, to, subject: '⏰ Votre essai YelhaSubs est terminé — activez un plan pour continuer', html: wrap('fr', content) }).catch(() => {})
 }
 
 export async function sendPaymentConfirmation({ to, name, planName, amount, nextBillingDate, apps }: {
@@ -460,9 +544,12 @@ export async function sendAppRenewalReminder(params: {
 
 export async function sendYelhaRenewalReminder(params: {
   to: string; name: string; planName: string; amount: number
-  expiresAt: Date; daysLeft: number
+  billingCycle?: string; expiresAt: Date; daysLeft: number
 }) {
-  const { to, name, planName, amount, expiresAt, daysLeft } = params
+  const { to, name, planName, amount, billingCycle, expiresAt, daysLeft } = params
+  const isAnnual = billingCycle === 'ANNUAL'
+  const displayAmount = isAnnual ? amount * 12 : amount
+  const periodLabel = isAnnual ? 'DA/an' : 'DA/mois'
   const expiryStr = expiresAt.toLocaleDateString('fr-DZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const isUrgent = daysLeft === 1
   const billingUrl = 'https://subs.yelha.net/dashboard/settings/billing'
@@ -477,7 +564,7 @@ export async function sendYelhaRenewalReminder(params: {
     </p>
     <div style="background:${isUrgent ? '#fef2f2' : '#fff7ed'};border:1px solid ${isUrgent ? '#fca5a5' : '#fcd34d'};border-radius:12px;padding:16px 20px;margin-bottom:24px;">
       <p style="margin:0;color:${isUrgent ? '#991b1b' : '#92400e'};font-size:14px;font-weight:600;">
-        ${isUrgent ? '🚨' : '⏳'} Il vous reste <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong> — Montant : <strong>${amount.toLocaleString('fr-DZ')} DA/mois</strong>
+        ${isUrgent ? '🚨' : '⏳'} Il vous reste <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong> — Montant : <strong>${displayAmount.toLocaleString('fr-DZ')} ${periodLabel}</strong>
       </p>
     </div>
 
@@ -499,9 +586,9 @@ export async function sendYelhaRenewalReminder(params: {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Compte CCP</td><td style="padding:4px 0;font-weight:600;font-size:13px;text-align:right;font-family:monospace;">00799999004399346548</td></tr>
         <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Titulaire</td><td style="padding:4px 0;font-weight:600;font-size:13px;text-align:right;">Yelha Technologies</td></tr>
-        <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Montant</td><td style="padding:4px 0;font-weight:700;font-size:14px;color:#1D9E75;text-align:right;">${amount.toLocaleString('fr-DZ')} DA</td></tr>
+        <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Montant</td><td style="padding:4px 0;font-weight:700;font-size:14px;color:#1D9E75;text-align:right;">${displayAmount.toLocaleString('fr-DZ')} ${periodLabel}</td></tr>
       </table>
-      <p style="margin:10px 0 0;color:#92400e;font-size:12px;">Envoyez votre reçu à <a href="mailto:cvkdev@outlook.fr" style="color:#1D9E75;">cvkdev@outlook.fr</a> — activation sous 24–48h.</p>
+      <p style="margin:10px 0 0;color:#92400e;font-size:12px;">Envoyez votre reçu sur WhatsApp au <strong>+33 7 61 17 93 79</strong> ou à <a href="mailto:cvkdev@outlook.fr" style="color:#1D9E75;">cvkdev@outlook.fr</a> — activation sous 24h.</p>
     </div>
     <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">Vous pouvez aussi renouveler depuis votre <a href="${billingUrl}" style="color:#1D9E75;">espace facturation</a>.</p>`
 
