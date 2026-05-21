@@ -16,6 +16,10 @@ const grantSchema = z.union([
     months: z.number().optional(),
   }),
   z.object({
+    type: z.literal('reject_ccp'),
+    paymentId: z.string(),
+  }),
+  z.object({
     type: z.enum(['free', 'activate']),
     userId: z.string().cuid(),
     planId: z.string().optional(),
@@ -86,6 +90,13 @@ export async function POST(req: NextRequest) {
           : []),
       ])
       return apiSuccess({ confirmed: true })
+    }
+
+    if (type === 'reject_ccp') {
+      const paymentId = 'paymentId' in parsed.data ? parsed.data.paymentId : undefined
+      if (!paymentId) return apiError('paymentId requis', 422)
+      await prisma.yelhaPayment.update({ where: { id: paymentId }, data: { status: 'FAILED' } })
+      return apiSuccess({ rejected: true })
     }
 
     if (!userId) return apiError('userId requis', 422)

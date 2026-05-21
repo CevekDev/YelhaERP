@@ -10,6 +10,7 @@ const schema = z.object({
   planId:       z.enum(Object.keys(PLANS) as [PlanId, ...PlanId[]]),
   billingCycle: z.enum(['MONTHLY', 'ANNUAL']),
   method:       z.enum(['CHARGILY', 'CCP']),
+  promoCode:    z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 422, parsed.error.flatten())
 
-    const { planId, billingCycle, method } = parsed.data
+    const { planId, billingCycle, method, promoCode: promoCodeStr } = parsed.data
     const isAnnual = billingCycle === 'ANNUAL'
 
     const pricingConfig = await prisma.systemConfig.findUnique({ where: { key: 'pricing' } })
@@ -32,7 +33,23 @@ export async function POST(req: NextRequest) {
 
     const basePlanPrice = planOverrides[planId] ?? PLANS[planId].price
     const monthlyAmount = isAnnual ? Math.round(basePlanPrice * (1 - ANNUAL_DISCOUNT)) : basePlanPrice
-    const totalDA = isAnnual ? monthlyAmount * 12 : monthlyAmount
+    let totalDA = isAnnual ? monthlyAmount * 12 : monthlyAmount
+    let extraDays = 0
+
+    let appliedPromo: Awaited<ReturnType<typeof prisma.promoCode.findUnique>> | null = null
+    if (promoCodeStr) {
+      const promo = await prisma.promoCode.findUnique({ where: { code: promoCodeStr } })
+      if (!promo || !promo.isActive) return apiError('Code promo invalide', 400)
+      if (promo.expiresAt && promo.expiresAt < new Date()) return apiError('Code promo expiré', 400)
+      if (promo.maxUses !== null && promo.usedCount >= promo.maxUses) return apiError('Code promo épuisé', 400)
+      if (promo.planId && promo.planId !== planId) return apiError('Code promo non applicable à ce plan', 400)
+      if (promo.discountType === 'PERCENT') {
+        totalDA = Math.max(0, Math.round(totalDA * (1 - promo.discountValue / 100)))
+      } else if (promo.discountType === 'FREE_MONTHS') {
+        extraDays = promo.discountValue * 30
+      }
+      appliedPromo = promo
+    }
 
     const sub = await prisma.yelhaSubscription.findUnique({ where: { userId } })
     if (!sub) return apiError('Abonnement introuvable', 404)
@@ -46,9 +63,9 @@ export async function POST(req: NextRequest) {
       : now
     const periodEnd = new Date(periodStart)
     if (isAnnual) {
-      periodEnd.setDate(periodEnd.getDate() + 365)
+      periodEnd.setDate(periodEnd.getDate() + 365 + extraDays)
     } else {
-      periodEnd.setDate(periodEnd.getDate() + 30)
+      periodEnd.setDate(periodEnd.getDate() + 30 + extraDays)
     }
 
     if (method === 'CHARGILY') {
@@ -96,6 +113,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
+      if (appliedPromo) await prisma.promoCode.update({ where: { id: appliedPromo.id }, data: { usedCount: { increment: 1 } } })
       return apiSuccess({ url: chargilyData.checkout_url })
     }
 
@@ -115,6 +133,7 @@ export async function POST(req: NextRequest) {
 
     const ccpRef = 'YELHA-' + payment.id.slice(0, 8).toUpperCase()
     await prisma.yelhaPayment.update({ where: { id: payment.id }, data: { ccpRef } })
+    if (appliedPromo) await prisma.promoCode.update({ where: { id: appliedPromo.id }, data: { usedCount: { increment: 1 } } })
 
     return apiSuccess({
       ccpRef,

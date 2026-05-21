@@ -364,3 +364,19 @@ model SystemConfig {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+// ============================================================
+// CODES PROMO
+// ============================================================
+model PromoCode {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  discountType  String    // "PERCENT" | "FREE_MONTHS"
+  discountValue Int
+  planId        String?
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+}
