@@ -17,7 +17,8 @@
  *   npx tsx scripts/test-subscription-flow.ts --keep   (skip cleanup)
  */
 
-import 'dotenv/config'
+import { config } from 'dotenv'
+config({ path: '.env.local' })
 import { assertNotProd } from './lib/prod-guard'
 import { PrismaClient } from '@prisma/client'
 import { sendEmail } from '../lib/email/resend'
