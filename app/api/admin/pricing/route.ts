@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     const config = await prisma.systemConfig.findUnique({ where: { key: PRICING_CONFIG_KEY } })
 
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }

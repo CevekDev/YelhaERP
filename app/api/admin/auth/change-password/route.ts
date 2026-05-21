@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminToken, ADMIN_COOKIE } from '@/lib/admin-auth'
@@ -8,7 +7,7 @@ import { verifyAdminToken, ADMIN_COOKIE } from '@/lib/admin-auth'
 const schema = z.object({ newPassword: z.string().min(8, 'Minimum 8 caractères') })
 
 export async function POST(req: NextRequest) {
-  const token = cookies().get(ADMIN_COOKIE)?.value
+  const token = req.cookies.get(ADMIN_COOKIE)?.value
   if (!token || !verifyAdminToken(token)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
   let body: unknown

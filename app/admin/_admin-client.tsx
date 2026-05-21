@@ -52,13 +52,14 @@ function StatsTab() {
 
   useEffect(() => {
     fetch('/api/admin/stats').then(r => r.json()).then(d => {
-      setStats(d.data ?? d)
+      const payload = d.data ?? d
+      if (payload?.companies?.byStatus) setStats(payload)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
-  if (!stats) return <p className="text-muted-foreground">Aucune donnée disponible.</p>
+  if (!stats?.companies) return <p className="text-muted-foreground">Aucune donnée disponible.</p>
 
   const totalActive = (stats.companies.byStatus.active ?? 0)
   const totalTrial = (stats.companies.byStatus.trial ?? 0)

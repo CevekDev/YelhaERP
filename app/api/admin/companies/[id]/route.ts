@@ -8,7 +8,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const { success, reset } = await rateLimit(req, AUTHENTICATED_RATE_LIMIT)
   if (!success) return rateLimitResponse(reset)
   try {
-    await requireSuperAdmin()
+    await requireSuperAdmin(req)
 
     const user = await prisma.user.findUnique({
       where: { id: params.id },
