@@ -540,6 +540,24 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ---
 
+## 🔄 Changements session 2026-05-21 — Script test flux abonnement
+
+### Script E2E flow abonnement
+- ✅ `scripts/test-subscription-flow.ts` : CRÉÉ — teste le flux complet en 9 étapes :
+  1. Trouve le compte `cevekmehdi@gmail.com`
+  2. Crée un plan de test (1 500 DA, 7j essai)
+  3. Crée un client de test avec cet email
+  4. Crée un abonnement TRIAL (nextBilling = +7j)
+  5. Simule fin d'essai → EXPIRED (nextBilling dans le passé)
+  6. Active l'abonnement → ACTIVE (nextBilling = +30j)
+  7. Simule J-1 → nextBilling = +23h
+  8. Exécute la logique de rappel email inline (reproduction du cron)
+  9. Nettoyage (supprimable avec --keep)
+- Protégé par `assertNotProd()` (bloqué sur Supabase prod sans --allow-prod)
+- Usage : `npx tsx scripts/test-subscription-flow.ts`
+
+---
+
 ## 🚧 En cours / À faire
 
 - ⏳ `prisma db push` requis pour les 6 nouveaux champs sur `Subscription`
