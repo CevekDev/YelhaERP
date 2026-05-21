@@ -6,7 +6,7 @@ import { getTenantContext } from '@/lib/security/tenant'
 import { apiSuccess, apiError } from '@/lib/security/api-response'
 
 const schema = z.object({
-  type: z.enum(['renewal', 'trialEnd', 'welcome']),
+  type: z.enum(['renewal', 'trialEnd', 'welcome', 'trialWelcome']),
   lang: z.enum(['fr', 'en', 'ar']),
 })
 

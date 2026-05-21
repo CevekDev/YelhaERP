@@ -241,6 +241,12 @@ export default function SubscriptionsPage() {
                 Intégration
               </Button>
             </Link>
+            <Link href="/dashboard/subscriptions/emails">
+              <Button variant="outline" className="gap-2">
+                <Mail className="h-4 w-4" />
+                Emails
+              </Button>
+            </Link>
             <Link href="/dashboard/subscriptions/settings">
               <Button variant="outline" className="gap-2">
                 <SettingsIcon className="h-4 w-4" />

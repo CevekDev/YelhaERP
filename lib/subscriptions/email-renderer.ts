@@ -1,5 +1,9 @@
 import type { EmailLang, EmailTemplate } from './email-templates'
 
+export function isWhiteLabel(plan: string | null | undefined): boolean {
+  return ['PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE'].includes(plan ?? '')
+}
+
 export interface RenderData {
   clientName: string
   planName: string
@@ -170,8 +174,10 @@ export function renderEmail(params: {
   lang: EmailLang
   data: RenderData
   settings: PaymentSettings
+  whiteLabel?: boolean
+  skipPaymentBlock?: boolean
 }): { subject: string; html: string } {
-  const { template, lang, data, settings } = params
+  const { template, lang, data, settings, whiteLabel = false, skipPaymentBlock = false } = params
 
   const values: Record<string, string> = {
     clientName:  escapeHtml(data.clientName),
@@ -189,8 +195,9 @@ export function renderEmail(params: {
   })
 
   const bodyHtml = replacePlaceholders(renderBodyHtml(template.body), values)
-  const paymentHtml = buildPaymentBlocks(lang, data.planName, data.amount, settings)
+  const paymentHtml = skipPaymentBlock ? '' : buildPaymentBlocks(lang, data.planName, data.amount, settings)
   const isRtl = lang === 'ar'
+  const headerLabel = whiteLabel ? escapeHtml(data.companyName) : '📊 YelhaSubs'
 
   const html = `<!DOCTYPE html>
 <html lang="${lang}" dir="${isRtl ? 'rtl' : 'ltr'}">
@@ -201,7 +208,7 @@ export function renderEmail(params: {
       <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06);">
         <tr><td>
           <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1D9E75,#3ec79c);padding:32px 40px;">
-            <tr><td align="center"><span style="color:#fff;font-size:22px;font-weight:800;">📊 YelhaSubs</span></td></tr>
+            <tr><td align="center"><span style="color:#fff;font-size:22px;font-weight:800;">${headerLabel}</span></td></tr>
           </table>
         </td></tr>
         <tr><td style="padding:40px;" dir="${isRtl ? 'rtl' : 'ltr'}">

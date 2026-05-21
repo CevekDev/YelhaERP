@@ -1,5 +1,5 @@
 export type EmailLang = 'fr' | 'en' | 'ar'
-export type EmailType = 'renewal' | 'trialEnd' | 'welcome'
+export type EmailType = 'renewal' | 'trialEnd' | 'welcome' | 'trialWelcome'
 
 export interface EmailTemplate {
   subject: string
@@ -79,6 +79,38 @@ Use one of the payment methods below to activate your subscription.`,
 استخدم إحدى وسائل الدفع أدناه لتفعيل اشتراكك.`,
     },
   },
+  trialWelcome: {
+    fr: {
+      subject: '🎁 Votre essai gratuit {{planName}} a commencé !',
+      body: `Bonjour {{clientName}},
+
+Bonne nouvelle ! Votre période d'essai gratuit du plan **{{planName}}** chez {{companyName}} a bien commencé.
+
+Vous avez accès à toutes les fonctionnalités jusqu'au **{{expiresAt}}**. Aucun paiement n'est requis pendant cette période.
+
+Profitez de votre essai sans engagement. Si vous avez des questions, n'hésitez pas à nous contacter.`,
+    },
+    en: {
+      subject: '🎁 Your free trial for {{planName}} has started!',
+      body: `Hello {{clientName}},
+
+Great news! Your free trial of the **{{planName}}** plan at {{companyName}} has started.
+
+You have access to all features until **{{expiresAt}}**. No payment is required during this period.
+
+Enjoy your trial with no commitment. Feel free to contact us if you have any questions.`,
+    },
+    ar: {
+      subject: '🎁 بدأت فترتك التجريبية المجانية {{planName}} !',
+      body: `مرحباً {{clientName}}،
+
+أخبار رائعة! لقد بدأت فترتك التجريبية المجانية لخطة **{{planName}}** لدى {{companyName}}.
+
+لديك وصول إلى جميع الميزات حتى **{{expiresAt}}**. لا يلزم أي دفع خلال هذه الفترة.
+
+استمتع بتجربتك بدون أي التزام. لا تتردد في التواصل معنا إذا كان لديك أي أسئلة.`,
+    },
+  },
   welcome: {
     fr: {
       subject: '💳 Activez votre abonnement {{planName}} chez {{companyName}}',
@@ -114,9 +146,10 @@ To activate your subscription, please complete the payment using one of the meth
 }
 
 export interface TemplatesByLang {
-  renewal?:  Partial<Record<EmailLang, Partial<EmailTemplate>>>
-  trialEnd?: Partial<Record<EmailLang, Partial<EmailTemplate>>>
-  welcome?:  Partial<Record<EmailLang, Partial<EmailTemplate>>>
+  trialWelcome?: Partial<Record<EmailLang, Partial<EmailTemplate>>>
+  renewal?:      Partial<Record<EmailLang, Partial<EmailTemplate>>>
+  trialEnd?:     Partial<Record<EmailLang, Partial<EmailTemplate>>>
+  welcome?:      Partial<Record<EmailLang, Partial<EmailTemplate>>>
 }
 
 export function getTemplate(

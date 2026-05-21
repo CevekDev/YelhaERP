@@ -30,9 +30,10 @@ interface Settings {
 }
 
 const TYPE_LABELS: Record<EmailType, { label: string; icon: string; description: string }> = {
-  welcome:  { label: 'Email de début',      icon: '💳', description: 'Envoyé dès la création — invite le client à payer pour activer son abonnement' },
-  renewal:  { label: 'Renouvellement',     icon: '⚠️', description: 'Envoyé 1 jour avant l\'expiration d\'un abonnement actif' },
-  trialEnd: { label: 'Fin d\'essai gratuit', icon: '🎁', description: 'Envoyé 1 jour avant la fin d\'une période d\'essai' },
+  trialWelcome: { label: 'Début d\'essai',       icon: '🎁', description: 'Envoyé à la création — confirme que la période d\'essai gratuit a commencé' },
+  welcome:      { label: 'Email de début',       icon: '💳', description: 'Envoyé dès la création — invite le client à payer pour activer son abonnement' },
+  renewal:      { label: 'Renouvellement',       icon: '⚠️', description: 'Envoyé 1 jour avant l\'expiration d\'un abonnement actif' },
+  trialEnd:     { label: 'Fin d\'essai gratuit', icon: '🎁', description: 'Envoyé 1 jour avant la fin d\'une période d\'essai' },
 }
 
 export default function SubscriptionSettingsPage() {
