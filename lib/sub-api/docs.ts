@@ -139,7 +139,7 @@ La valeur \`Retry-After\` est en **secondes**.
 | \`201\` | Créé avec succès |
 | \`400\` | Corps JSON invalide ou absent |
 | \`401\` | Clé API manquante, invalide ou révoquée |
-| \`403\` | Abonnement app Abonnements expiré |
+| \`403\` | Abonnement expiré, accès refusé ou limite d'abonnements atteinte |
 | \`404\` | Ressource introuvable |
 | \`409\` | Conflit (plan avec abonnés actifs, limite de clés atteinte, etc.) |
 | \`422\` | Données invalides (validation Zod) |
@@ -154,7 +154,9 @@ La valeur \`Retry-After\` est en **secondes**.
 | \`INVALID_KEY_FORMAT\` | 401 | La clé ne commence pas par \`yelha_sub_\` |
 | \`INVALID_KEY\` | 401 | Clé inexistante ou révoquée |
 | \`RATE_LIMIT_EXCEEDED\` | 429 | 60 req/min dépassées |
-| \`APP_SUBSCRIPTION_EXPIRED\` | 403 | Votre abonnement app Abonnements a expiré |
+| \`SUBSCRIPTION_EXPIRED\` | 403 | Votre abonnement YelhaSubs a expiré |
+| \`APP_ACCESS_DENIED\` | 403 | Abonnement YelhaSubs requis pour accéder à cette ressource |
+| \`SUBSCRIPTION_LIMIT\` | 403 | Limite d'abonnements actifs atteinte pour votre plan |
 | \`BAD_BODY\` | 400 | Corps JSON non parsable |
 | \`VALIDATION_ERROR\` | 422 | Champs manquants ou invalides (Zod) |
 | \`NOT_FOUND\` | 404 | Ressource introuvable |
@@ -639,6 +641,8 @@ Content-Type: application/json
 \`\`\`
 
 > 💡 Si \`clientEmail\` est fourni, un email de bienvenue est envoyé automatiquement après la création.
+
+> ⚠️ La création échoue avec `403 SUBSCRIPTION_LIMIT` si vous avez atteint le nombre maximum d'abonnements actifs autorisé par votre plan YelhaSubs (Starter: 20, Premium: 50, Pro: 220, Agency: illimité).
 
 ## PATCH /subscriptions/{id} — Modifier un abonnement
 
