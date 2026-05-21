@@ -101,6 +101,7 @@ function CheckoutModal({
   }
 
   if (ccpResult) {
+    const waLink = `https://wa.me/33761179379?text=${encodeURIComponent(`Bonjour, voici mon reçu de virement CCP pour l'abonnement YelhaSubs.\nRéférence : ${ccpResult.ccpRef}\nMontant : ${ccpResult.amount} DA`)}`
     return (
       <ModalShell onClose={onClose}>
         <div className="space-y-4">
@@ -110,20 +111,37 @@ function CheckoutModal({
             </div>
             <div>
               <p className="font-semibold text-white">Commande enregistrée</p>
-              <p className="text-xs text-white/40">Votre abonnement sera activé après réception du virement</p>
+              <p className="text-xs text-white/40">Activé sous 24h après confirmation du virement</p>
             </div>
           </div>
-          <div className="rounded-xl bg-white/[0.04] border border-white/[0.08] p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-white/50">Référence</span>
-              <span className="font-mono font-bold text-emerald-400">{ccpResult.ccpRef}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-white/50">Montant</span>
-              <span className="font-bold text-white">{formatDA(ccpResult.amount)}</span>
-            </div>
+
+          {/* Instructions virement */}
+          <div className="rounded-xl bg-white/[0.04] border border-white/[0.08] p-4 space-y-3">
+            <Row label="Numéro CCP" value="00799999004399346548" mono />
+            <Row label="Référence" value={ccpResult.ccpRef} mono accent />
+            <Row label="Montant" value={formatDA(ccpResult.amount)} bold />
           </div>
-          <p className="text-xs text-white/50 leading-relaxed">{ccpResult.instructions}</p>
+
+          {/* Envoi du reçu */}
+          <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-4 space-y-2">
+            <p className="text-xs font-semibold text-white/70">Après le virement</p>
+            <p className="text-xs text-white/50 leading-relaxed">
+              Envoyez une photo du reçu de virement sur WhatsApp en mentionnant la référence{' '}
+              <span className="font-mono text-emerald-400">{ccpResult.ccpRef}</span>.
+            </p>
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full mt-1 py-2 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] text-xs font-semibold hover:bg-[#25D366]/20 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              Envoyer le reçu sur WhatsApp (+33 7 61 17 93 79)
+            </a>
+          </div>
+
           <Button onClick={onClose} className="w-full bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/[0.1]">
             Fermer
           </Button>
@@ -225,6 +243,15 @@ function CheckoutModal({
         </Button>
       </div>
     </ModalShell>
+  )
+}
+
+function Row({ label, value, mono, accent, bold }: { label: string; value: string; mono?: boolean; accent?: boolean; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-white/50">{label}</span>
+      <span className={`${mono ? 'font-mono' : ''} ${accent ? 'text-emerald-400' : bold ? 'font-bold text-white' : 'text-white/80'}`}>{value}</span>
+    </div>
   )
 }
 
