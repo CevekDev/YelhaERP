@@ -2,17 +2,18 @@
  * Test end-to-end subscription flow for cevekmehdi@gmail.com
  *
  * Steps:
- *  1.  Find the YelhaERP user whose email is cevekmehdi@gmail.com
+ *  1.  Find the YelhaERP user whose email is cevekmehdi@gmail.com — save plan
+ *  1b. Set user.plan = 'PRO' to simulate white-label mode
  *  2.  Create a subscription plan (test plan, 1 500 DA/mois, 7-day trial)
  *  3.  Create a client with email cevekmehdi@gmail.com
  *  4.  Create a subscription in TRIAL status (nextBilling = now + 7 days)
- *  4b. Send welcome email (bienvenue + instructions paiement)
+ *  4b. Send trialWelcome email (confirms trial started, no payment block)
  *  4c. Simulate trial J-1 → send trial-end reminder email
  *  5.  Simulate trial end → status EXPIRED
  *  6.  Activate subscription → status ACTIVE, nextBilling = now + 30 days
  *  7.  Simulate renewal J-1 → nextBilling = now + 23 hours
  *  8.  Send renewal reminder email
- *  9.  Cleanup all test data created
+ *  9.  Cleanup all test data + restore user.plan
  *
  * Usage:
  *   npx tsx scripts/test-subscription-flow.ts --allow-prod
@@ -22,28 +23,38 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-// Load .env.vercel.local then .env.local (Vercel vars take priority for RESEND etc.)
-for (const filename of ['.env.vercel.local', '.env.local']) {
-  try {
-    const envPath = resolve(process.cwd(), filename)
-    const lines = readFileSync(envPath, 'utf-8').split('\n')
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) continue
-      const eq = trimmed.indexOf('=')
-      if (eq < 0) continue
-      const key = trimmed.slice(0, eq).trim()
-      const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '')
-      if (!(key in process.env)) process.env[key] = val
+// Walk up from cwd to find .env files (handles git worktrees where env files live in the main project)
+;(() => {
+  const filenames = ['.env.vercel.local', '.env.local']
+  let dir = process.cwd()
+  const visited = new Set<string>()
+  while (dir && !visited.has(dir)) {
+    visited.add(dir)
+    for (const filename of filenames) {
+      try {
+        const lines = readFileSync(resolve(dir, filename), 'utf-8').split('\n')
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || trimmed.startsWith('#')) continue
+          const eq = trimmed.indexOf('=')
+          if (eq < 0) continue
+          const key = trimmed.slice(0, eq).trim()
+          const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '')
+          if (!(key in process.env)) process.env[key] = val
+        }
+      } catch { /* file absent */ }
     }
-  } catch { /* file absent — skip */ }
-}
+    const parent = resolve(dir, '..')
+    if (parent === dir) break
+    dir = parent
+  }
+})()
 
 import { assertNotProd } from './lib/prod-guard'
 import { PrismaClient } from '@prisma/client'
 import { sendEmail } from '../lib/email/resend'
 import { getTemplate, type EmailLang, type TemplatesByLang } from '../lib/subscriptions/email-templates'
-import { renderEmail } from '../lib/subscriptions/email-renderer'
+import { renderEmail, isWhiteLabel } from '../lib/subscriptions/email-renderer'
 import { sendWelcomeEmail } from '../lib/subscriptions/send-welcome'
 
 assertNotProd('test-subscription-flow')
@@ -77,7 +88,7 @@ async function runReminderLogic(
     include: {
       client: { select: { name: true, firstName: true } },
       plan:   { select: { name: true, price: true } },
-      user:   { select: { id: true, name: true, subscriptionSettings: true } },
+      user:   { select: { id: true, name: true, plan: true, subscriptionSettings: true } },
     },
   })
 
@@ -100,6 +111,7 @@ async function runReminderLogic(
     lang,
     data: { clientName, planName: sub.plan.name, companyName: sub.user.name ?? 'YelhaERP', amount, expiresAt: sub.nextBilling },
     settings: { whatsapp: settings?.whatsapp ?? null, ccpNumber: settings?.ccpNumber ?? null, chargilyCheckoutUrl: null },
+    whiteLabel: isWhiteLabel(sub.user.plan),
   })
 
   info(`Sujet : "${subject}"`)
@@ -123,7 +135,7 @@ async function runReminderLogic(
 
 async function main() {
   console.log('━'.repeat(60))
-  console.log('  Test : flux d\'abonnement E2E (5 emails)')
+  console.log('  Test : flux d\'abonnement E2E — mode PRO white-label')
   console.log(`  Email cible : ${TARGET_EMAIL}`)
   console.log('━'.repeat(60))
 
@@ -134,7 +146,13 @@ async function main() {
     include: { subscriptionSettings: true },
   })
   if (!user) fail(`Aucun compte trouvé pour ${TARGET_EMAIL}`)
-  ok(`Compte trouvé — id: ${user.id}  nom: ${user.name ?? '(sans nom)'}`)
+  const originalPlan = user.plan
+  ok(`Compte trouvé — id: ${user.id}  nom: ${user.name ?? '(sans nom)'}  plan: ${originalPlan}`)
+
+  // ── 1b. Activer le mode PRO (white-label) ─────────────────────────────────
+  step('1b', 'Activation temporaire du plan PRO (simulation white-label)…')
+  await prisma.user.update({ where: { id: user.id }, data: { plan: 'PRO' } })
+  ok(`user.plan → PRO  (sera restauré à "${originalPlan}" en fin de test)`)
 
   // ── 2. Créer un plan de test ──────────────────────────────────────────────
   step('2', 'Création du plan d\'abonnement de test…')
@@ -210,20 +228,23 @@ async function main() {
   if (KEEP) {
     step('9', 'Nettoyage ignoré (--keep passé)')
     info(`Sub: ${sub.id}  Client: ${client.id}  Plan: ${plan.id}`)
+    info(`user.plan est toujours PRO — restaurez manuellement si besoin`)
   } else {
-    step('9', 'Nettoyage des données de test…')
+    step('9', 'Nettoyage des données de test + restauration du plan…')
     await prisma.subscription.delete({ where: { id: sub.id } })
     ok('Abonnement supprimé')
     await prisma.client.delete({ where: { id: client.id } })
     ok('Client supprimé')
     await prisma.subscriptionPlan.delete({ where: { id: plan.id } })
     ok('Plan supprimé')
+    await prisma.user.update({ where: { id: user.id }, data: { plan: originalPlan } })
+    ok(`user.plan restauré → ${originalPlan}`)
   }
 
   console.log('\n' + '━'.repeat(60))
-  console.log('  ✅ Tous les tests ont réussi ! (3 emails envoyés)')
+  console.log('  ✅ Tous les tests ont réussi ! (3 emails envoyés en mode PRO)')
   console.log('  📬 Vérifiez cevekmehdi@gmail.com :')
-  console.log('     1. Email de bienvenue / activation')
+  console.log('     1. Email bienvenue essai (trialWelcome — header = nom de votre société)')
   console.log('     2. Rappel fin d\'essai (J-1 TRIAL)')
   console.log('     3. Rappel renouvellement (J-1 ACTIVE)')
   console.log('━'.repeat(60) + '\n')
