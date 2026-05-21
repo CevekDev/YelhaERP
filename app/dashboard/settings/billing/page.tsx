@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, CreditCard, CheckCircle, Clock, AlertTriangle, RefreshCw, Zap } from 'lucide-react'
+import {
+  ArrowLeft, CreditCard, CheckCircle, Clock, AlertTriangle,
+  RefreshCw, Zap, X, Loader2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDA } from '@/lib/algerian/format'
 
@@ -41,6 +45,9 @@ const PLAN_LABELS: Record<string, string> = {
   trial: 'Essai gratuit', starter: 'Starter', premium: 'Premium', pro: 'Pro', agency: 'Agency',
 }
 
+const PLAN_IDS = ['starter', 'premium', 'pro', 'agency'] as const
+type PlanId = typeof PLAN_IDS[number]
+
 function daysLeft(iso: string) {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000))
 }
@@ -49,13 +56,212 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+// ─── Checkout Modal ───────────────────────────────────────────────────────────
+function CheckoutModal({
+  planId, cycle, prices,
+  onClose,
+}: {
+  planId: PlanId
+  cycle: 'MONTHLY' | 'ANNUAL'
+  prices: Record<string, number>
+  onClose: () => void
+}) {
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>(planId)
+  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'ANNUAL'>(cycle)
+  const [method, setMethod] = useState<'CHARGILY' | 'CCP'>('CHARGILY')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [ccpResult, setCcpResult] = useState<{ ccpRef: string; amount: number; instructions: string } | null>(null)
+
+  const basePrice = prices[selectedPlan] ?? 0
+  const monthlyPrice = billingCycle === 'ANNUAL' ? Math.round(basePrice * 0.8) : basePrice
+  const totalPrice = billingCycle === 'ANNUAL' ? monthlyPrice * 12 : monthlyPrice
+
+  async function handlePay() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: selectedPlan, billingCycle, method }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Erreur lors du paiement.'); return }
+      if (method === 'CHARGILY' && data.url) {
+        window.location.href = data.url
+      } else if (method === 'CCP') {
+        setCcpResult({ ccpRef: data.ccpRef, amount: data.amount, instructions: data.instructions })
+      }
+    } catch {
+      setError('Erreur réseau.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (ccpResult) {
+    return (
+      <ModalShell onClose={onClose}>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Commande enregistrée</p>
+              <p className="text-xs text-white/40">Votre abonnement sera activé après réception du virement</p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-white/[0.04] border border-white/[0.08] p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-white/50">Référence</span>
+              <span className="font-mono font-bold text-emerald-400">{ccpResult.ccpRef}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-white/50">Montant</span>
+              <span className="font-bold text-white">{formatDA(ccpResult.amount)}</span>
+            </div>
+          </div>
+          <p className="text-xs text-white/50 leading-relaxed">{ccpResult.instructions}</p>
+          <Button onClick={onClose} className="w-full bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/[0.1]">
+            Fermer
+          </Button>
+        </div>
+      </ModalShell>
+    )
+  }
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="space-y-5">
+        <div>
+          <p className="text-base font-semibold text-white">Choisir un plan</p>
+          <p className="text-xs text-white/40 mt-0.5">Sélectionnez votre formule et mode de paiement</p>
+        </div>
+
+        {/* Plan selector */}
+        <div className="grid grid-cols-2 gap-2">
+          {PLAN_IDS.map(id => (
+            <button
+              key={id}
+              onClick={() => setSelectedPlan(id)}
+              className={`rounded-xl p-3 text-left border transition-all ${
+                selectedPlan === id
+                  ? 'border-emerald-500/60 bg-emerald-500/[0.08]'
+                  : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
+              }`}
+            >
+              <p className="text-sm font-semibold text-white">{PLAN_LABELS[id]}</p>
+              <p className="text-xs text-white/50 mt-0.5">{formatDA(prices[id] ?? 0)}/mois</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Billing cycle */}
+        <div>
+          <p className="text-xs font-medium text-white/50 mb-2">Facturation</p>
+          <div className="flex gap-2">
+            {(['MONTHLY', 'ANNUAL'] as const).map(c => (
+              <button
+                key={c}
+                onClick={() => setBillingCycle(c)}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                  billingCycle === c
+                    ? 'border-emerald-500/60 bg-emerald-500/[0.08] text-white'
+                    : 'border-white/[0.08] text-white/50 hover:text-white'
+                }`}
+              >
+                {c === 'MONTHLY' ? 'Mensuel' : <span>Annuel <span className="text-emerald-400">−20%</span></span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Payment method */}
+        <div>
+          <p className="text-xs font-medium text-white/50 mb-2">Mode de paiement</p>
+          <div className="flex gap-2">
+            {([['CHARGILY', 'Chargily (Edahabia / CIB)'], ['CCP', 'Virement CCP']] as const).map(([m, label]) => (
+              <button
+                key={m}
+                onClick={() => setMethod(m)}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                  method === m
+                    ? 'border-emerald-500/60 bg-emerald-500/[0.08] text-white'
+                    : 'border-white/[0.08] text-white/50 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">{PLAN_LABELS[selectedPlan]} · {billingCycle === 'ANNUAL' ? 'Annuel' : 'Mensuel'}</p>
+            {billingCycle === 'ANNUAL' && (
+              <p className="text-xs text-white/40">{formatDA(monthlyPrice)}/mois</p>
+            )}
+          </div>
+          <p className="text-lg font-bold text-white">{formatDA(totalPrice)}</p>
+        </div>
+
+        {error && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-2.5 text-xs text-red-400">
+            {error}
+          </div>
+        )}
+
+        <Button
+          onClick={handlePay}
+          disabled={loading}
+          className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold gap-2"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+          {method === 'CHARGILY' ? 'Payer avec Chargily' : 'Confirmer la commande CCP'}
+        </Button>
+      </div>
+    </ModalShell>
+  )
+}
+
+function ModalShell({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-2xl bg-[#111113] border border-white/[0.1] p-6 shadow-2xl">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-white/30 hover:text-white transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function BillingPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
   const [sub, setSub] = useState<Sub | null>(null)
   const [planPrices, setPlanPrices] = useState<Record<string, number>>({
     starter: 990, premium: 1990, pro: 2990, agency: 4990,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanId | null>(null)
+  const [checkoutCycle, setCheckoutCycle] = useState<'MONTHLY' | 'ANNUAL'>('MONTHLY')
+
+  const openCheckout = useCallback((planId: PlanId, cycle: 'MONTHLY' | 'ANNUAL' = 'MONTHLY') => {
+    setCheckoutPlan(planId)
+    setCheckoutCycle(cycle)
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -74,6 +280,17 @@ export default function BillingPage() {
     }).catch(() => setError('Erreur réseau.'))
       .finally(() => setLoading(false))
   }, [])
+
+  // Open checkout automatically if plan param is present (coming from /pricing)
+  useEffect(() => {
+    const plan = searchParams.get('plan')
+    const cycle = searchParams.get('cycle')
+    if (plan && PLAN_IDS.includes(plan as PlanId)) {
+      openCheckout(plan as PlanId, cycle === 'ANNUAL' ? 'ANNUAL' : 'MONTHLY')
+      // Clean URL params without triggering a reload
+      router.replace('/dashboard/settings/billing', { scroll: false })
+    }
+  }, [searchParams, openCheckout, router])
 
   if (loading) {
     return (
@@ -102,6 +319,15 @@ export default function BillingPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {checkoutPlan && (
+        <CheckoutModal
+          planId={checkoutPlan}
+          cycle={checkoutCycle}
+          prices={planPrices}
+          onClose={() => setCheckoutPlan(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/dashboard/subscriptions/overview">
@@ -130,7 +356,6 @@ export default function BillingPage() {
             )}
           </div>
 
-          {/* Status badge */}
           {isTrial && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold">
               <Clock className="w-3.5 h-3.5" />
@@ -151,7 +376,6 @@ export default function BillingPage() {
           )}
         </div>
 
-        {/* Period info */}
         <div className="flex flex-wrap gap-4 text-sm text-white/40">
           {isTrial && sub.trialEndsAt && (
             <span>Essai jusqu&apos;au <strong className="text-white/70">{fmtDate(sub.trialEndsAt)}</strong></span>
@@ -161,22 +385,24 @@ export default function BillingPage() {
           )}
         </div>
 
-        {/* CTA */}
         {(isTrial || isExpired) && (
-          <Link href="/pricing">
-            <Button className="gap-2 bg-emerald-500 hover:bg-emerald-400 text-white w-full sm:w-auto">
-              <Zap className="w-4 h-4" />
-              {isExpired ? 'Renouveler l\'abonnement' : 'Passer à un plan payant'}
-            </Button>
-          </Link>
+          <Button
+            onClick={() => openCheckout('starter')}
+            className="gap-2 bg-emerald-500 hover:bg-emerald-400 text-white w-full sm:w-auto"
+          >
+            <Zap className="w-4 h-4" />
+            {isExpired ? "Renouveler l'abonnement" : 'Passer à un plan payant'}
+          </Button>
         )}
         {isActive && (
-          <Link href="/pricing">
-            <Button variant="outline" className="gap-2 border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.06]">
-              <RefreshCw className="w-4 h-4" />
-              Changer de plan
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            onClick={() => openCheckout(sub.planId as PlanId)}
+            className="gap-2 border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.06]"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Changer de plan
+          </Button>
         )}
       </div>
 
@@ -185,15 +411,18 @@ export default function BillingPage() {
         <div className="space-y-3">
           <p className="text-sm font-medium text-white/60">Plans disponibles</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {(['starter', 'premium', 'pro', 'agency'] as const).map(planId => (
+            {PLAN_IDS.map(planId => (
               <div key={planId} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-2">
                 <p className="font-semibold text-white text-sm">{PLAN_LABELS[planId]}</p>
                 <p className="text-xl font-bold text-white">{formatDA(planPrices[planId] ?? 0)}<span className="text-xs text-white/40 font-normal">/mois</span></p>
-                <Link href="/pricing">
-                  <Button size="sm" variant="outline" className="w-full mt-1 border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.06] text-xs">
-                    Choisir
-                  </Button>
-                </Link>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openCheckout(planId)}
+                  className="w-full mt-1 border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.06] text-xs"
+                >
+                  Choisir
+                </Button>
               </div>
             ))}
           </div>

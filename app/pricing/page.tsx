@@ -29,8 +29,8 @@ export default function PricingPage() {
     }).catch(() => {})
   }, [])
 
-  const ctaHref = session?.user ? '/dashboard/settings/billing' : '/register'
-  const ctaLabel = session?.user ? 'Choisir ce plan' : "Démarrer l'essai gratuit"
+  const isLoggedIn = !!session?.user
+  const ctaLabel = isLoggedIn ? 'Choisir ce plan' : "Démarrer l'essai gratuit"
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white antialiased">
@@ -119,7 +119,7 @@ export default function PricingPage() {
                 </ul>
 
                 <Link
-                  href={ctaHref}
+                  href={isLoggedIn ? `/dashboard/settings/billing?plan=${p.id}&cycle=${annual ? 'ANNUAL' : 'MONTHLY'}` : '/register'}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     p.popular
                       ? 'bg-emerald-500 hover:bg-emerald-400 text-white'
