@@ -1,6 +1,6 @@
 # 🗺️ PROJECT_MAP.md — YelhaERP
 
-> Dernière mise à jour : 2026-05-19
+> Dernière mise à jour : 2026-05-21
 > Lire ce fichier EN PREMIER à chaque session (voir CLAUDE.md).
 
 ---
