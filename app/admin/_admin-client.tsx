@@ -49,16 +49,18 @@ function fmtDate(d: string) {
 function StatsTab() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/stats').then(r => r.json()).then(d => {
-      const payload = d.data ?? d
-      if (payload?.companies?.byStatus) setStats(payload)
+      if (d.error) { setError(d.error); setLoading(false); return }
+      if (d?.companies?.byStatus) setStats(d)
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => { setError('Erreur réseau'); setLoading(false) })
   }, [])
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
+  if (error) return <p className="text-sm text-destructive bg-destructive/10 rounded-xl px-4 py-3">{error}</p>
   if (!stats?.companies) return <p className="text-muted-foreground">Aucune donnée disponible.</p>
 
   const totalActive = (stats.companies.byStatus.active ?? 0)
@@ -174,15 +176,18 @@ function UsersTab() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
+    setApiError(null)
     const params = new URLSearchParams({ page: String(page), search })
     fetch(`/api/admin/companies?${params}`).then(r => r.json()).then(d => {
-      setUsers(d.data?.companies ?? d.companies ?? [])
-      setTotal(d.data?.total ?? d.total ?? 0)
+      if (d.error) { setApiError(d.error); setLoading(false); return }
+      setUsers(d.companies ?? [])
+      setTotal(d.total ?? 0)
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => { setApiError('Erreur réseau'); setLoading(false) })
   }, [page, search])
 
   useEffect(() => { load() }, [load])
@@ -223,6 +228,7 @@ function UsersTab() {
         />
       </div>
 
+      {apiError && <p className="text-sm text-destructive bg-destructive/10 rounded-xl px-4 py-3">{apiError}</p>}
       {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto my-12" /> : (
         <div className="rounded-2xl border bg-card divide-y divide-border">
           {users.map(u => (
