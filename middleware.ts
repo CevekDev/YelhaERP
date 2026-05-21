@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   '/api/portal',
   '/api/restaurant/qr',
   '/api/restaurant/menu/public',
+  '/admin',
   '/portal',
   '/pricing',
   '/subscriptions/checkout',

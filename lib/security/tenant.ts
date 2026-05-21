@@ -1,5 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
+import { verifyAdminToken, ADMIN_COOKIE } from '@/lib/admin-auth'
 import type { Role } from '@prisma/client'
 
 export interface TenantContext {
@@ -30,9 +32,9 @@ export async function getTenantContext(): Promise<TenantContext> {
 }
 
 export async function requireSuperAdmin(): Promise<void> {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('UNAUTHORIZED')
-  if (!session.user.isSuperAdmin) throw new Error('FORBIDDEN')
+  const token = cookies().get(ADMIN_COOKIE)?.value
+  if (!token) throw new Error('UNAUTHORIZED')
+  if (!verifyAdminToken(token)) throw new Error('FORBIDDEN')
 }
 
 const roleHierarchy: Record<Role, number> = {
