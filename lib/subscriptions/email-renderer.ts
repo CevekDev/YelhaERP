@@ -165,13 +165,20 @@ function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s
   return `<p style="margin:24px 0 12px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>${blocks.join('')}`
 }
 
+const WHITE_LABEL_PLANS = ['PREMIUM', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
+
+export function isWhiteLabel(plan: string): boolean {
+  return WHITE_LABEL_PLANS.includes(plan.toUpperCase())
+}
+
 export function renderEmail(params: {
   template: EmailTemplate
   lang: EmailLang
   data: RenderData
   settings: PaymentSettings
+  whiteLabel?: boolean
 }): { subject: string; html: string } {
-  const { template, lang, data, settings } = params
+  const { template, lang, data, settings, whiteLabel = false } = params
 
   const values: Record<string, string> = {
     clientName:  escapeHtml(data.clientName),
@@ -201,7 +208,7 @@ export function renderEmail(params: {
       <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06);">
         <tr><td>
           <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1D9E75,#3ec79c);padding:32px 40px;">
-            <tr><td align="center"><span style="color:#fff;font-size:22px;font-weight:800;">📊 YelhaSubs</span></td></tr>
+            <tr><td align="center"><span style="color:#fff;font-size:22px;font-weight:800;">${whiteLabel ? escapeHtml(data.companyName) : '📊 YelhaSubs'}</span></td></tr>
           </table>
         </td></tr>
         <tr><td style="padding:40px;" dir="${isRtl ? 'rtl' : 'ltr'}">

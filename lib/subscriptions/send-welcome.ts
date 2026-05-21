@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email/resend'
 import { getTemplate, type EmailLang, type TemplatesByLang } from './email-templates'
-import { renderEmail, generateChargilyCheckout } from './email-renderer'
+import { renderEmail, generateChargilyCheckout, isWhiteLabel } from './email-renderer'
 
 /**
  * Envoie l'email de début d'abonnement au client avec les options de paiement.
@@ -14,7 +14,7 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
       include: {
         client: { select: { name: true, firstName: true, email: true } },
         plan:   { select: { name: true, price: true } },
-        user:   { select: { name: true, subscriptionSettings: true } },
+        user:   { select: { name: true, plan: true, subscriptionSettings: true } },
       },
     })
     if (!sub) {
@@ -68,6 +68,7 @@ export async function sendWelcomeEmail(subscriptionId: string): Promise<void> {
         chargilyCheckoutUrl,
         isNew:              true,
       },
+      whiteLabel: isWhiteLabel(sub.user.plan),
     })
 
     await sendEmail({ to, subject, html })

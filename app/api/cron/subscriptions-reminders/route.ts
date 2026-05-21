@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { apiError, apiSuccess } from '@/lib/security/api-response'
 import { sendEmail } from '@/lib/email/resend'
 import { getTemplate, type EmailLang, type EmailType, type TemplatesByLang } from '@/lib/subscriptions/email-templates'
-import { renderEmail, generateChargilyCheckout } from '@/lib/subscriptions/email-renderer'
+import { renderEmail, generateChargilyCheckout, isWhiteLabel } from '@/lib/subscriptions/email-renderer'
 import { canAccessSubs } from '@/lib/billing/check-access'
 import { verifyCronSecret } from '@/lib/security/cron-auth'
 
@@ -12,7 +12,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subs.yelha.net'
 const INCLUDE = {
   client: { select: { name: true, firstName: true } },
   plan:   { select: { name: true, price: true } },
-  user:   { select: { id: true, name: true, subscriptionSettings: true } },
+  user:   { select: { id: true, name: true, plan: true, subscriptionSettings: true } },
 } as const
 
 export async function GET(req: NextRequest) {
@@ -119,6 +119,7 @@ export async function GET(req: NextRequest) {
           ccpNumber:           settings?.ccpNumber ?? null,
           chargilyCheckoutUrl: chargilyUrl,
         },
+        whiteLabel: isWhiteLabel(sub.user.plan),
       })
 
       try {
