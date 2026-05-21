@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
 
     const { type } = parsed.data
     const userId = 'userId' in parsed.data ? parsed.data.userId : undefined
-    const planId = parsed.data.planId
+    const planId = 'planId' in parsed.data ? parsed.data.planId : undefined
     const months = 'months' in parsed.data ? (parsed.data.months ?? 1) : 1
-    const paymentId = parsed.data.paymentId
+    const paymentId = 'paymentId' in parsed.data ? parsed.data.paymentId : undefined
 
     if (type === 'confirm_ccp') {
       if (!paymentId) return apiError('paymentId requis', 422)
