@@ -5,7 +5,7 @@ export const PLANS = {
     price: 0,
     maxUsers: 1,
     description: 'Découvrez YelhaSubs sans engagement',
-    durationDays: 30,
+    durationDays: 15,
     limits: { emails: 50, apiRequests: 500 },
   },
   starter: {

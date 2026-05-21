@@ -214,14 +214,14 @@ export async function sendWelcomeEmail(email: string, name: string, locale = 'fr
 export async function sendTrialWelcome({ to, name }: { to: string; name: string }) {
   const content = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">🎁 Bonjour ${name} !</h1>
-    <p style="margin:0 0 20px;color:#64748b;font-size:15px;line-height:1.6;">Votre essai gratuit de <strong>30 jours</strong> vient de commencer.</p>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;line-height:1.6;">Votre essai gratuit de <strong>15 jours</strong> vient de commencer.</p>
     <div style="background:#E1F5EE;border:1px solid #1D9E75;border-radius:12px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0;color:#0F6E56;font-size:14px;">✅ Inclus : Facturation · Clients · Stock · Dépenses · Devis + 3 apps au choix</p>
+      <p style="margin:0;color:#0F6E56;font-size:14px;">✅ Gérez vos abonnements clients, configurez vos plans et automatisez vos rappels de paiement.</p>
     </div>
     <div style="text-align:center;margin:28px 0;">
-      <a href="https://subs.yelha.net/onboarding/apps" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Choisir mes 3 apps →</a>
+      <a href="https://subs.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Accéder à mon tableau de bord →</a>
     </div>`
-  await getResend().emails.send({ from: FROM, to, subject: 'Bienvenue sur YelhaSubs — votre essai de 30 jours commence', html: wrap('fr', content) }).catch(() => {})
+  await getResend().emails.send({ from: FROM, to, subject: 'Bienvenue sur YelhaSubs — votre essai de 15 jours commence', html: wrap('fr', content) }).catch(() => {})
 }
 
 export async function sendTrialReminder({ to, name, daysLeft }: { to: string; name: string; daysLeft: number }) {
@@ -241,11 +241,11 @@ export async function sendTrialReminder({ to, name, daysLeft }: { to: string; na
 export async function sendTrialExpired({ to, name }: { to: string; name: string }) {
   const content = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Votre essai YelhaSubs est terminé</h1>
-    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, vos données sont conservées pendant 30 jours supplémentaires.</p>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour ${name}, vos données sont conservées pendant 15 jours supplémentaires.</p>
     <div style="text-align:center;margin:28px 0;">
       <a href="https://subs.yelha.net/pricing" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">Voir les plans →</a>
     </div>`
-  await getResend().emails.send({ from: FROM, to, subject: 'Votre essai YelhaSubs est terminé — vos données sont conservées 30 jours', html: wrap('fr', content) }).catch(() => {})
+  await getResend().emails.send({ from: FROM, to, subject: 'Votre essai YelhaSubs est terminé — vos données sont conservées 15 jours', html: wrap('fr', content) }).catch(() => {})
 }
 
 export async function sendPaymentConfirmation({ to, name, planName, amount, nextBillingDate, apps }: {

@@ -86,7 +86,7 @@ function Hero() {
             href="/register"
             className="inline-flex items-center justify-center gap-2 bg-white text-[#0a0a0b] hover:bg-white/90 font-medium px-5 py-2.5 rounded-lg text-sm transition-colors"
           >
-            Démarrer 30 jours gratuits <ArrowRight className="w-4 h-4" />
+            Démarrer 15 jours gratuits <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/pricing"
@@ -404,7 +404,7 @@ function PricingTeaser() {
     <section className="border-y border-white/[0.06] bg-white/[0.01]">
       <div className="max-w-3xl mx-auto px-6 py-24 text-center">
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Tarification simple.</h2>
-        <p className="text-white/60 mt-4 max-w-lg mx-auto">À partir de <strong className="text-white">990 DA / mois</strong>. 30 jours d&apos;essai gratuit. Sans carte bancaire.</p>
+        <p className="text-white/60 mt-4 max-w-lg mx-auto">À partir de <strong className="text-white">990 DA / mois</strong>. 15 jours d&apos;essai gratuit. Sans carte bancaire.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
           <Link
             href="/pricing"
@@ -462,7 +462,7 @@ function CTA() {
         <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
           Prêt à arrêter Excel ?
         </h2>
-        <p className="text-white/60 mt-4 max-w-lg mx-auto">30 jours pour tester. Sans CB. Sans bullshit.</p>
+        <p className="text-white/60 mt-4 max-w-lg mx-auto">15 jours pour tester. Sans CB. Sans bullshit.</p>
         <Link
           href="/register"
           className="inline-flex items-center justify-center gap-2 bg-white text-[#0a0a0b] hover:bg-white/90 font-medium px-6 py-3 rounded-lg text-sm mt-8"
@@ -470,7 +470,7 @@ function CTA() {
           Créer mon compte <ArrowRight className="w-4 h-4" />
         </Link>
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-xs text-white/40">
-          <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-400" /> 30 jours gratuits</span>
+          <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-400" /> 15 jours gratuits</span>
           <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-400" /> Sans CB</span>
           <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-400" /> Support FR/AR</span>
         </div>

@@ -20,7 +20,7 @@ function createCustomAdapter(): Adapter {
     ...base,
     async createUser(user: Omit<AdapterUser, 'id'>) {
       const trialEndsAt = new Date()
-      trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+      trialEndsAt.setDate(trialEndsAt.getDate() + 15)
 
       const newUser = await prisma.user.create({
         data: {
@@ -34,7 +34,7 @@ function createCustomAdapter(): Adapter {
         },
       })
 
-      // Create YelhaSubscription (essai 30j)
+      // Create YelhaSubscription (essai 15j)
       await prisma.yelhaSubscription.create({
         data: {
           userId:             newUser.id,

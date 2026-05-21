@@ -106,7 +106,7 @@ export default function PricingPage() {
 
       <section className="px-6 pt-16 pb-12 text-center max-w-4xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Choisissez votre plan</h1>
-        <p className="text-slate-600 mt-4 text-lg">30 jours d&apos;essai gratuit. Sans engagement. Annulable à tout moment.</p>
+        <p className="text-slate-600 mt-4 text-lg">15 jours d&apos;essai gratuit. Sans engagement. Annulable à tout moment.</p>
 
         <div className="inline-flex items-center gap-2 bg-slate-100 rounded-full p-1 mt-8">
           <button
@@ -162,7 +162,7 @@ export default function PricingPage() {
         </div>
 
         <div className="mt-12 text-center text-sm text-slate-500">
-          <p>Tous les plans incluent : 30 jours d&apos;essai · Sans CB · Support email · TVA 19% non incluse</p>
+          <p>Tous les plans incluent : 15 jours d&apos;essai · Sans CB · Support email · TVA 19% non incluse</p>
         </div>
       </section>
     </div>

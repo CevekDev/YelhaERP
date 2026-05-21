@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const expiry = new Date(Date.now() + 15 * 60 * 1000) // 15 min
 
   const trialEndsAt = new Date()
-  trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+  trialEndsAt.setDate(trialEndsAt.getDate() + 15)
 
   await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         verificationToken: code, verificationExpiry: expiry,
       },
     })
-    const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const trialEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
     await tx.yelhaSubscription.create({
       data: {
         userId: user.id,

@@ -51,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/pricing" style={{ display: 'inline-block', background: '#1D9E75', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
               Voir les plans →
             </Link>
-            <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 16 }}>Vos données sont conservées 30 jours supplémentaires.</p>
+            <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 16 }}>Vos données sont conservées 15 jours supplémentaires.</p>
           </div>
         </div>
       )}

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     // Auto-create trial subscription for companies sans abonnement existant
     if (!sub) {
-      const trialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      const trialEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
       sub = await prisma.yelhaSubscription.create({
         data: {
           userId,
