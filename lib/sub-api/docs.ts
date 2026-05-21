@@ -642,7 +642,7 @@ Content-Type: application/json
 
 > 💡 Si \`clientEmail\` est fourni, un email de bienvenue est envoyé automatiquement après la création.
 
-> ⚠️ La création échoue avec `403 SUBSCRIPTION_LIMIT` si vous avez atteint le nombre maximum d'abonnements actifs autorisé par votre plan YelhaSubs (Starter: 20, Premium: 50, Pro: 220, Agency: illimité).
+> ⚠️ La création échoue avec \`403 SUBSCRIPTION_LIMIT\` si vous avez atteint le nombre maximum d'abonnements actifs autorisé par votre plan YelhaSubs (Starter: 20, Premium: 50, Pro: 220, Agency: illimité).
 
 ## PATCH /subscriptions/{id} — Modifier un abonnement
 
