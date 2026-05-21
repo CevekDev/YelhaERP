@@ -15,7 +15,7 @@ const NAV = [
   { href: '/dashboard/subscriptions',             labelKey: 'sidebar.subscriptions',  icon: RefreshCw },
   { href: '/dashboard/subscriptions/plans',       labelKey: 'sidebar.plans',          icon: Users },
   { href: '/dashboard/subscriptions/integration', labelKey: 'sidebar.integration',    icon: Zap },
-  { href: '/dashboard/subscriptions/settings',    labelKey: 'sidebar.emailSettings',  icon: Settings },
+  { href: '/dashboard/subscriptions/emails',       labelKey: 'sidebar.emailSettings',  icon: Settings },
   { href: '/dashboard/notifications',             labelKey: 'sidebar.notifications',  icon: Bell },
   { href: '/dashboard/settings/profile',          labelKey: 'sidebar.profile',        icon: User },
   { href: '/dashboard/settings/billing',          labelKey: 'sidebar.payment',        icon: CreditCard },
