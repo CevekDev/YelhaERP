@@ -3,175 +3,139 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { RefreshCw, Check, ArrowRight } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
+import { PLANS as BASE } from '@/lib/pricing/config'
 
-interface Plan {
-  id: string
-  name: string
-  price: number
-  desc: string
-  feats: string[]
-  popular?: boolean
-}
+type PlanRow = { id: string; name: string; price: number; desc: string; limit: string; whiteLabel: boolean; popular?: boolean }
 
-const PLANS: Plan[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 990,
-    desc: 'Idéal pour démarrer',
-    feats: [
-      '20 abonnements actifs max',
-      'Rappels emails automatiques',
-      'Paiement CCP avec référence',
-      'Multilingue FR/EN/AR',
-      '1 utilisateur',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 1990,
-    desc: 'Pour les petites équipes',
-    feats: [
-      '50 abonnements actifs max',
-      'Rappels emails + WhatsApp',
-      'Chargily Pay (Edahabia/CIB) + CCP',
-      'Statistiques avancées',
-      '2 utilisateurs',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 2990,
-    popular: true,
-    desc: 'Pour les entreprises qui scalent',
-    feats: [
-      '220 abonnements actifs max',
-      'Emails sans branding YelhaSubs',
-      'API publique',
-      'Templates email personnalisés',
-      'Webhooks sortants',
-    ],
-  },
-  {
-    id: 'agency',
-    name: 'Agency',
-    price: 4990,
-    desc: 'Pour les agences et grands volumes',
-    feats: [
-      'Abonnements illimités',
-      'Emails sans branding YelhaSubs',
-      'Support prioritaire WhatsApp',
-      'Utilisateurs illimités',
-      'Onboarding personnalisé',
-    ],
-  },
+const DEFAULTS: PlanRow[] = [
+  { id: 'starter', name: 'Starter',  price: BASE.starter.price,  desc: 'Pour démarrer',              limit: '20 abonnements actifs',   whiteLabel: false },
+  { id: 'premium', name: 'Premium',  price: BASE.premium.price,  desc: 'Pour les petites équipes',   limit: '50 abonnements actifs',   whiteLabel: false },
+  { id: 'pro',     name: 'Pro',      price: BASE.pro.price,      desc: 'Pour les entreprises',       limit: '220 abonnements actifs',  whiteLabel: true, popular: true },
+  { id: 'agency',  name: 'Agency',   price: BASE.agency.price,   desc: 'Pour les agences',           limit: 'Abonnements illimités',   whiteLabel: true },
 ]
 
-function fDA(n: number): string {
-  return n.toLocaleString('fr-DZ') + ' DA'
-}
+function fDA(n: number) { return n.toLocaleString('fr-DZ') + ' DA' }
 
 export default function PricingPage() {
   const { data: session } = useSession()
   const [annual, setAnnual] = useState(false)
-  const [plans, setPlans] = useState(PLANS)
-  const discount = 0.2
+  const [plans, setPlans] = useState(DEFAULTS)
 
   useEffect(() => {
     fetch('/api/billing/plans').then(r => r.json()).then(d => {
       if (!d.plans) return
-      setPlans(PLANS.map(p => ({ ...p, price: d.plans[p.id]?.price ?? p.price })))
+      setPlans(DEFAULTS.map(p => ({ ...p, price: d.plans[p.id]?.price ?? p.price })))
     }).catch(() => {})
   }, [])
 
   const ctaHref = session?.user ? '/dashboard/settings/billing' : '/register'
+  const ctaLabel = session?.user ? 'Choisir ce plan' : "Démarrer l'essai gratuit"
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <header className="border-b border-slate-200 sticky top-0 bg-white/80 backdrop-blur-sm z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#1D9E75] rounded-lg flex items-center justify-center">
-              <RefreshCw className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-lg">YelhaSubs</span>
+    <div className="min-h-screen bg-[#0a0a0b] text-white antialiased">
+
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0a0a0b]/80 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-[#0a0a0b] text-sm">Y</div>
+            <span className="font-semibold tracking-tight">YelhaSubs</span>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/" className="text-sm font-medium text-slate-600 hover:text-slate-900">Accueil</Link>
-            {session?.user ? (
-              <Link href="/dashboard/subscriptions" className="bg-[#1D9E75] hover:bg-[#178a64] text-white font-semibold px-4 py-2 rounded-lg text-sm">
-                Tableau de bord
-              </Link>
-            ) : (
-              <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">Connexion</Link>
-            )}
+          <nav className="flex items-center gap-3">
+            <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">Accueil</Link>
+            {session?.user
+              ? <Link href="/dashboard/subscriptions" className="text-sm font-medium bg-white text-[#0a0a0b] hover:bg-white/90 px-4 py-1.5 rounded-lg">Tableau de bord</Link>
+              : <Link href="/login" className="text-sm text-white/60 hover:text-white transition-colors">Connexion</Link>
+            }
           </nav>
         </div>
       </header>
 
-      <section className="px-6 pt-16 pb-12 text-center max-w-4xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Choisissez votre plan</h1>
-        <p className="text-slate-600 mt-4 text-lg">15 jours d&apos;essai gratuit. Sans engagement. Annulable à tout moment.</p>
+      {/* Hero */}
+      <section className="max-w-3xl mx-auto px-6 pt-20 pb-14 text-center">
+        <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight">Choisissez votre plan</h1>
+        <p className="text-white/50 mt-4 text-base">15 jours d&apos;essai gratuit. Sans carte bancaire. Annulable à tout moment.</p>
 
-        <div className="inline-flex items-center gap-2 bg-slate-100 rounded-full p-1 mt-8">
+        <div className="inline-flex items-center gap-1 bg-white/[0.04] border border-white/[0.08] rounded-full p-1 mt-8">
           <button
             onClick={() => setAnnual(false)}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${!annual ? 'bg-white shadow' : 'text-slate-600'}`}
+            className={`px-5 py-1.5 text-sm font-medium rounded-full transition-all ${!annual ? 'bg-white text-[#0a0a0b] shadow' : 'text-white/50 hover:text-white'}`}
           >
             Mensuel
           </button>
           <button
             onClick={() => setAnnual(true)}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${annual ? 'bg-white shadow' : 'text-slate-600'}`}
+            className={`px-5 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 ${annual ? 'bg-white text-[#0a0a0b] shadow' : 'text-white/50 hover:text-white'}`}
           >
-            Annuel <span className="text-[#1D9E75] text-xs">-20%</span>
+            Annuel <span className={`text-xs font-semibold ${annual ? 'text-emerald-600' : 'text-emerald-400'}`}>−20%</span>
           </button>
         </div>
       </section>
 
-      <section className="px-6 pb-20 max-w-6xl mx-auto">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* Cards */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map(p => {
-            const price = annual ? Math.round(p.price * (1 - discount)) : p.price
+            const price = annual ? Math.round(p.price * 0.8) : p.price
             return (
-              <div key={p.id} className={`rounded-2xl p-6 border-2 relative ${p.popular ? 'border-[#1D9E75] bg-[#1D9E75]/5' : 'border-slate-200 bg-white'}`}>
+              <div
+                key={p.id}
+                className={`relative rounded-2xl p-6 flex flex-col gap-5 border transition-all ${
+                  p.popular
+                    ? 'border-emerald-500/50 bg-emerald-500/[0.06] shadow-[0_0_40px_-10px_rgba(16,185,129,0.2)]'
+                    : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.04]'
+                }`}
+              >
                 {p.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1D9E75] text-white text-[10px] font-bold px-3 py-0.5 rounded-full">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full tracking-wide">
                     POPULAIRE
                   </span>
                 )}
-                <h3 className="font-bold text-xl">{p.name}</h3>
-                <p className="text-sm text-slate-500 mt-0.5">{p.desc}</p>
-                <p className="text-3xl font-black mt-5">
-                  {fDA(price)} <span className="text-sm font-medium text-slate-500">/mois</span>
-                </p>
-                {annual && <p className="text-xs text-[#1D9E75] mt-1">Facturé {fDA(price * 12)} / an</p>}
-                <ul className="mt-6 space-y-2">
-                  {p.feats.map(f => (
-                    <li key={f} className="text-sm text-slate-700 flex gap-2 items-start">
-                      <Check className="w-4 h-4 text-[#1D9E75] mt-0.5 shrink-0" />{f}
+
+                <div>
+                  <h3 className="font-semibold text-lg">{p.name}</h3>
+                  <p className="text-white/40 text-xs mt-0.5">{p.desc}</p>
+                </div>
+
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold tracking-tight">{fDA(price)}</span>
+                  </div>
+                  <p className="text-white/40 text-xs mt-0.5">/mois {annual && <span className="text-emerald-400">· {fDA(price * 12)}/an</span>}</p>
+                </div>
+
+                <ul className="flex-1 space-y-2.5">
+                  <li className="flex items-start gap-2 text-sm text-white/70">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    {p.limit}
+                  </li>
+                  {p.whiteLabel && (
+                    <li className="flex items-start gap-2 text-sm text-white/70">
+                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                      Emails à votre nom
                     </li>
-                  ))}
+                  )}
                 </ul>
+
                 <Link
                   href={ctaHref}
-                  className={`mt-6 inline-flex items-center justify-center gap-2 w-full font-semibold py-2.5 rounded-xl text-sm transition-colors ${
-                    p.popular ? 'bg-[#1D9E75] hover:bg-[#178a64] text-white' : 'bg-white border border-slate-200 hover:border-slate-300 text-slate-900'
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    p.popular
+                      ? 'bg-emerald-500 hover:bg-emerald-400 text-white'
+                      : 'bg-white/[0.06] border border-white/[0.1] text-white hover:bg-white/[0.1]'
                   }`}
                 >
-                  {session?.user ? 'Choisir ce plan' : "Démarrer l'essai gratuit"} <ArrowRight className="w-4 h-4" />
+                  {ctaLabel} <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             )
           })}
         </div>
 
-        <div className="mt-12 text-center text-sm text-slate-500">
-          <p>Tous les plans incluent : 15 jours d&apos;essai · Sans CB · Support email · TVA 19% non incluse</p>
-        </div>
+        <p className="text-center text-xs text-white/30 mt-10">
+          Tous les plans incluent 15 jours d&apos;essai gratuit · Sans carte bancaire · TVA 19% non incluse
+        </p>
       </section>
     </div>
   )

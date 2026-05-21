@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Check, Zap } from 'lucide-react'
+import { PricingSection } from '@/components/landing/pricing-section'
 
 export default function LandingPage() {
   return (
@@ -10,7 +11,7 @@ export default function LandingPage() {
       <Showcase />
       <FeatureGrid />
       <UseCases />
-      <PricingTeaser />
+      <PricingSection />
       <FAQ />
       <CTA />
       <Footer />
@@ -32,7 +33,7 @@ function Header() {
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm">
           <Link href="#features" className="text-white/60 hover:text-white transition-colors">Fonctionnalités</Link>
-          <Link href="/pricing" className="text-white/60 hover:text-white transition-colors">Tarifs</Link>
+          <Link href="#tarifs" className="text-white/60 hover:text-white transition-colors">Tarifs</Link>
           <Link href="#faq" className="text-white/60 hover:text-white transition-colors">FAQ</Link>
         </nav>
         <div className="flex items-center gap-2">
@@ -78,7 +79,7 @@ function Hero() {
 
         <p className="text-lg text-white/60 mt-7 max-w-xl mx-auto leading-relaxed">
           YelhaSubs automatise la facturation récurrente de vos clients en Algérie.
-          Paiement Chargily Pay, CCP, rappels WhatsApp.
+          Paiement Chargily Pay, CCP, rappels automatiques par email.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
@@ -240,7 +241,7 @@ function Showcase() {
         <Row
           step="03"
           title="On s'occupe du reste"
-          desc="Rappels J-3 et J-1 par email et WhatsApp. Lien de paiement automatique. Vous voyez juste l'argent rentrer."
+          desc="Rappels J-3 et J-1 par email. Lien de paiement automatique. Vous voyez juste l'argent rentrer."
           mock={<MockEmail />}
         />
       </div>
@@ -345,7 +346,7 @@ function FeatureGrid() {
   const features = [
     { t: 'Chargily Pay intégré',     d: 'Edahabia et CIB. Webhooks automatiques. Réconciliation immédiate.' },
     { t: 'Virement CCP',             d: 'Chaque paiement a une référence unique. Vous confirmez en 1 clic.' },
-    { t: 'Rappels WhatsApp',         d: 'Multilingue FR / EN / AR. Templates personnalisables.' },
+    { t: 'Rappels email automatiques', d: 'J-3 et J-1. Multilingue FR / EN / AR. Templates personnalisables.' },
     { t: 'API publique',             d: 'Intégrez votre site, Shopify, WooCommerce ou app mobile.' },
     { t: 'Webhooks sortants',        d: 'Notifiez votre stack à chaque événement (créé, payé, expiré).' },
     { t: 'Multi-devises',            d: 'DZD, EUR, USD. Pour vos clients à l\'export.' },
@@ -397,34 +398,13 @@ function UseCases() {
   )
 }
 
-/* ─────────────────── Pricing teaser ─────────────────── */
-
-function PricingTeaser() {
-  return (
-    <section className="border-y border-white/[0.06] bg-white/[0.01]">
-      <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Tarification simple.</h2>
-        <p className="text-white/60 mt-4 max-w-lg mx-auto">À partir de <strong className="text-white">990 DA / mois</strong>. 15 jours d&apos;essai gratuit. Sans carte bancaire.</p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center justify-center gap-2 bg-white text-[#0a0a0b] hover:bg-white/90 font-medium px-5 py-2.5 rounded-lg text-sm"
-          >
-            Voir les 3 plans <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 /* ─────────────────── FAQ ─────────────────── */
 
 function FAQ() {
   const q = [
     { q: 'Comment ça fonctionne avec Chargily Pay ?',         a: 'Vous renseignez votre clé API Chargily dans les paramètres. À chaque rappel, un lien de paiement personnalisé est généré. Le paiement est encaissé sur votre compte Chargily, pas le nôtre.' },
     { q: 'Et si je n\'ai pas Chargily ?',                     a: 'Vous pouvez fonctionner uniquement en CCP. Chaque abonnement génère une référence unique que le client met dans le commentaire du virement. Vous confirmez le paiement manuellement en 1 clic.' },
-    { q: 'Combien d\'abonnements puis-je gérer ?',            a: 'Starter : 50. Pro : 500. Agency : illimité.' },
+    { q: 'Combien d\'abonnements puis-je gérer ?',            a: 'Starter : 20. Premium : 50. Pro : 220. Agency : illimité.' },
     { q: 'Mes données sont-elles en sécurité ?',              a: 'Oui. Données chiffrées, sauvegardes quotidiennes, hébergement européen. Conforme aux exigences algériennes de souveraineté des données business.' },
     { q: 'Annulation ?',                                      a: 'En 1 clic depuis votre tableau de bord. Pas d\'engagement, pas de pénalité.' },
   ]
