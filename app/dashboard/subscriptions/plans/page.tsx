@@ -217,7 +217,7 @@ export default function PlansPage() {
                 className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
                 value={form.features}
                 onChange={e => setForm(f => ({ ...f, features: e.target.value }))}
-                placeholder="Accès illimité&#10;Support prioritaire&#10;Facturation automatique"
+                placeholder={"Accès illimité\nSupport prioritaire\nFacturation automatique"}
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
