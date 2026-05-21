@@ -21,7 +21,7 @@ const PLANS: Plan[] = [
     price: 990,
     desc: 'Idéal pour démarrer',
     feats: [
-      "Jusqu'à 50 abonnements actifs",
+      '20 abonnements actifs max',
       'Rappels emails automatiques',
       'Paiement CCP avec référence',
       'Multilingue FR/EN/AR',
@@ -34,7 +34,7 @@ const PLANS: Plan[] = [
     price: 1990,
     desc: 'Pour les petites équipes',
     feats: [
-      "Jusqu'à 200 abonnements actifs",
+      '50 abonnements actifs max',
       'Rappels emails + WhatsApp',
       'Chargily Pay (Edahabia/CIB) + CCP',
       'Statistiques avancées',
@@ -48,11 +48,11 @@ const PLANS: Plan[] = [
     popular: true,
     desc: 'Pour les entreprises qui scalent',
     feats: [
-      "Jusqu'à 500 abonnements actifs",
+      '220 abonnements actifs max',
+      'Emails sans branding YelhaSubs',
       'API publique',
       'Templates email personnalisés',
       'Webhooks sortants',
-      '5 utilisateurs',
     ],
   },
   {
@@ -62,7 +62,7 @@ const PLANS: Plan[] = [
     desc: 'Pour les agences et grands volumes',
     feats: [
       'Abonnements illimités',
-      'White-label des emails',
+      'Emails sans branding YelhaSubs',
       'Support prioritaire WhatsApp',
       'Utilisateurs illimités',
       'Onboarding personnalisé',

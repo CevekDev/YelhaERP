@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { withSubApi, ok, apiError } from '@/lib/sub-api/auth'
 import { sendWelcomeEmail } from '@/lib/subscriptions/send-welcome'
 import { canAccessSubs } from '@/lib/billing/check-access'
+import { checkSubscriptionLimit } from '@/lib/billing/subscription-limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,6 +74,11 @@ export async function POST(req: NextRequest) {
     if (!await canAccessSubs(ctx.userId)) {
       return apiError('Abonnement app Abonnements requis', 403, 'APP_ACCESS_DENIED')
     }
+
+    const user = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { plan: true } })
+    const limitCheck = await checkSubscriptionLimit(ctx.userId, user?.plan ?? 'TRIAL')
+    if (!limitCheck.allowed) return apiError(`Limite atteinte : votre plan autorise ${limitCheck.limit} abonnements actifs maximum.`, 403, 'SUBSCRIPTION_LIMIT')
+
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400, 'BAD_BODY') }
     const parsed = createSchema.safeParse(body)

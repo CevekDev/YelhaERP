@@ -6,6 +6,7 @@ import { apiSuccess, apiError, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { hasRole } from '@/lib/security/tenant'
 import { sendWelcomeEmail } from '@/lib/subscriptions/send-welcome'
+import { checkSubscriptionLimit } from '@/lib/billing/subscription-limits'
 
 const createSchema = z.object({
   planId:      z.string(),
@@ -72,6 +73,9 @@ export async function POST(req: NextRequest) {
 
     // Seuls OWNER et ADMIN peuvent créer des abonnements
     if (!hasRole(ctx.role, 'ADMIN')) return apiError('Permissions insuffisantes', 403)
+
+    const limitCheck = await checkSubscriptionLimit(ctx.userId, ctx.plan)
+    if (!limitCheck.allowed) return apiError(`Limite atteinte : votre plan autorise ${limitCheck.limit} abonnements actifs maximum.`, 403)
 
     let body: unknown
     try { body = await req.json() } catch { return apiError('Corps invalide', 400) }

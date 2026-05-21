@@ -165,7 +165,7 @@ function buildPaymentBlocks(lang: EmailLang, planName: string, amount: number, s
   return `<p style="margin:24px 0 12px;font-weight:700;font-size:15px;color:#0f172a;">${t.title}</p>${blocks.join('')}`
 }
 
-const WHITE_LABEL_PLANS = ['PREMIUM', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
+const WHITE_LABEL_PLANS = ['PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
 
 export function isWhiteLabel(plan: string): boolean {
   return WHITE_LABEL_PLANS.includes(plan.toUpperCase())
