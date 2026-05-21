@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { SidebarContent, MobileSidebarTrigger } from './sidebar'
-import { NotificationBell } from './notification-bell'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -29,13 +28,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Mobile top bar */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 flex items-center gap-2 px-4 border-b bg-[#0d0d0f]/90 backdrop-blur-xl border-white/[0.07]">
         <MobileSidebarTrigger />
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-[#0d0d0f] text-xs">
             Y
           </div>
           <span className="font-semibold text-sm text-white">YelhaSubs</span>
         </div>
-        <NotificationBell />
       </header>
 
       {/* Main content */}
