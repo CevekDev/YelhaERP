@@ -101,7 +101,7 @@ export default function PlansPage() {
     <div>
       <Header title="Plans d'abonnement" />
       <div className="p-4 md:p-6 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold">Plans d&apos;abonnement</h1>
             <p className="text-muted-foreground text-sm mt-1">Créez et gérez vos offres tarifaires.</p>

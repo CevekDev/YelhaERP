@@ -135,7 +135,7 @@ export default function NewSubscriptionPage() {
         </div>
 
         {settingsConfigured === false && (
-          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3">
+          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3 flex-wrap">
             <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 text-sm text-amber-900 dark:text-amber-200">
               <p className="font-semibold mb-1">Paramètres de paiement non configurés</p>

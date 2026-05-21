@@ -89,7 +89,7 @@ export default function IntegrationPage() {
     <div>
       <Header title="Intégration API" />
       <div className="p-4 md:p-6 max-w-6xl">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4" />
           </Button>

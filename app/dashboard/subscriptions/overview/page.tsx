@@ -40,7 +40,7 @@ export default function OverviewPage() {
     : '0.0'
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -60,7 +60,7 @@ export default function OverviewPage() {
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-3 gap-3">
         <KpiCard
           label="MRR"
           value={data ? formatDA(data.mrr) : '—'}
@@ -136,11 +136,11 @@ export default function OverviewPage() {
 
 function KpiCard({ label, value, trend, trendUp }: { label: string; value: string; trend: string; trendUp: boolean }) {
   return (
-    <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-5">
-      <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">{label}</p>
-      <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
+    <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 sm:p-5">
+      <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2 sm:mb-3">{label}</p>
+      <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">{value}</p>
       {trend && (
-        <p className={`text-[12px] mt-1.5 font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+        <p className={`text-[12px] mt-1 sm:mt-1.5 font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
           {trend}
         </p>
       )}

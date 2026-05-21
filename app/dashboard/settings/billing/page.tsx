@@ -95,7 +95,7 @@ export default function BillingPage() {
   const paidPayments = sub.payments.filter(p => p.status === 'PAID' || p.status === 'SUCCEEDED')
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/dashboard/subscriptions/overview">
@@ -115,7 +115,7 @@ export default function BillingPage() {
         : isTrial ? 'border-amber-500/30 bg-amber-500/[0.05]'
         : 'border-white/[0.07] bg-white/[0.02]'
       }`}>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1">Plan actuel</p>
             <p className="text-2xl font-bold text-white">{PLAN_LABELS[sub.planId] ?? sub.planId}</p>

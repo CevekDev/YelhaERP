@@ -235,7 +235,7 @@ export default function SubscriptionsPage() {
               ))}
             </div>
             <div className="flex-1" />
-            <Link href="/dashboard/subscriptions/new" data-tutorial="new-sub">
+            <Link href="/dashboard/subscriptions/new">
               <Button className="gap-2 text-sm"><Plus className="h-4 w-4" />Nouveau</Button>
             </Link>
           </div>
