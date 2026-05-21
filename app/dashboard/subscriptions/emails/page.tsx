@@ -22,9 +22,10 @@ interface Settings {
 }
 
 const TYPES: { id: EmailType; label: string; icon: string; description: string }[] = [
-  { id: 'welcome',  label: 'Bienvenue',        icon: '💳', description: "Envoyé à la création — invite le client à payer pour activer son abonnement" },
-  { id: 'renewal',  label: 'Renouvellement',   icon: '⚠️', description: "Envoyé 1 jour avant l'expiration d'un abonnement actif" },
-  { id: 'trialEnd', label: "Fin d'essai",       icon: '🎁', description: "Envoyé 1 jour avant la fin d'une période d'essai" },
+  { id: 'trialWelcome', label: 'Début d\'essai',    icon: '🎁', description: "Envoyé à la création — confirme que la période d'essai gratuit a commencé" },
+  { id: 'welcome',      label: 'Bienvenue',          icon: '💳', description: "Envoyé à la création — invite le client à payer pour activer son abonnement" },
+  { id: 'renewal',      label: 'Renouvellement',     icon: '⚠️', description: "Envoyé 1 jour avant l'expiration d'un abonnement actif" },
+  { id: 'trialEnd',     label: "Fin d'essai",         icon: '⏰', description: "Envoyé 1 jour avant la fin d'une période d'essai" },
 ]
 
 export default function EmailsPage() {
@@ -32,7 +33,7 @@ export default function EmailsPage() {
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<Settings>({ emailLanguage: 'fr', emailTemplates: {} })
 
-  const [activeType, setActiveType] = useState<EmailType>('renewal')
+  const [activeType, setActiveType] = useState<EmailType>('trialWelcome')
   const [activeLang, setActiveLang] = useState<EmailLang>('fr')
   const [editorSubject, setEditorSubject] = useState('')
   const [editorBody, setEditorBody] = useState('')
@@ -191,7 +192,7 @@ export default function EmailsPage() {
       </div>
 
       {/* Type selector */}
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {TYPES.map(t => (
           <button
             key={t.id}

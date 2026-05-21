@@ -13,8 +13,10 @@ const templateSchema = z.object({
 }).partial()
 
 const templatesSchema = z.object({
-  renewal:  z.record(langSchema, templateSchema).optional(),
-  trialEnd: z.record(langSchema, templateSchema).optional(),
+  trialWelcome: z.record(langSchema, templateSchema).optional(),
+  welcome:      z.record(langSchema, templateSchema).optional(),
+  renewal:      z.record(langSchema, templateSchema).optional(),
+  trialEnd:     z.record(langSchema, templateSchema).optional(),
 }).optional()
 
 const putSchema = z.object({
