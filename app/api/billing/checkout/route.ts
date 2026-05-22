@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           amount: totalDA,
           currency: 'dzd',
-          success_url: `${appUrl}/dashboard/settings/billing?paid=1&${ctxQs}`,
-          failure_url: `${appUrl}/dashboard/settings/billing?failed=1&${ctxQs}`,
+          success_url: `${appUrl}/payment/success?${ctxQs}`,
+          failure_url: `${appUrl}/payment/cancel?${ctxQs}`,
           locale: 'fr',
           metadata: { planId, billingCycle, userId },
         }),

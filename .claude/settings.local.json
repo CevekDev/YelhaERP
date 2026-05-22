@@ -30,7 +30,19 @@
       "Bash(npm ls *)",
       "Bash(npm run *)",
       "Bash(npx dotenv *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Read(//c/Users/cevek/OneDrive/Bureau/YelhaERP/**)",
+      "Bash(npx tsx *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const l=fs.readFileSync\\('.env.local','utf-8'\\).split\\('\\\\n'\\).find\\(x=>x.startsWith\\('RESEND'\\)\\);console.log\\(l?'trouvé: '+l.slice\\(0,35\\)+'...':'ABSENT'\\)\")",
+      "Bash(npx vercel *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const l=fs.readFileSync\\('.env.vercel.local','utf-8'\\).split\\('\\\\n'\\).find\\(x=>x.startsWith\\('RESEND'\\)\\);console.log\\(l?'trouvé: '+l.slice\\(0,35\\)+'...':'ABSENT dans .env.vercel.local'\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const l=fs.readFileSync\\('.env.vercel.prod','utf-8'\\).split\\('\\\\n'\\).find\\(x=>x.startsWith\\('RESEND'\\)\\);console.log\\(l?'trouvé: '+l.slice\\(0,35\\)+'...':'ABSENT dans .env.vercel.prod'\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const l=fs.readFileSync\\('.env.vercel.prod','utf-8'\\).split\\('\\\\n'\\).find\\(x=>x.startsWith\\('RESEND'\\)\\);console.log\\('longueur valeur:', l ? l.length : 0\\); console.log\\('contenu:', JSON.stringify\\(l?.slice\\(0,80\\)\\)\\)\")",
+      "Bash(RESEND_API_KEY=\"re_PUBhzm1n_5u8gdinmiHyHdU454JuJec7C\" npx tsx scripts/test-subscription-flow.ts --allow-prod)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\cevek\\\\OneDrive\\\\Bureau\\\\YelhaERP\" -Name \"*.env*\" -File)"
     ]
   }
 }

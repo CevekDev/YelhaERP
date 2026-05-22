@@ -654,6 +654,27 @@ export async function sendYelhaSubscriptionActivated(params: {
   }).catch(() => {})
 }
 
+export async function sendPasswordReset({ to, name, resetUrl }: { to: string; name: string; resetUrl: string }) {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Réinitialisation de mot de passe 🔐</h1>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">Bonjour <strong>${name}</strong>, vous avez demandé la réinitialisation de votre mot de passe YelhaSubs.</p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${resetUrl}" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">
+        Réinitialiser mon mot de passe →
+      </a>
+    </div>
+    <p style="color:#64748b;font-size:13px;text-align:center;">Ce lien expire dans <strong>1 heure</strong>. Si vous n'avez pas fait cette demande, ignorez cet email — votre mot de passe reste inchangé.</p>
+    <div style="margin-top:24px;padding:16px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;">
+      <p style="margin:0;font-size:12px;color:#92400e;">⚠️ Ne partagez jamais ce lien. L'équipe YelhaSubs ne vous demandera jamais votre mot de passe.</p>
+    </div>`
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: 'Réinitialisation de votre mot de passe — YelhaSubs',
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
 export async function sendPaymentFailed({ to, name, planName }: { to: string; name: string; planName: string }) {
   const content = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Problème de paiement ⚠️</h1>

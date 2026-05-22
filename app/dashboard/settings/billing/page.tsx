@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, CheckCircle, Clock, AlertTriangle,
-  RefreshCw, Zap, X, Loader2, Check,
+  RefreshCw, Zap, X, Loader2, Check, Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDA } from '@/lib/algerian/format'
@@ -532,11 +532,24 @@ export default function BillingPage() {
                   <p className="text-sm text-white/80">{PLAN_LABELS[p.planId] ?? p.planId}</p>
                   <p className="text-xs text-white/35 mt-0.5">{fmtDate(p.paidAt ?? p.createdAt)} · {METHOD_LABELS[p.method] ?? p.method}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{p.amount === 0 ? '—' : formatDA(p.amount)}</p>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
-                    <CheckCircle className="w-3 h-3" /> Payé
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-white">{p.amount === 0 ? '—' : formatDA(p.amount)}</p>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
+                      <CheckCircle className="w-3 h-3" /> Payé
+                    </span>
+                  </div>
+                  {p.amount > 0 && (
+                    <a
+                      href={`/api/billing/invoice/${p.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Télécharger la facture PDF"
+                      className="text-white/25 hover:text-white/60 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                    </a>
+                  )}
                 </div>
               </div>
             ))}

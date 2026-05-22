@@ -64,7 +64,7 @@ export default function ConditionsPage() {
         <div className="mb-10">
           <span className="text-xs font-medium text-emerald-400 uppercase tracking-widest">Légal</span>
           <h1 className="text-3xl font-semibold tracking-tight mt-2">Conditions d&apos;utilisation</h1>
-          <p className="text-white/40 text-sm mt-1">Dernière mise à jour : 17 mai 2026</p>
+          <p className="text-white/40 text-sm mt-1">Dernière mise à jour : 22 mai 2026</p>
         </div>
 
         <div className="space-y-8 divide-y divide-white/[0.06]">
@@ -110,12 +110,17 @@ export default function ConditionsPage() {
           <div className="pt-8">
             <Section n={4} title="Tarifs et facturation">
               <p>
-                Les tarifs des modules additionnels sont libellés en dinars algériens (DA) et peuvent être modifiés
-                avec un préavis de 30 jours. Les abonnements sont mensuels et renouvelés automatiquement sauf résiliation.
+                Les tarifs des modules additionnels sont libellés en dinars algériens (DA) hors taxes et peuvent être modifiés
+                avec un préavis de 30 jours notifié par email. Les abonnements sont mensuels ou annuels et renouvelés
+                automatiquement sauf résiliation avant la date d&apos;échéance.
               </p>
               <p>
-                Le paiement est traité via Chargily (Edahabia, CIB). Toute période commencée est due en intégralité.
-                Aucun remboursement proratisé n&apos;est accordé en cas de résiliation en cours de période.
+                <strong className="text-white">Moyens de paiement acceptés :</strong> Chargily ePay (Edahabia, CIB algérien)
+                et virement CCP. Pour les paiements CCP, la validation manuelle intervient sous 24h ouvrées.
+              </p>
+              <p>
+                Toute période commencée est due en intégralité. Aucun remboursement proratisé n&apos;est accordé en cas
+                de résiliation en cours de période. Une facture en format PDF est disponible pour chaque paiement confirmé.
               </p>
             </Section>
           </div>
@@ -170,14 +175,50 @@ export default function ConditionsPage() {
           </div>
 
           <div className="pt-8">
-            <Section n={9} title="Droit applicable et contact">
+            <Section n={9} title="Résiliation et droit de rétractation">
               <p>
-                Les présentes CGU sont régies par le droit algérien. Tout litige sera soumis aux tribunaux d&apos;Alger.
-                Pour toute question :{' '}
-                <a href="mailto:cvkdev@outlook.fr" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
-                  cvkdev@outlook.fr
-                </a>
+                <strong className="text-white">Résiliation par l&apos;utilisateur :</strong> Vous pouvez résilier votre abonnement à tout moment
+                depuis votre espace client. La résiliation prend effet à la fin de la période en cours.
+                Le Core ERP reste accessible gratuitement sans limitation dans le temps.
               </p>
+              <p>
+                <strong className="text-white">Suppression de compte :</strong> Vous pouvez demander la suppression complète de votre compte
+                et de vos données depuis les paramètres de votre profil, conformément à la loi algérienne n° 18-07
+                relative à la protection des personnes physiques dans le traitement des données à caractère personnel.
+              </p>
+              <p>
+                <strong className="text-white">Résiliation par YelhaSubs :</strong> En cas de violation grave des présentes CGU,
+                YelhaSubs se réserve le droit de suspendre ou résilier votre accès avec un préavis de 48h,
+                sauf en cas d&apos;urgence liée à la sécurité.
+              </p>
+            </Section>
+          </div>
+
+          <div className="pt-8">
+            <Section n={10} title="Droit applicable et contact">
+              <p>
+                Les présentes CGU sont régies par le droit algérien, notamment la loi n° 18-05 du 10 mai 2018
+                relative au commerce électronique, l&apos;ordonnance n° 03-03 relative à la concurrence,
+                et la loi n° 18-07 relative à la protection des données personnelles.
+                Tout litige sera soumis aux juridictions compétentes d&apos;Alger.
+              </p>
+              <p><strong className="text-white">Support :</strong></p>
+              <ul className="space-y-1.5 mt-1">
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+                  Email :{' '}
+                  <a href="mailto:cvkdev@outlook.fr" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
+                    cvkdev@outlook.fr
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+                  WhatsApp :{' '}
+                  <a href="https://wa.me/33761179379" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
+                    +33 7 61 17 93 79
+                  </a>
+                </li>
+              </ul>
             </Section>
           </div>
         </div>

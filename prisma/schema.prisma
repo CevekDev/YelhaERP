@@ -45,8 +45,10 @@ model User {
   phone              String?
   birthDate          DateTime?
   emailVerified      DateTime?
-  verificationToken  String?   @unique
-  verificationExpiry DateTime?
+  verificationToken   String?   @unique
+  verificationExpiry  DateTime?
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
   role               Role      @default(OWNER)
   isSuperAdmin       Boolean   @default(false)
   // Plan YelhaSubs (dénormalisé pour accès rapide)
