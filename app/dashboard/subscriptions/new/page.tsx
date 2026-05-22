@@ -32,8 +32,6 @@ export default function NewSubscriptionPage() {
   const [clientMode, setClientMode] = useState<'existing' | 'new'>('existing')
   const [clientSearch, setClientSearch] = useState('')
   const [selectedClientId, setSelectedClientId] = useState('')
-  const [status, setStatus] = useState('PENDING')
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
   const [clientEmail, setClientEmail] = useState('')
 
@@ -99,8 +97,7 @@ export default function NewSubscriptionPage() {
 
     setSaving(true)
     const payload: Record<string, unknown> = {
-      planId, status,
-      ...(status !== 'PENDING' ? { startDate: new Date(startDate).toISOString() } : {}),
+      planId,
       notes: notes || undefined,
       clientEmail: clientEmail || undefined,
     }
@@ -319,44 +316,11 @@ export default function NewSubscriptionPage() {
             </CardContent>
           </Card>
 
-          {/* Options */}
+          {/* Notes */}
           <Card>
-            <CardContent className="p-5 space-y-4">
-              <h2 className="font-semibold">Options</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Statut initial</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PENDING">En attente de paiement</SelectItem>
-                      <SelectItem value="ACTIVE">Actif (paiement déjà reçu)</SelectItem>
-                      <SelectItem value="TRIAL">Essai gratuit</SelectItem>
-                      <SelectItem value="PAUSED">Pausé</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {status === 'PENDING' && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400">
-                      Un email de paiement sera envoyé au client. L&apos;abonnement s&apos;activera dès que vous cliquerez sur <strong>Activer</strong> (paiement WhatsApp/CCP) ou automatiquement si Chargily ePay est configuré.
-                    </p>
-                  )}
-                </div>
-                {status !== 'PENDING' && (
-                  <div className="space-y-1.5">
-                    <Label>Date de début</Label>
-                    <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                  </div>
-                )}
-              </div>
-              {status === 'TRIAL' && selectedPlan && !selectedPlan.trialDays && (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Ce plan n&apos;a pas de durée d&apos;essai définie. La date de fin d&apos;essai utilisera l&apos;intervalle du plan.
-                </p>
-              )}
-              <div className="space-y-1.5">
-                <Label>Notes internes</Label>
-                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes internes..." />
-              </div>
+            <CardContent className="p-5 space-y-3">
+              <h2 className="font-semibold">Notes internes</h2>
+              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes optionnelles..." />
             </CardContent>
           </Card>
 
@@ -365,7 +329,7 @@ export default function NewSubscriptionPage() {
             <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-sm">
               <p className="font-semibold text-primary mb-1">Récapitulatif</p>
               <p>Plan : <strong>{selectedPlan.name}</strong></p>
-              <p>Tarif : <strong className="da-amount">{formatDA(Number(selectedPlan.price))}</strong> / {INTERVAL_LABELS[selectedPlan.interval]}</p>
+              <p>Tarif : <strong className="da-amount">{formatDA(Number(selectedPlan.price))}</strong> / {selectedPlan.intervalCount > 1 ? `${selectedPlan.intervalCount} ` : ''}{INTERVAL_LABELS[selectedPlan.interval]}</p>
               {clientMode === 'existing' && selectedClientId && (
                 <p>Client : <strong>{clients.find(c => c.id === selectedClientId)?.name}</strong></p>
               )}
@@ -373,9 +337,7 @@ export default function NewSubscriptionPage() {
                 <p>Client : <strong>{[newClient.firstName, newClient.name].filter(Boolean).join(' ')}</strong> (nouveau)</p>
               )}
               {clientEmail && <p>Email rappel : <strong>{clientEmail}</strong></p>}
-              {status === 'TRIAL' && selectedPlan.trialDays && (
-                <p>Essai gratuit : <strong>{selectedPlan.trialDays} jours</strong></p>
-              )}
+              <p>Démarrage : <strong>{selectedPlan.trialDays ? `Essai gratuit de ${selectedPlan.trialDays} jours` : 'En attente de paiement'}</strong></p>
             </div>
           )}
 

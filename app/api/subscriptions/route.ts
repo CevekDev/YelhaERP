@@ -20,10 +20,6 @@ const createSchema = z.object({
     address:   z.string().max(300).optional(),
     clientType: z.enum(['COMPANY', 'INDIVIDUAL']).default('INDIVIDUAL'),
   }).optional(),
-  status:      z.enum(['PENDING', 'TRIAL', 'ACTIVE', 'PAUSED']).default('PENDING'),
-  startDate:   z.string().datetime().optional(),
-  endDate:     z.string().datetime().optional().nullable(),
-  nextBilling: z.string().datetime().optional().nullable(),
   notes:       z.string().max(1000).optional(),
   clientEmail: z.string().email().optional(),
 })
@@ -82,7 +78,7 @@ export async function POST(req: NextRequest) {
     const parsed = createSchema.safeParse(body)
     if (!parsed.success) return apiError('Données invalides', 400)
 
-    const { planId, clientId, newClient, status, startDate, endDate, nextBilling, notes, clientEmail } = parsed.data
+    const { planId, clientId, newClient, notes, clientEmail } = parsed.data
 
     const plan = await prisma.subscriptionPlan.findFirst({
       where: { id: planId, userId: ctx.userId, isActive: true },
@@ -103,24 +99,13 @@ export async function POST(req: NextRequest) {
       return apiError('Veuillez sélectionner ou créer un client', 422)
     }
 
-    // Compute nextBilling (only for non-PENDING statuses)
-    let computedNextBilling = nextBilling ? new Date(nextBilling) : null
-    if (!computedNextBilling && status !== 'PENDING') {
-      const start = startDate ? new Date(startDate) : new Date()
-      if (status === 'TRIAL' && plan.trialDays && plan.trialDays > 0) {
-        computedNextBilling = new Date(start)
-        computedNextBilling.setDate(start.getDate() + plan.trialDays)
-      } else if (status === 'ACTIVE') {
-        computedNextBilling = new Date(start)
-        const count = plan.intervalCount
-        switch (plan.interval) {
-          case 'DAILY':     computedNextBilling.setDate(start.getDate() + count); break
-          case 'WEEKLY':    computedNextBilling.setDate(start.getDate() + count * 7); break
-          case 'MONTHLY':   computedNextBilling.setMonth(start.getMonth() + count); break
-          case 'QUARTERLY': computedNextBilling.setMonth(start.getMonth() + count * 3); break
-          case 'YEARLY':    computedNextBilling.setFullYear(start.getFullYear() + count); break
-        }
-      }
+    // Status and nextBilling are auto-computed from the plan
+    const status = (plan.trialDays && plan.trialDays > 0) ? 'TRIAL' : 'PENDING'
+    const start = new Date()
+    let computedNextBilling: Date | null = null
+    if (status === 'TRIAL') {
+      computedNextBilling = new Date(start)
+      computedNextBilling.setDate(start.getDate() + plan.trialDays!)
     }
 
     const subscription = await prisma.subscription.create({
@@ -129,8 +114,8 @@ export async function POST(req: NextRequest) {
         clientId:    resolvedClientId,
         planId,
         status,
-        startDate:   startDate ? new Date(startDate) : new Date(),
-        endDate:     endDate ? new Date(endDate) : null,
+        startDate:   start,
+        endDate:     null,
         nextBilling: computedNextBilling,
         notes,
         clientEmail: clientEmail || undefined,

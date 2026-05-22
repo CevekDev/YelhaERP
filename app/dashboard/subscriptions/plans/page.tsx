@@ -16,6 +16,9 @@ import { toast } from 'sonner'
 const INTERVAL_LABELS: Record<string, string> = {
   DAILY: 'Jour', WEEKLY: 'Semaine', MONTHLY: 'Mois', QUARTERLY: 'Trimestre', YEARLY: 'An',
 }
+const INTERVAL_OPTIONS: Record<string, string> = {
+  WEEKLY: 'Semaine (min. 7 jours)', MONTHLY: 'Mois', QUARTERLY: 'Trimestre', YEARLY: 'An',
+}
 
 interface Plan {
   id: string; name: string; description?: string; price: number
@@ -200,7 +203,7 @@ export default function PlansPage() {
                 <Select value={form.interval} onValueChange={v => setForm(f => ({ ...f, interval: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(INTERVAL_LABELS).map(([k, v]) => (
+                    {Object.entries(INTERVAL_OPTIONS).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
                     ))}
                   </SelectContent>

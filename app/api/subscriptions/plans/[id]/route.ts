@@ -9,7 +9,7 @@ const patchSchema = z.object({
   description:   z.string().max(500).optional().nullable(),
   price:         z.number().min(0).optional(),
   currency:      z.string().optional(),
-  interval:      z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']).optional(),
+  interval:      z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']).optional(),
   intervalCount: z.number().int().min(1).optional(),
   trialDays:     z.number().int().min(0).optional().nullable(),
   features:      z.array(z.string().max(200)).max(20).optional(),

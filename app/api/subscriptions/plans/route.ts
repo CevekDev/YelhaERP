@@ -9,7 +9,7 @@ const planSchema = z.object({
   description:   z.string().max(500).optional(),
   price:         z.number().min(0),
   currency:      z.string().default('DZD'),
-  interval:      z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']).default('MONTHLY'),
+  interval:      z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']).default('MONTHLY'),
   intervalCount: z.number().int().min(1).default(1),
   trialDays:     z.number().int().min(0).optional().nullable(),
   features:      z.array(z.string().max(200)).max(20).default([]),
