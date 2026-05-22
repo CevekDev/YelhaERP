@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { TopNav } from '@/components/layout/top-nav'
 import { KeyboardShortcuts } from '@/components/providers/keyboard-shortcuts'
+import { SupportButton } from '@/components/support-button'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -34,7 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Compte suspendu</h2>
             <p style={{ color: '#64748b', fontSize: 15, marginBottom: 24 }}>Votre compte a été suspendu. Contactez le support pour plus d&apos;informations.</p>
-            <a href="mailto:contact@yelha.net" style={{ display: 'inline-block', background: '#ef4444', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
+            <a href="mailto:cvkdev@outlook.fr" style={{ display: 'inline-block', background: '#ef4444', color: '#fff', fontWeight: 600, padding: '12px 32px', borderRadius: 10, textDecoration: 'none', fontSize: 15 }}>
               Contacter le support →
             </a>
           </div>
@@ -61,6 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main className="pt-14 md:pt-24 min-h-screen">
         {children}
       </main>
+      <SupportButton />
     </div>
   )
 }

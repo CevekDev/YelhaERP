@@ -588,6 +588,41 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ---
 
+## 🔄 Changements session 2026-05-22 — Commercialisation complète
+
+### 🔐 Récupération de mot de passe
+- ✅ `prisma/schema.prisma` : champs `passwordResetToken String? @unique` + `passwordResetExpiry DateTime?` sur User
+- ✅ `lib/email/resend.ts` : `sendPasswordReset({ to, name, resetUrl })` — email HTML avec lien 1h
+- ✅ `app/api/auth/forgot-password/route.ts` : CRÉÉ — rate limit IP + par email (3/h), génère token SHA256, envoie email, pas d'énumération (réponse identique si email inexistant)
+- ✅ `app/api/auth/reset-password/route.ts` : CRÉÉ — vérifie token SHA256 + expiry, bcrypt.hash(12), efface token
+- ✅ `app/(auth)/forgot-password/page.tsx` : CRÉÉ — formulaire email + état "email envoyé"
+- ✅ `app/(auth)/reset-password/page.tsx` : CRÉÉ — lit `?token=` URL, formulaire nouveau mot de passe + confirmation, show/hide, redirect login 3s
+- ✅ `app/(auth)/login/page.tsx` : lien "Mot de passe oublié ?" entre champ password et bouton submit
+- ✅ `middleware.ts` : `/forgot-password` + `/reset-password` ajoutés aux PUBLIC_PATHS
+
+### 💳 Pages paiement Chargily
+- ✅ `app/payment/success/page.tsx` : CRÉÉ — confirmation réception, note délai CCP 24h, CTA dashboard + billing
+- ✅ `app/payment/cancel/page.tsx` : CRÉÉ — paiement annulé, CTA réessayer + dashboard
+- ✅ `app/api/billing/checkout/route.ts` : success_url → `/payment/success`, failure_url → `/payment/cancel`
+- ✅ `middleware.ts` : `/payment` ajouté aux PUBLIC_PATHS
+
+### 🗑️ Suppression de compte (RGPD / loi 18-07)
+- ✅ `app/api/settings/account/route.ts` : DELETE — vérifie mot de passe (si non-OAuth), exige confirmation textuelle "SUPPRIMER MON COMPTE", rate limit 3/h, cascade Prisma
+- ✅ `app/dashboard/settings/profile/page.tsx` : zone dangereuse ajoutée en bas — toggle, champ confirmation texte + mot de passe si requis, bouton destructif
+
+### 📄 Facture PDF
+- ✅ `app/api/billing/invoice/[id]/route.ts` : CRÉÉ — jsPDF, mise en page professionnelle (header vert, table, total, mention TVA, réf paiement, footer), sécurisé par auth + vérification userId
+- ✅ `app/dashboard/settings/billing/page.tsx` : colonne "PDF" avec icône Download sur chaque paiement ERP confirmé
+
+### 📞 Support client
+- ✅ `components/support-button.tsx` : CRÉÉ — bouton flottant bottom-right, toggle ouvre liens WhatsApp (+33 7 61 17 93 79) + email (cvkdev@outlook.fr)
+- ✅ `app/dashboard/layout.tsx` : SupportButton importé et rendu, email banni corrigé (contact@yelha.net → cvkdev@outlook.fr)
+
+### 📜 CGU/CGV Algérie
+- ✅ `app/conditions/page.tsx` : Article 4 enrichi (CCP, délai 24h, facture PDF), Article 9 renommé "Résiliation et droit de rétractation" (résiliation utilisateur, suppression compte RGPD, résiliation YelhaSubs), Article 10 "Droit applicable" avec références légales (loi 18-05 commerce électronique, ordonnance 03-03, loi 18-07 données), contacts support WhatsApp + email
+
+---
+
 ## 🚧 En cours / À faire
 
 - ⏳ `prisma db push` requis pour les 6 nouveaux champs sur `Subscription`

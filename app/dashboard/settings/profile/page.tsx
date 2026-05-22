@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n'
 import type { Locale } from '@/lib/i18n/translations'
 import { signOut, useSession } from 'next-auth/react'
 import { toast } from 'sonner'
-import { Loader2, LogOut, Sun, Moon } from 'lucide-react'
+import { Loader2, LogOut, Sun, Moon, Trash2, AlertTriangle } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 interface UserProfile {
@@ -40,6 +40,12 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+
+  // Account deletion
+  const [showDeleteZone, setShowDeleteZone] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState('')
@@ -101,6 +107,29 @@ export default function ProfilePage() {
       toast.error(t('profile.network_error'))
     } finally {
       setSavingPassword(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirm !== 'SUPPRIMER MON COMPTE') {
+      toast.error('Tapez exactement "SUPPRIMER MON COMPTE"')
+      return
+    }
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/settings/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword || undefined, confirm: deleteConfirm }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Erreur'); return }
+      toast.success('Compte supprimé')
+      signOut({ callbackUrl: '/login' })
+    } catch {
+      toast.error('Erreur réseau')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -280,6 +309,74 @@ export default function ProfilePage() {
               <LogOut className="h-4 w-4" />
               {t('profile.logout_btn')}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Danger zone — delete account */}
+        <Card className="border-red-300">
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h2 className="font-semibold text-red-700">Zone dangereuse</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  La suppression de votre compte est irréversible. Toutes vos données seront définitivement effacées.
+                </p>
+              </div>
+            </div>
+
+            {!showDeleteZone ? (
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteZone(true)}
+                className="gap-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer mon compte
+              </Button>
+            ) : (
+              <div className="space-y-3 border border-red-200 rounded-xl p-4 bg-red-50/50">
+                {profile?.hasPassword && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Confirmez votre mot de passe</Label>
+                    <Input
+                      type="password"
+                      value={deletePassword}
+                      onChange={e => setDeletePassword(e.target.value)}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">
+                    Tapez <span className="font-mono font-bold text-red-600">SUPPRIMER MON COMPTE</span> pour confirmer
+                  </Label>
+                  <Input
+                    value={deleteConfirm}
+                    onChange={e => setDeleteConfirm(e.target.value)}
+                    placeholder="SUPPRIMER MON COMPTE"
+                    className="font-mono"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting || deleteConfirm !== 'SUPPRIMER MON COMPTE'}
+                    className="gap-2"
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    Supprimer définitivement
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setShowDeleteZone(false); setDeleteConfirm(''); setDeletePassword('') }}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

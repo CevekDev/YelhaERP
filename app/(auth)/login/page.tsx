@@ -136,7 +136,12 @@ function LoginForm() {
           {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
         </div>
         <div>
-          <label htmlFor="password" className={labelCls}>{t('auth.field_password')}</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="password" className="text-sm font-medium text-slate-700">{t('auth.field_password')}</label>
+            <Link href="/forgot-password" className="text-xs text-yelha-600 hover:text-yelha-700 hover:underline">
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <input id="password" type="password" autoComplete="current-password" className={inputCls} {...register('password')} />
           {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
         </div>

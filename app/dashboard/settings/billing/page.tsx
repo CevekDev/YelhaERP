@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, CreditCard, AlertTriangle, CheckCircle, Clock,
-  X, RefreshCw, Zap, Package,
+  X, RefreshCw, Zap, Package, Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { APPS, type AppId } from '@/lib/pricing/config'
@@ -370,7 +370,8 @@ export default function BillingPage() {
                   <th className="pb-2 pr-4 font-medium">Module</th>
                   <th className="pb-2 pr-4 font-medium">Montant</th>
                   <th className="pb-2 pr-4 font-medium">Méthode</th>
-                  <th className="pb-2 font-medium">Statut</th>
+                  <th className="pb-2 pr-4 font-medium">Statut</th>
+                  <th className="pb-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -380,10 +381,24 @@ export default function BillingPage() {
                     <td className="py-2.5 pr-4 font-medium">{p.appId ? `${p.appId} — ${p.planId}` : p.planId}</td>
                     <td className="py-2.5 pr-4 da-amount font-semibold">{p.amount === 0 ? '—' : formatDA(p.amount)}</td>
                     <td className="py-2.5 pr-4 text-muted-foreground">{methodLabel[p.method] ?? p.method}</td>
-                    <td className="py-2.5">
+                    <td className="py-2.5 pr-4">
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
                         <CheckCircle className="h-3 w-3" />Payé
                       </span>
+                    </td>
+                    <td className="py-2.5">
+                      {!p.appId && p.amount > 0 && (
+                        <a
+                          href={`/api/billing/invoice/${p.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Télécharger la facture PDF"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">PDF</span>
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}
