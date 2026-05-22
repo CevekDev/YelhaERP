@@ -64,6 +64,11 @@ function computeNextBilling(start: Date, interval: string, count: number): Date 
 export async function POST(req: NextRequest) {
   // Lire le body brut pour la signature
   const body = await req.text()
+  const signature = req.headers.get('signature')
+  if (!signature) {
+    return NextResponse.json({ error: 'Signature manquante' }, { status: 401 })
+  }
+
   let payload: ChargilyPayload
   try { payload = JSON.parse(body) as ChargilyPayload }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -87,7 +92,6 @@ export async function POST(req: NextRequest) {
   const secret = sub.user.subscriptionSettings?.chargilyKey
   if (!secret) return NextResponse.json({ error: 'No Chargily secret configured' }, { status: 400 })
 
-  const signature = req.headers.get('signature')
   if (!verifySignature(body, signature, secret)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
