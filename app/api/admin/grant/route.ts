@@ -67,6 +67,17 @@ export async function POST(req: NextRequest) {
       const ccpPlanEnum = ccpPlanId.toUpperCase() as 'TRIAL' | 'STARTER' | 'PRO' | 'AGENCY' | 'BUSINESS' | 'ENTERPRISE'
       const validPlansForCcp = ['TRIAL', 'STARTER', 'PRO', 'AGENCY', 'BUSINESS', 'ENTERPRISE']
 
+      // Si la période calculée au checkout est déjà expirée (paiement confirmé tardivement),
+      // on recalcule une période fraîche depuis maintenant
+      const periodStart = payment.periodEnd > now ? payment.periodStart : now
+      const periodEnd = payment.periodEnd > now
+        ? payment.periodEnd
+        : (() => {
+            const d = new Date(now)
+            d.setDate(d.getDate() + (payment.billingCycle === 'ANNUAL' ? 365 : 30))
+            return d
+          })()
+
       await prisma.$transaction([
         prisma.yelhaPayment.update({ where: { id: paymentId }, data: { status: 'PAID', paidAt: now } }),
         prisma.yelhaSubscription.update({
@@ -75,8 +86,8 @@ export async function POST(req: NextRequest) {
             status: 'ACTIVE',
             planId: payment.planId,
             billingCycle: payment.billingCycle,
-            currentPeriodStart: payment.periodStart,
-            currentPeriodEnd: payment.periodEnd,
+            currentPeriodStart: periodStart,
+            currentPeriodEnd: periodEnd,
             lastPaymentAt: now,
             lastPaymentRef: payment.ccpRef ?? payment.id,
             monthlyAmount: payment.amount,
@@ -96,7 +107,7 @@ export async function POST(req: NextRequest) {
         to: payment.subscription.user.email,
         name: payment.subscription.user.name ?? payment.subscription.user.email,
         planName: ccpPlanMeta?.name ?? ccpPlanId,
-        periodEnd: payment.periodEnd,
+        periodEnd,
         amount: payment.amount,
         isFree: false,
       }).catch(() => {})
