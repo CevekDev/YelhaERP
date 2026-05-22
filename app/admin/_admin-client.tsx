@@ -270,7 +270,7 @@ function UsersTab() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {u.email} · {u.plan}
-                    {u.yelhaSubscription && <span className={` · ${u.yelhaSubscription.status === 'ACTIVE' ? 'text-emerald-500' : 'text-amber-500'}`}>{u.yelhaSubscription.status}</span>}
+                    {u.yelhaSubscription && <span className={u.yelhaSubscription.status === 'ACTIVE' ? 'text-emerald-500' : 'text-amber-500'}>{' · '}{u.yelhaSubscription.status}</span>}
                     {' · '}{fmtDate(u.createdAt)}
                   </p>
                 </div>
