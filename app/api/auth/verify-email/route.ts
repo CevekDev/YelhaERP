@@ -53,8 +53,23 @@ export async function POST(req: NextRequest) {
   })
 
   try {
-    const sub = await prisma.yelhaSubscription.findUnique({ where: { userId: user.id } })
-    const trialEndsAt = sub?.trialEndsAt ?? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+    const trialEndsAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+    await prisma.yelhaSubscription.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        planId: 'trial',
+        status: 'TRIAL',
+        billingCycle: 'MONTHLY',
+        trialEndsAt,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: trialEndsAt,
+        monthlyAmount: 0,
+        limitEmails: 50,
+        limitApiReq: 500,
+      },
+      update: {},
+    })
     await sendTrialWelcome({ to: emailNorm, name: user.name, trialEndsAt })
   } catch {
     // non-blocking

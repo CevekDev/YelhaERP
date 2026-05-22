@@ -16,27 +16,7 @@ export async function GET(req: NextRequest) {
       include: { payments: { orderBy: { createdAt: 'desc' }, take: 10 } },
     })
 
-    // Auto-create trial subscription for companies sans abonnement existant
-    if (!sub) {
-      const trialEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
-      sub = await prisma.yelhaSubscription.create({
-        data: {
-          userId,
-          planId: 'trial',
-          status: 'TRIAL',
-          billingCycle: 'MONTHLY',
-          trialEndsAt: trialEnd,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: trialEnd,
-          monthlyAmount: 0,
-          limitEmails: 50,
-          limitApiReq: 500,
-        },
-        include: { payments: true },
-      })
-    }
-
-    return apiSuccess({ subscription: sub })
+    return apiSuccess({ subscription: sub ?? null })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur'
     if (msg === 'UNAUTHORIZED') return apiError('Non authentifié', 401)

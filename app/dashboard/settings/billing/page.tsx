@@ -344,7 +344,6 @@ export default function BillingPage() {
       fetch('/api/billing/plans').then(r => r.json()),
     ]).then(([subData, plansData]) => {
       if (subData.subscription) setSub(subData.subscription)
-      else setError("Impossible de charger l'abonnement.")
       if (plansData.plans) {
         const prices: Record<string, number> = {}
         for (const [id, p] of Object.entries(plansData.plans as Record<string, { price: number }>)) prices[id] = p.price
@@ -370,13 +369,48 @@ export default function BillingPage() {
     )
   }
 
-  if (error || !sub) {
+  if (error) {
     return (
       <div className="p-6 max-w-2xl">
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center">
           <AlertTriangle className="h-8 w-8 text-red-400 mx-auto mb-2" />
-          <p className="text-red-400 font-medium">{error || 'Abonnement introuvable'}</p>
+          <p className="text-red-400 font-medium">{error}</p>
         </div>
+      </div>
+    )
+  }
+
+  if (!sub) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        {checkoutPlan && (
+          <CheckoutModal planId={checkoutPlan} cycle={checkoutCycle} prices={planPrices} onClose={() => setCheckoutPlan(null)} />
+        )}
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/subscriptions/overview">
+            <Button variant="ghost" size="icon" className="text-white/40 hover:text-white hover:bg-white/[0.06]">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold text-white">Paiement</h1>
+            <p className="text-sm text-white/40">Gérez votre abonnement YelhaSubs</p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-8 text-center space-y-2">
+          <CreditCard className="w-10 h-10 text-white/20 mx-auto" />
+          <p className="text-white font-medium">Aucun abonnement actif</p>
+          <p className="text-white/40 text-sm">Choisissez un plan pour débuter.</p>
+        </div>
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => setAnnual(a => !a)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${annual ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-white/[0.08] text-white/50 hover:text-white'}`}
+          >
+            Annuel <span className="text-emerald-400">−20%</span>
+          </button>
+        </div>
+        <PlanCards prices={planPrices} currentPlanId="" annual={annual} onSelect={openCheckout} />
       </div>
     )
   }

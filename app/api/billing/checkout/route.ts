@@ -51,10 +51,23 @@ export async function POST(req: NextRequest) {
       appliedPromo = promo
     }
 
-    const sub = await prisma.yelhaSubscription.findUnique({ where: { userId } })
-    if (!sub) return apiError('Abonnement introuvable', 404)
-
     const now = new Date()
+
+    const sub = await prisma.yelhaSubscription.upsert({
+      where: { userId },
+      create: {
+        userId,
+        planId,
+        status: 'EXPIRED',
+        billingCycle: isAnnual ? 'ANNUAL' : 'MONTHLY',
+        currentPeriodStart: now,
+        currentPeriodEnd: now,
+        monthlyAmount: 0,
+        limitEmails: 0,
+        limitApiReq: 0,
+      },
+      update: {},
+    })
     const daysUntilEnd = sub.currentPeriodEnd
       ? (sub.currentPeriodEnd.getTime() - now.getTime()) / 86400000
       : -1
