@@ -216,11 +216,11 @@ async function main() {
 
     const c2 = await req('GET', '/clients', undefined, KEY)
     ok('GET /clients → 200', c2.status === 200)
-    ok('Contient notre client', (c2.data as {data?:{id:string}[]}).data?.some(c => c.id === clientId))
+    ok('Contient notre client', (c2.data as {data?:{id:string}[]}).data?.some(c => c.id === clientId) ?? false)
 
     const c3 = await req('GET', '/clients?search=Benali', undefined, KEY)
     ok('Recherche "Benali" → 200', c3.status === 200)
-    ok('Trouvé dans recherche', (c3.data as {data?:{id:string}[]}).data?.some(c => c.id === clientId))
+    ok('Trouvé dans recherche', (c3.data as {data?:{id:string}[]}).data?.some(c => c.id === clientId) ?? false)
 
     const c4 = await req('GET', `/clients/${clientId}`, undefined, KEY)
     ok('GET /clients/:id → 200', c4.status === 200)
@@ -264,7 +264,7 @@ async function main() {
 
     const s2 = await req('GET', '/subscriptions', undefined, KEY)
     ok('GET /subscriptions → 200', s2.status === 200)
-    ok('Contient notre sub', (s2.data as {data?:{id:string}[]}).data?.some(s => s.id === subscriptionId))
+    ok('Contient notre sub', (s2.data as {data?:{id:string}[]}).data?.some(s => s.id === subscriptionId) ?? false)
 
     const s3 = await req('GET', `/subscriptions?status=${subStatus}`, undefined, KEY)
     ok(`Filtre ?status=${subStatus} → 200`, s3.status === 200)
