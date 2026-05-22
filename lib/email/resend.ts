@@ -601,6 +601,59 @@ export async function sendYelhaRenewalReminder(params: {
   }).catch(() => {})
 }
 
+export async function sendYelhaSubscriptionActivated(params: {
+  to: string
+  name: string
+  planName: string
+  periodEnd: Date
+  amount: number
+  isFree?: boolean
+}) {
+  const { to, name, planName, periodEnd, amount, isFree } = params
+  const endStr = periodEnd.toLocaleDateString('fr-DZ', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">${isFree ? '🎁 Abonnement offert !' : '✅ Abonnement activé !'}</h1>
+    <p style="margin:0 0 24px;color:#64748b;font-size:15px;">
+      Bonjour <strong>${name}</strong>,<br>
+      votre abonnement YelhaSubs <strong>Plan ${planName}</strong> est maintenant actif.
+    </p>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:13px;color:#64748b;padding:4px 0;">Plan</td>
+          <td style="font-size:13px;font-weight:700;color:#0f172a;text-align:right;padding:4px 0;">${planName}</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;color:#64748b;padding:4px 0;">Valide jusqu'au</td>
+          <td style="font-size:13px;font-weight:700;color:#0f172a;text-align:right;padding:4px 0;">${endStr}</td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;color:#64748b;padding:4px 0;">Montant</td>
+          <td style="font-size:13px;font-weight:700;color:${isFree ? '#1D9E75' : '#0f172a'};text-align:right;padding:4px 0;">${isFree ? 'Offert' : `${amount.toLocaleString('fr-DZ')} DA`}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://subs.yelha.net/dashboard" style="display:inline-block;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;padding:14px 36px;border-radius:12px;text-decoration:none;">
+        Accéder à mon dashboard →
+      </a>
+    </div>
+
+    <p style="color:#94a3b8;font-size:13px;text-align:center;">
+      Une question ? <a href="mailto:cvkdev@outlook.fr" style="color:#1D9E75;">cvkdev@outlook.fr</a>
+    </p>`
+
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `${isFree ? '🎁 Abonnement offert' : '✅ Abonnement activé'} — Plan ${planName}`,
+    html: wrap('fr', content),
+  }).catch(() => {})
+}
+
 export async function sendPaymentFailed({ to, name, planName }: { to: string; name: string; planName: string }) {
   const content = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Problème de paiement ⚠️</h1>

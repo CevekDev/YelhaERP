@@ -6,6 +6,7 @@ import { apiError, apiSuccess, rateLimitResponse } from '@/lib/security/api-resp
 import { rateLimit, AUTHENTICATED_RATE_LIMIT } from '@/lib/security/ratelimit'
 import { PLANS } from '@/lib/pricing/config'
 import type { PlanId } from '@/lib/pricing/config'
+import { sendYelhaSubscriptionActivated } from '@/lib/email/resend'
 
 const grantSchema = z.union([
   z.object({
@@ -89,6 +90,17 @@ export async function POST(req: NextRequest) {
           ? [prisma.user.update({ where: { id: payment.subscription.user.id }, data: { plan: ccpPlanEnum } })]
           : []),
       ])
+
+      const ccpPlanMeta = PLANS[ccpPlanId]
+      sendYelhaSubscriptionActivated({
+        to: payment.subscription.user.email,
+        name: payment.subscription.user.name ?? payment.subscription.user.email,
+        planName: ccpPlanMeta?.name ?? ccpPlanId,
+        periodEnd: payment.periodEnd,
+        amount: payment.amount,
+        isFree: false,
+      }).catch(() => {})
+
       return apiSuccess({ confirmed: true })
     }
 
@@ -100,7 +112,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!userId) return apiError('userId requis', 422)
-    const sub = await prisma.yelhaSubscription.findUnique({ where: { userId } })
+    const sub = await prisma.yelhaSubscription.findUnique({
+      where: { userId },
+      include: { user: true },
+    })
     if (!sub) return apiError('Abonnement introuvable', 404)
 
     const now = new Date()
@@ -146,6 +161,16 @@ export async function POST(req: NextRequest) {
         },
       }),
     ])
+
+    const activatedPlanMeta = PLANS[effectivePlanId as PlanId]
+    sendYelhaSubscriptionActivated({
+      to: sub.user.email,
+      name: sub.user.name ?? sub.user.email,
+      planName: activatedPlanMeta?.name ?? effectivePlanId,
+      periodEnd,
+      amount: type === 'free' ? 0 : (sub.monthlyAmount ?? 0),
+      isFree: type === 'free',
+    }).catch(() => {})
 
     return apiSuccess({ granted: true, type, planId: effectivePlanId, periodEnd })
   } catch (e: unknown) {
