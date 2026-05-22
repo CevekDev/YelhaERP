@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2, TrendingUp, CheckCircle, Package, FileText, Users, BarChart3, Zap, Shield, Truck } from 'lucide-react'
+import { Loader2, TrendingUp, CheckCircle, Package, FileText, Users, BarChart3, Zap, Shield, Truck, Calendar } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 
@@ -120,13 +120,64 @@ export default function RegisterPage() {
             })}
           </div>
 
-          {/* Module teaser */}
-          <div className="bg-yelha-500/10 border border-yelha-500/20 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <Zap className="w-4 h-4 text-yelha-400 flex-shrink-0 mt-0.5" />
+          {/* Trial timeline */}
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-3.5 h-3.5 text-yelha-400" />
+              <p className="text-xs font-semibold text-yelha-300">Comment ça marche</p>
+            </div>
+
+            {/* Step 1 */}
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <CheckCircle className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div className="w-px flex-1 min-h-[20px] bg-gradient-to-b from-emerald-500/50 to-yelha-500/40 my-1" />
+              </div>
+              <div className="pb-3">
+                <p className="text-xs font-semibold text-white">Aujourd&apos;hui — Accès immédiat</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Core ERP complet inclus, sans limite de durée</p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-yelha-500 flex items-center justify-center">
+                  <Zap className="w-3 h-3 text-white" />
+                </div>
+                <div className="w-px flex-1 min-h-[20px] bg-gradient-to-b from-yelha-500/50 to-amber-500/40 my-1" />
+              </div>
+              <div className="pb-3">
+                <p className="text-xs font-semibold text-white">15 jours d&apos;essai gratuit</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Modules avancés (Abonnements, CRM…) sans engagement</p>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                  <span className="text-amber-400 text-[10px] font-bold">J15</span>
+                </div>
+              </div>
               <div>
-                <p className="text-yelha-300 text-xs font-semibold mb-1">Module Abonnements disponible</p>
-                <p className="text-slate-400 text-xs leading-relaxed">Gérez des abonnements récurrents avec paiement Chargily — 15j d&apos;essai gratuit, puis 1 500 DA/mois.</p>
+                <p className="text-xs font-semibold text-white/70">Après 15 jours — Choisissez un plan</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  À partir de <span className="text-yelha-400 font-semibold">1 500 DA/mois</span> — aucune carte requise avant
+                </p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-3 space-y-1">
+              <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-full w-0 bg-gradient-to-r from-emerald-500 via-yelha-400 to-amber-400 rounded-full" />
+              </div>
+              <div className="flex justify-between text-[10px] text-white/20">
+                <span>Inscription</span>
+                <span className="text-amber-400/50 font-medium">Jour 15 — Paiement</span>
               </div>
             </div>
           </div>
@@ -163,6 +214,14 @@ export default function RegisterPage() {
             <div className="mb-6">
               <h2 className="text-2xl font-extrabold text-slate-900">{t('auth.register_title')}</h2>
               <p className="text-slate-500 text-sm mt-1">{t('auth.register_desc')}</p>
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <CheckCircle className="w-3 h-3" /> Core ERP gratuit à vie
+                </span>
+                <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <Calendar className="w-3 h-3" /> 15j d&apos;essai modules avancés
+                </span>
+              </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-4">

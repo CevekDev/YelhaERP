@@ -449,6 +449,34 @@ export default function BillingPage() {
           )}
         </div>
 
+        {/* Trial progress bar */}
+        {isTrial && sub.trialEndsAt && (() => {
+          const total = 15
+          const remaining = trialDays
+          const used = Math.max(0, total - remaining)
+          const pct = Math.min(100, Math.round((used / total) * 100))
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-white/40">Période d&apos;essai</span>
+                <span className={`font-semibold ${remaining <= 3 ? 'text-red-400' : remaining <= 7 ? 'text-amber-400' : 'text-white/70'}`}>
+                  {remaining > 0 ? `${remaining} jour${remaining !== 1 ? 's' : ''} restant${remaining !== 1 ? 's' : ''}` : 'Expiré aujourd\'hui'}
+                </span>
+              </div>
+              <div className="h-2 w-full bg-white/[0.07] rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${remaining <= 3 ? 'bg-red-500' : remaining <= 7 ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-white/25">
+                <span>Jour 0 — Inscription</span>
+                <span>Jour 15 — Paiement requis</span>
+              </div>
+            </div>
+          )
+        })()}
+
         {(isTrial || isExpired) && (
           <Button onClick={() => openCheckout('starter')} className="gap-2 bg-emerald-500 hover:bg-emerald-400 text-white w-full sm:w-auto">
             <Zap className="w-4 h-4" />
