@@ -540,6 +540,36 @@ GET/PUT/DELETE   /api/v1/webhooks/[id]
 
 ---
 
+## 🔄 Changements session 2026-05-22 — E2E Sub-API + email flow + billing UI
+
+### Tests E2E Sub-API
+- ✅ `scripts/test-sub-api-e2e.ts` : CRÉÉ — 70 assertions couvrant tout le Sub-API :
+  - Auth (sans clé, mauvais format, clé inexistante)
+  - Headers X-RateLimit (limit, remaining, reset)
+  - GET /docs (markdown, content-type)
+  - Plans CRUD (POST, validation 422, GET list/pagination, GET by ID, PATCH, 404)
+  - Clients CRUD (POST, validation, GET + search, PATCH, null clear)
+  - Subscriptions CRUD (POST avec clientId, POST newClient inline, filtres, PATCH status cycle, cancelledAt)
+  - Checkout (409 sans Chargily, 400/409 sub annulée, 404 sub inexistante)
+  - DELETE (plans, clients, subscriptions + verify 404)
+  - Webhooks (chargily-subscriptions 401 sans sig, chargily 400 sans sig, HMAC valide 200)
+  - Pagination (limit=2, clamp 100, filter vide)
+- Setup : active temporairement l'abonnement YelhaSubs de test, restaure en finally
+
+### Fix sécurité webhook
+- ✅ `app/api/webhooks/chargily-subscriptions/route.ts` : vérification header `signature` avant tout accès DB (retourne 401 si absent) — empêche le probing de subscriptionId
+
+### Email flow complet
+- ✅ `lib/email/resend.ts` : `sendTrialWelcome` avec trialEndsAt, `sendTrialReminder` (J-7/J-3/J-1) + planComparisonTable + ccpBlock, `sendTrialExpired` + both payment methods, `sendYelhaRenewalReminder` avec billingCycle (MONTHLY/ANNUAL)
+- ✅ `app/api/auth/verify-email/route.ts` : envoie `sendTrialWelcome` avec la vraie `trialEndsAt` depuis DB
+- ✅ `app/api/cron/billing/route.ts` : J-7/J-3/J-1 trial reminders + J-3/J-1 renewal reminders avec billingCycle
+
+### Billing page redesign
+- ✅ `app/dashboard/settings/billing/page.tsx` : 4 plan cards (max-w-5xl), CheckoutModal avec sélecteur plan+cycle, CcpResult avec N° CCP + bouton WhatsApp, fix redirect loop (URL params ?plan=&cycle=)
+- ✅ `app/pricing/page.tsx` : CTA logged-in → `/dashboard/settings/billing?plan=ID&cycle=CYCLE`
+
+---
+
 ## 🔄 Changements session 2026-05-21 — Script test flux abonnement
 
 ### Script E2E flow abonnement
