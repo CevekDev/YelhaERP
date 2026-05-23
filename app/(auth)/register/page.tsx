@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2, TrendingUp, CheckCircle, Package, FileText, Users, BarChart3, Zap, Shield, Truck, Calendar } from 'lucide-react'
+import { Loader2, TrendingUp, CheckCircle, RefreshCw, Bell, Users, BarChart3, CreditCard, Shield, Calendar } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 
@@ -65,11 +65,11 @@ export default function RegisterPage() {
   const labelCls = "block text-sm font-medium text-slate-700 mb-1.5"
 
   const freeFeatures = [
-    { icon: FileText, label: 'Facturation & devis illimités',       color: 'text-blue-400 bg-blue-500/10' },
-    { icon: Truck,    label: 'Achats & bons de commande',            color: 'text-orange-400 bg-orange-500/10' },
-    { icon: Package,  label: 'Gestion des stocks en temps réel',     color: 'text-yelha-400 bg-yelha-500/10' },
-    { icon: Users,    label: 'Clients & fournisseurs illimités',      color: 'text-purple-400 bg-purple-500/10' },
-    { icon: BarChart3, label: 'Tableau de bord & rapports',          color: 'text-pink-400 bg-pink-500/10' },
+    { icon: Users,     label: 'Gestion illimitée de clients et abonnés',         color: 'text-yelha-400 bg-yelha-500/10' },
+    { icon: RefreshCw, label: 'Plans, renouvellements & suivi des statuts',       color: 'text-blue-400 bg-blue-500/10' },
+    { icon: Bell,      label: 'Rappels email automatiques avant expiration',       color: 'text-orange-400 bg-orange-500/10' },
+    { icon: CreditCard,label: 'Paiement Chargily (Edahabia/CIB) et CCP',         color: 'text-purple-400 bg-purple-500/10' },
+    { icon: BarChart3, label: 'Tableau de bord MRR, churn et revenus',            color: 'text-pink-400 bg-pink-500/10' },
   ]
 
   return (
@@ -92,15 +92,15 @@ export default function RegisterPage() {
           </div>
 
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
-            <CheckCircle className="w-3.5 h-3.5" /> GRATUIT À VIE — aucune carte requise
+            <CheckCircle className="w-3.5 h-3.5" /> 15 jours d&apos;essai gratuit — aucune carte requise
           </div>
 
           <h1 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-3">
-            Votre Core ERP<br />
-            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">inclus gratuitement</span>
+            Gérez vos abonnements<br />
+            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">clients simplement</span>
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed mb-7">
-            Créez votre compte en 30 secondes et accédez immédiatement à toutes les fonctionnalités Core, sans limite de durée.
+            Créez vos plans, gérez vos abonnés et automatisez vos rappels de paiement — en dinars algériens.
           </p>
 
           <div className="space-y-2.5 mb-8">
@@ -120,7 +120,7 @@ export default function RegisterPage() {
             })}
           </div>
 
-          {/* Trial timeline */}
+          {/* How it works */}
           <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="w-3.5 h-3.5 text-yelha-400" />
@@ -137,7 +137,7 @@ export default function RegisterPage() {
               </div>
               <div className="pb-3">
                 <p className="text-xs font-semibold text-white">Aujourd&apos;hui — Accès immédiat</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Core ERP complet inclus, sans limite de durée</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Créez vos plans et ajoutez vos premiers abonnés</p>
               </div>
             </div>
 
@@ -145,13 +145,13 @@ export default function RegisterPage() {
             <div className="flex gap-3">
               <div className="flex flex-col items-center flex-shrink-0">
                 <div className="w-6 h-6 rounded-full bg-yelha-500 flex items-center justify-center">
-                  <Zap className="w-3 h-3 text-white" />
+                  <RefreshCw className="w-3 h-3 text-white" />
                 </div>
                 <div className="w-px flex-1 min-h-[20px] bg-gradient-to-b from-yelha-500/50 to-amber-500/40 my-1" />
               </div>
               <div className="pb-3">
                 <p className="text-xs font-semibold text-white">15 jours d&apos;essai gratuit</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Modules avancés (Abonnements, CRM…) sans engagement</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Toutes les fonctionnalités, sans engagement</p>
               </div>
             </div>
 
@@ -165,7 +165,7 @@ export default function RegisterPage() {
               <div>
                 <p className="text-xs font-semibold text-white/70">Après 15 jours — Choisissez un plan</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  À partir de <span className="text-yelha-400 font-semibold">1 500 DA/mois</span> — aucune carte requise avant
+                  À partir de <span className="text-yelha-400 font-semibold">990 DA/mois</span> — Edahabia, CIB ou CCP
                 </p>
               </div>
             </div>
@@ -184,11 +184,11 @@ export default function RegisterPage() {
         </div>
 
         <div className="relative z-10 flex flex-wrap gap-2.5 mt-8">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
-            <Shield className="w-3.5 h-3.5 text-yelha-400" /> Conforme droit algérien
+          <div className="flex items-center gap-2 bg-yelha-500/10 border border-yelha-500/20 text-yelha-400 text-xs font-semibold px-3 py-2 rounded-lg">
+            <CreditCard className="w-3.5 h-3.5" /> Edahabia · CIB · CCP
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
-            <Zap className="w-3.5 h-3.5 text-yelha-400" /> IRG & TVA automatiques
+            <Shield className="w-3.5 h-3.5 text-yelha-400" /> Paiement sécurisé
           </div>
         </div>
       </div>
@@ -216,10 +216,10 @@ export default function RegisterPage() {
               <p className="text-slate-500 text-sm mt-1">{t('auth.register_desc')}</p>
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  <CheckCircle className="w-3 h-3" /> Core ERP gratuit à vie
+                  <CheckCircle className="w-3 h-3" /> 15j d&apos;essai gratuit
                 </span>
                 <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  <Calendar className="w-3 h-3" /> 15j d&apos;essai modules avancés
+                  <Calendar className="w-3 h-3" /> Aucune carte requise
                 </span>
               </div>
             </div>
