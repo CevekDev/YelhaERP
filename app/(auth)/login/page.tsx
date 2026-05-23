@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import {
   Loader2, TrendingUp, ArrowLeft, Users,
-  CheckCircle, FileText, Package, BarChart3, Zap, Shield,
+  CheckCircle, RefreshCw, Bell, BarChart3, CreditCard, Shield,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
@@ -195,17 +195,17 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-3">
-            Gérez votre entreprise<br />
-            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">avec confiance</span>
+            Gérez vos abonnements<br />
+            <span className="bg-gradient-to-r from-yelha-400 to-yelha-300 bg-clip-text text-transparent">clients simplement</span>
           </h1>
           <p className="text-slate-400 text-base leading-relaxed mb-8">
-            Solution complète adaptée à la réglementation algérienne. Facturation, stock, abonnements clients — tout en un.
+            Créez vos plans, gérez vos abonnés et automatisez vos rappels de paiement — en dinars algériens.
           </p>
 
           <div className="grid grid-cols-3 gap-3 mb-8">
             {[
-              { value: '500+', label: 'Entreprises' },
-              { value: '10k+', label: 'Factures' },
+              { value: '15j', label: 'Essai gratuit' },
+              { value: '24h', label: 'Activation CCP' },
               { value: '99.9%', label: 'Uptime' },
             ].map(s => (
               <div key={s.label} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
@@ -217,10 +217,10 @@ export default function LoginPage() {
 
           <div className="space-y-2.5">
             {[
-              { icon: FileText,  label: 'Facturation & devis conformes TVA algérienne', color: 'text-blue-400 bg-blue-500/10' },
-              { icon: Package,   label: 'Stocks, achats & fournisseurs en temps réel',  color: 'text-orange-400 bg-orange-500/10' },
-              { icon: Users,     label: 'Gestion des abonnements clients avec paiement', color: 'text-yelha-400 bg-yelha-500/10' },
-              { icon: BarChart3, label: 'Tableau de bord & rapports financiers',         color: 'text-purple-400 bg-purple-500/10' },
+              { icon: Users,     label: 'Gestion illimitée de clients et abonnés',          color: 'text-yelha-400 bg-yelha-500/10' },
+              { icon: RefreshCw, label: 'Renouvellements automatiques & suivi des statuts',  color: 'text-blue-400 bg-blue-500/10' },
+              { icon: Bell,      label: 'Rappels par email avant chaque expiration',          color: 'text-orange-400 bg-orange-500/10' },
+              { icon: BarChart3, label: 'Tableau de bord MRR, churn et revenus',             color: 'text-purple-400 bg-purple-500/10' },
             ].map(f => {
               const Icon = f.icon
               return (
@@ -237,13 +237,13 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-wrap gap-2.5 mt-10">
           <div className="flex items-center gap-2 bg-yelha-500/10 border border-yelha-500/20 text-yelha-400 text-xs font-semibold px-3 py-2 rounded-lg">
-            <Zap className="w-3.5 h-3.5" /> IRG & TVA auto
+            <CreditCard className="w-3.5 h-3.5" /> Edahabia · CIB · CCP
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
-            <Shield className="w-3.5 h-3.5 text-yelha-400" /> Conforme droit algérien
+            <Shield className="w-3.5 h-3.5 text-yelha-400" /> Paiement sécurisé
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Core ERP gratuit à vie
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Essai 15j gratuit
           </div>
         </div>
       </div>
