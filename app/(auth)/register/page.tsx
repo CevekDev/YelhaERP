@@ -165,7 +165,7 @@ export default function RegisterPage() {
               <div>
                 <p className="text-xs font-semibold text-white/70">Après 15 jours — Choisissez un plan</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  À partir de <span className="text-yelha-400 font-semibold">990 DA/mois</span> — Edahabia, CIB ou CCP
+                  Payant — Edahabia, CIB ou virement CCP
                 </p>
               </div>
             </div>
