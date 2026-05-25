@@ -347,9 +347,9 @@ function FeatureGrid() {
     { t: 'Chargily Pay intégré',     d: 'Edahabia et CIB. Webhooks automatiques. Réconciliation immédiate.' },
     { t: 'Virement CCP',             d: 'Chaque paiement a une référence unique. Vous confirmez en 1 clic.' },
     { t: 'Rappels email automatiques', d: 'J-3 et J-1. Multilingue FR / EN / AR. Templates personnalisables.' },
-    { t: 'API publique',             d: 'Intégrez votre site, Shopify, WooCommerce ou app mobile.' },
+    { t: 'API publique',             d: 'Intégrez YelhaSubs à votre application ou site web.' },
     { t: 'Webhooks sortants',        d: 'Notifiez votre stack à chaque événement (créé, payé, expiré).' },
-    { t: 'Multi-devises',            d: 'DZD, EUR, USD. Pour vos clients à l\'export.' },
+    { t: 'Tableau de bord',          d: 'MRR, churn, renouvellements à venir — tout en un coup d\'œil.' },
   ]
   return (
     <section className="border-t border-white/[0.06] bg-white/[0.01]">
