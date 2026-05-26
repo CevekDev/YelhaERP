@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { RefreshCw, LogOut, Menu, LayoutDashboard, User, CreditCard, Zap, Users, Settings } from 'lucide-react'
+import { RefreshCw, LogOut, Menu, LayoutDashboard, User, CreditCard, Zap, Users, Settings, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useT } from '@/lib/i18n'
@@ -14,6 +14,7 @@ const NAV = [
   { href: '/dashboard/subscriptions/overview',    labelKey: 'sidebar.overview',       icon: LayoutDashboard },
   { href: '/dashboard/subscriptions',             labelKey: 'sidebar.subscriptions',  icon: RefreshCw },
   { href: '/dashboard/subscriptions/plans',       labelKey: 'sidebar.plans',          icon: Users },
+  { href: '/dashboard/subscriptions/clients',    labelKey: 'sidebar.clients',        icon: UserRound },
   { href: '/dashboard/subscriptions/integration', labelKey: 'sidebar.integration',    icon: Zap },
   { href: '/dashboard/subscriptions/emails',       labelKey: 'sidebar.emailSettings',  icon: Settings },
   { href: '/dashboard/subscriptions/settings',    labelKey: 'sidebar.settings',       icon: CreditCard },
