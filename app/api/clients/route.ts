@@ -25,7 +25,16 @@ export async function GET(req: NextRequest) {
     where,
     take: limit,
     orderBy: { name: 'asc' },
-    select: { id: true, name: true, firstName: true, phone: true, email: true, wilaya: true },
+    select: {
+      id: true, name: true, firstName: true, phone: true, email: true, wilaya: true,
+      subscriptions: {
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, status: true, startDate: true, nextBilling: true, clientEmail: true,
+          plan: { select: { id: true, name: true, price: true, interval: true, intervalCount: true } },
+        },
+      },
+    },
   })
 
   return apiSuccess({ clients })
