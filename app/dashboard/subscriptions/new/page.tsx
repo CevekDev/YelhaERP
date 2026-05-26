@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatDA } from '@/lib/algerian/format'
 import { Loader2, ArrowLeft, UserPlus, Search, Settings as SettingsIcon, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -262,21 +261,9 @@ export default function NewSubscriptionPage() {
                       <Input type="email" value={newClient.email} onChange={e => setNewClient(c => ({ ...c, email: e.target.value }))} placeholder="email@exemple.com" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label>Wilaya</Label>
-                      <Input value={newClient.wilaya} onChange={e => setNewClient(c => ({ ...c, wilaya: e.target.value }))} placeholder="Alger" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Type</Label>
-                      <Select value={newClient.clientType} onValueChange={v => setNewClient(c => ({ ...c, clientType: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
-                          <SelectItem value="COMPANY">Entreprise</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label>Wilaya</Label>
+                    <Input value={newClient.wilaya} onChange={e => setNewClient(c => ({ ...c, wilaya: e.target.value }))} placeholder="Alger" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Adresse</Label>

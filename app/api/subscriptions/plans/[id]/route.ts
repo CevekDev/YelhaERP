@@ -47,7 +47,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!plan) return apiError('Plan introuvable', 404)
 
   const activeCount = await prisma.subscription.count({
-    where: { planId: params.id, status: { in: ['ACTIVE', 'TRIAL'] } },
+    where: { planId: params.id, status: 'ACTIVE' },
   })
   if (activeCount > 0) return apiError(`Ce plan a ${activeCount} abonné(s) actif(s). Désactivez-le plutôt.`, 422)
 
