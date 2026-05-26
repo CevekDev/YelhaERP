@@ -49,7 +49,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const activeCount = await prisma.subscription.count({
     where: { planId: params.id, status: 'ACTIVE' },
   })
-  if (activeCount > 0) return apiError(`Ce plan a ${activeCount} abonné(s) actif(s). Désactivez-le plutôt.`, 422)
+  if (activeCount > 0) return apiError(`Ce plan a ${activeCount} abonné(s) actif(s). Annulez ces abonnements avant de supprimer le plan.`, 422)
+
+  // Supprime les abonnements non-actifs (PENDING, TRIAL, EXPIRED, CANCELLED, PAUSED) avant de supprimer le plan
+  await prisma.subscription.deleteMany({
+    where: { planId: params.id, status: { not: 'ACTIVE' } },
+  })
 
   await prisma.subscriptionPlan.delete({ where: { id: params.id } })
   return apiSuccess({ deleted: true })
