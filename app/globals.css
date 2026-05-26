@@ -95,6 +95,10 @@
   display: none;
 }
 
+textarea::placeholder {
+  color: hsl(var(--muted-foreground) / 0.45);
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

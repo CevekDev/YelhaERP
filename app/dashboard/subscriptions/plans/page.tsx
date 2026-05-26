@@ -217,7 +217,7 @@ export default function PlansPage() {
             <div className="space-y-1.5">
               <Label>Fonctionnalités (une par ligne)</Label>
               <textarea
-                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y placeholder:text-muted-foreground/50"
+                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
                 value={form.features}
                 onChange={e => setForm(f => ({ ...f, features: e.target.value }))}
                 placeholder={"Accès illimité\nSupport prioritaire\nFacturation automatique"}
