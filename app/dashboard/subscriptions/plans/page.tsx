@@ -174,11 +174,11 @@ export default function PlansPage() {
 
       {/* Create / Edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md flex flex-col max-h-[90vh]">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{editing ? 'Modifier le plan' : 'Nouveau plan'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
+          <div className="space-y-4 mt-2 overflow-y-auto pr-1">
             <div className="space-y-1.5">
               <Label>Nom du plan *</Label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex: Mensuel Pro" />
